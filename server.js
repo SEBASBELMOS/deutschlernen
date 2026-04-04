@@ -29,7 +29,7 @@ function getAuth(req) {
 }
 
 app.use(express.json({limit:"10mb"}));
-app.use(express.raw({type:"audio/*", limit:"25mb"}));
+app.use(express.raw({type:["audio/*","application/octet-stream","video/*"], limit:"25mb"}));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Auth
@@ -103,8 +103,11 @@ app.post("/api/chat", async (req,res) => {
 // AssemblyAI proxies
 app.post("/api/upload", async (req,res) => {
   try {
+    const contentType = req.headers["content-type"] || "audio/webm";
     const r = await fetch("https://api.assemblyai.com/v2/upload", {
-      method:"POST", headers:{authorization:ASSEMBLY_KEY}, body:req.body
+      method:"POST",
+      headers:{ authorization:ASSEMBLY_KEY, "content-type":contentType },
+      body:req.body
     });
     res.json(await r.json());
   } catch(err) { res.status(500).json({error:err.message}); }

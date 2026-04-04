@@ -531,22 +531,43 @@ function speak(text) {
 }
 
 // ── AssemblyAI ────────────────────────────────────────────────────────────────
-async function transcribe(blob) {
-  try {
-    const up = await (await fetch("/api/upload",{method:"POST",body:blob})).json();
-    const tx = await (await fetch("/api/transcript",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({audio_url:up.upload_url,language_code:"de"})})).json();
-    for (let i=0;i<20;i++) {
-      await new Promise(function(r){setTimeout(r,2000);});
-      const p = await (await fetch("/api/transcript/"+tx.id)).json();
-      if (p.status==="completed") return p.text||"";
-      if (p.status==="error") return null;
-    }
-    return null;
-  } catch(e){return null;}
+async function transcribe(blob, mimeType) {
+  if (!blob || blob.size < 1000) throw new Error("Audio muy corto, habla un poco mas.");
+  const headers = {"content-type": mimeType || "audio/webm"};
+
+  const upRes = await fetch("/api/upload", {method:"POST", headers:headers, body:blob});
+  const up = await upRes.json();
+  if (!up.upload_url) throw new Error("Error al subir el audio: "+(up.error||JSON.stringify(up)));
+
+  const txRes = await fetch("/api/transcript", {
+    method:"POST",
+    headers:{"content-type":"application/json"},
+    body:JSON.stringify({audio_url:up.upload_url, language_code:"de"})
+  });
+  const tx = await txRes.json();
+  if (!tx.id) throw new Error("Error al iniciar transcripcion: "+(tx.error||JSON.stringify(tx)));
+
+  for (let i=0; i<25; i++) {
+    await new Promise(function(r){setTimeout(r,2500);});
+    const p = await (await fetch("/api/transcript/"+tx.id)).json();
+    if (p.status==="completed") return p.text || "";
+    if (p.status==="error") throw new Error("AssemblyAI error: "+(p.error||"desconocido"));
+  }
+  throw new Error("Timeout: la transcripcion tardo demasiado.");
 }
 
 // ── Mic ───────────────────────────────────────────────────────────────────────
 let mr=null, chunks=[];
+
+// Elige el mejor formato de audio soportado por este browser/dispositivo
+function getBestMimeType() {
+  const types = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4","audio/aac",""];
+  for (let i=0; i<types.length; i++) {
+    if (!types[i] || MediaRecorder.isTypeSupported(types[i])) return types[i];
+  }
+  return "";
+}
+
 function makeMicBtn(color, cb) {
   const btn = document.createElement("button");
   btn.className="mic-btn";
@@ -559,20 +580,40 @@ function makeMicBtn(color, cb) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
       chunks=[];
-      mr=new MediaRecorder(stream);
-      mr.ondataavailable=function(e){chunks.push(e.data);};
+      const mimeType = getBestMimeType();
+      mr = mimeType ? new MediaRecorder(stream, {mimeType:mimeType}) : new MediaRecorder(stream);
+      mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) chunks.push(e.data); };
       mr.onstop=async function(){
         stream.getTracks().forEach(function(t){t.stop();});
         btn.textContent="..."; btn.style.borderColor="#64748b"; btn.style.color="#64748b"; btn.style.animation="none";
-        const text = await transcribe(new Blob(chunks,{type:"audio/webm"}));
-        btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
-        if (text&&cb) cb(text);
+        const usedType = mr.mimeType || mimeType || "audio/webm";
+        try {
+          const blob = new Blob(chunks, {type:usedType});
+          const text = await transcribe(blob, usedType);
+          btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
+          if (text && text.trim() && cb) cb(text.trim());
+          else if (!text || !text.trim()) showMicError(btn, color, "No se detecto voz. Intenta de nuevo.");
+        } catch(err) {
+          showMicError(btn, color, err.message);
+        }
       };
-      mr.start();
+      mr.start(250); // timeslice de 250ms para capturar chunks continuamente
       btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
-    } catch(e){alert("Allow microphone access.");}
+    } catch(e){
+      alert("Permite el acceso al microfono en tu browser.");
+    }
   };
   return btn;
+}
+
+function showMicError(btn, color, msg) {
+  btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
+  // Muestra el error de forma visible sin interrumpir el flujo
+  const errEl = document.createElement("div");
+  errEl.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e2e;border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:9999;max-width:300px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
+  errEl.textContent="🎤 "+msg;
+  document.body.appendChild(errEl);
+  setTimeout(function(){if(errEl.parentNode) errEl.parentNode.removeChild(errEl);}, 4000);
 }
 
 function hexToRgb(hex) {
