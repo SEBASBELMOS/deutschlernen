@@ -482,16 +482,33 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 
 <script>
 // ── AI proxy ──────────────────────────────────────────────────────────────────
-async function ai(system, messages) {
+async function ai(system, messages, maxTokens) {
   const res = await fetch("/api/chat", {
     method:"POST", headers:{"content-type":"application/json"},
-    body:JSON.stringify({model:"mimo-v2-flash",max_tokens:1000,temperature:0.7,
+    body:JSON.stringify({model:"mimo-v2-flash",max_tokens:maxTokens||1000,temperature:0.7,
       messages:[{role:"system",content:system}].concat(messages)})
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message||JSON.stringify(data.error));
   if (!data.choices||!data.choices.length) throw new Error("Empty response");
   return data.choices[0].message.content;
+}
+
+// Extrae y parsea el primer array JSON válido del texto del AI
+function parseJSONArray(text) {
+  const clean = text.replace(/```json|```/g,"").trim();
+  // Busca el array aunque haya texto extra antes/después
+  const match = clean.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error("No JSON array found");
+  try {
+    return JSON.parse(match[0]);
+  } catch(e) {
+    // Intenta truncar en el último objeto completo si el JSON fue cortado
+    const truncated = match[0].replace(/,?\s*\{[^}]*$/, "]");
+    const parsed = JSON.parse(truncated);
+    if (!parsed.length) throw new Error("JSON vacío después de reparar");
+    return parsed;
+  }
 }
 
 // ── TTS ───────────────────────────────────────────────────────────────────────
@@ -747,13 +764,15 @@ async function loadPhrases(sit) {
   loading.appendChild(mk("p","Generando frases...","color:var(--muted);font-size:13px;font-weight:500;"));
   el.appendChild(loading);
 
-  const excluded=shownPhrases[sit]||[];
-  const exclusionNote=excluded.length?" Do NOT repeat any of these phrases already shown: "+JSON.stringify(excluded)+".":"";
+  // Solo las últimas 10 excluidas para no inflar el prompt
+  const allExcluded=shownPhrases[sit]||[];
+  const excluded=allExcluded.slice(-10);
+  const exclusionNote=excluded.length?" Do NOT use these phrases: "+excluded.join(" | ")+".":"";
 
   try {
-    const sys="You are a German language expert. Generate exactly 5 complete real German phrases for the given situation. Reply ONLY with a valid JSON array, no markdown: [{\"de\":\"German phrase\",\"es\":\"Spanish translation\",\"tip\":\"short tip\"}]. Level A2-B1."+exclusionNote;
-    const text=await ai(sys,[{role:"user",content:"Situation: "+sit}]);
-    const phrases=JSON.parse(text.replace(/```json|```/g,"").trim());
+    const sys="You are a German language expert. Generate exactly 5 complete real German phrases for the given situation. Reply ONLY with a valid JSON array, no markdown, no extra text: [{\"de\":\"German phrase\",\"es\":\"Spanish translation\",\"tip\":\"short tip\"}]. Level A2-B1. Each tip must be under 8 words."+exclusionNote;
+    const text=await ai(sys,[{role:"user",content:"Situation: "+sit}], 1400);
+    const phrases=parseJSONArray(text);
     sessionPhrases+=phrases.length;
     if(!shownPhrases[sit]) shownPhrases[sit]=[];
     phrases.forEach(function(ph){shownPhrases[sit].push(ph.de);});
