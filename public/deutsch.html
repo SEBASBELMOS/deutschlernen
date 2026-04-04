@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeutschLernen</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body { background:#080810; color:#e2e8f0; font-family:system-ui,sans-serif; min-height:100vh; }
+button,input,textarea { font-family:inherit; cursor:pointer; }
+#app { max-width:620px; margin:0 auto; display:flex; flex-direction:column; min-height:100vh; }
+.tab-nav { display:flex; align-items:center; padding:14px 8px 0; gap:4px; }
+.tab-arrow { flex-shrink:0; background:none; border:none; color:#475569; font-size:20px; padding:0 6px; line-height:1; }
+.tab-arrow:hover { color:#94a3b8; }
+.tab-bar { display:flex; overflow-x:auto; gap:7px; scrollbar-width:none; flex:1; }
+.tab-bar::-webkit-scrollbar { display:none; }
+.tab { flex-shrink:0; border:none; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; white-space:nowrap; }
+.tab.on { background:#F5A623; color:#000; }
+.tab.off { background:rgba(255,255,255,0.06); color:#475569; }
+.content { flex:1; padding:20px; overflow-y:auto; }
+.screen { display:none; }
+.screen.active { display:block; }
+.card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+.btn-back { background:rgba(255,255,255,0.07); border:none; color:#94a3b8; border-radius:8px; padding:6px 12px; font-size:13px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.sit-btn { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px 10px; color:#cbd5e1; font-size:12px; font-weight:600; width:100%; }
+.icon-btn { background:none; border:none; font-size:18px; padding:2px 4px; }
+.loading-box { text-align:center; padding:48px 0; }
+.stat-row { display:flex; justify-content:space-between; align-items:center; border-radius:14px; padding:16px 20px; margin-bottom:10px; background:rgba(255,255,255,0.04); }
+.err { color:#ef4444; font-size:13px; text-align:center; margin-top:10px; }
+.chat-win { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px 14px 0 0; padding:14px 12px; height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+.chat-bar { display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.06); border-top:none; border-radius:0 0 14px 14px; padding:10px; }
+.chat-input { flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(78,205,196,0.2); border-radius:10px; padding:10px 13px; font-size:14px; color:#fff; outline:none; }
+.send-btn { background:#4ECDC4; color:#000; border:none; border-radius:10px; padding:10px 16px; font-size:15px; font-weight:700; }
+.send-btn:disabled { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.2); }
+.bubble-row { display:flex; }
+.bubble-row.user { justify-content:flex-end; }
+.bubble-row.bot { justify-content:flex-start; }
+.mic-btn { width:44px; height:44px; border-radius:50%; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:2px solid #4ECDC4; background:rgba(78,205,196,0.08); color:#4ECDC4; }
+.dots { display:flex; gap:5px; align-items:center; }
+.dot { width:7px; height:7px; border-radius:50%; }
+#login-screen { position:fixed; inset:0; background:#080810; display:flex; align-items:center; justify-content:center; z-index:999; padding:24px; }
+.login-box { width:100%; max-width:360px; }
+.login-input { width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:13px 16px; font-size:15px; color:#fff; outline:none; margin-bottom:10px; display:block; }
+.login-input:focus { border-color:rgba(245,166,35,0.5); }
+.login-btn { width:100%; background:#F5A623; color:#000; border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:800; margin-bottom:10px; }
+.login-toggle { width:100%; background:rgba(255,255,255,0.04); color:#94a3b8; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; font-size:13px; }
+.login-err { color:#ef4444; font-size:13px; text-align:center; margin-bottom:10px; min-height:20px; }
+@keyframes flipIn { from{transform:rotateY(90deg);opacity:0} to{transform:rotateY(0);opacity:1} }
+.flashcard { background:linear-gradient(135deg,rgba(245,166,35,0.08),rgba(245,166,35,0.03)); border:1px solid rgba(245,166,35,0.2); border-radius:20px; padding:32px 24px; text-align:center; margin-bottom:16px; animation:flipIn 0.3s ease; cursor:pointer; }
+@keyframes bounce { 0%,80%,100%{transform:scale(0.4);opacity:0.3} 40%{transform:scale(1);opacity:1} }
+@keyframes ring { 0%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 70%{box-shadow:0 0 0 8px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1 style="font-size:26px;font-weight:800;margin-bottom:4px;">Deutsch<span style="color:#F5A623;">Lernen</span></h1>
+    <p style="font-size:11px;color:#334155;letter-spacing:2px;margin-bottom:28px;">GERMAN WITH AI</p>
+    <div id="login-err" class="login-err"></div>
+    <input id="login-user" class="login-input" placeholder="Username" type="text" autocomplete="username"/>
+    <input id="login-pass" class="login-input" placeholder="Password" type="password" autocomplete="current-password"/>
+    <button class="login-btn" id="login-btn" onclick="doAuth()">Iniciar sesion</button>
+    <button class="login-toggle" onclick="toggleAuthMode()">No tienes cuenta? Registrate</button>
+    <p id="auth-mode-lbl" style="text-align:center;font-size:11px;color:#334155;margin-top:10px;">Modo: Login</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <div style="padding:18px 16px 0;display:flex;align-items:center;gap:10px;">
+    <div>
+      <h1 style="font-size:22px;font-weight:800;">Deutsch<span style="color:#F5A623;">Lernen</span></h1>
+      <p style="font-size:10px;color:#334155;letter-spacing:2px;">GERMAN WITH AI</p>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <div id="badge" style="display:none;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.25);border-radius:20px;padding:4px 10px;">
+        <span style="font-size:12px;color:#F5A623;">&#9733; <span id="badge-n">0</span></span>
+      </div>
+      <div id="user-chip" style="display:none;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 10px 4px 12px;">
+        <span id="user-lbl" style="font-size:12px;color:#94a3b8;"></span>
+        <button onclick="doLogout()" title="Cerrar sesion" style="background:none;border:none;padding:0;display:flex;align-items:center;opacity:0.5;cursor:pointer;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-arrow" onclick="scrollTabs(-1)">&#8249;</button>
+    <div class="tab-bar" id="tabs"></div>
+    <button class="tab-arrow" onclick="scrollTabs(1)">&#8250;</button>
+  </div>
+  <div class="content">
+    <div id="s-frases" class="screen"></div>
+    <div id="s-conversar" class="screen"></div>
+    <div id="s-corrigeme" class="screen"></div>
+    <div id="s-noentendi" class="screen"></div>
+    <div id="s-flashcards" class="screen"></div>
+    <div id="s-guardadas" class="screen"></div>
+    <div id="s-resumen" class="screen"></div>
+  </div>
+</div>
+
+<script>
+// ── AI proxy ──────────────────────────────────────────────────────────────────
+async function ai(system, messages) {
+  const res = await fetch("/api/chat", {
+    method:"POST", headers:{"content-type":"application/json"},
+    body:JSON.stringify({model:"mimo-v2-flash",max_tokens:1000,temperature:0.7,
+      messages:[{role:"system",content:system}].concat(messages)})
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message||JSON.stringify(data.error));
+  if (!data.choices||!data.choices.length) throw new Error("Empty response");
+  return data.choices[0].message.content;
+}
+
+// ── TTS ───────────────────────────────────────────────────────────────────────
+let _deVoice = null;
+function loadDeVoice() {
+  _deVoice = window.speechSynthesis.getVoices().find(function(v){return v.lang.startsWith("de");}) || null;
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = loadDeVoice;
+  loadDeVoice();
+}
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "de-DE";
+  u.rate = 0.82;
+  const voice = _deVoice || window.speechSynthesis.getVoices().find(function(v){return v.lang.startsWith("de");});
+  if (voice) u.voice = voice;
+  window.speechSynthesis.speak(u);
+}
+
+// ── AssemblyAI ────────────────────────────────────────────────────────────────
+async function transcribe(blob) {
+  try {
+    const up = await (await fetch("/api/upload",{method:"POST",body:blob})).json();
+    const tx = await (await fetch("/api/transcript",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({audio_url:up.upload_url,language_code:"de"})})).json();
+    for (let i=0;i<20;i++) {
+      await new Promise(function(r){setTimeout(r,2000);});
+      const p = await (await fetch("/api/transcript/"+tx.id)).json();
+      if (p.status==="completed") return p.text||"";
+      if (p.status==="error") return null;
+    }
+    return null;
+  } catch(e){return null;}
+}
+
+// ── Mic ───────────────────────────────────────────────────────────────────────
+let mr=null, chunks=[];
+function makeMicBtn(color, cb) {
+  const btn = document.createElement("button");
+  btn.className="mic-btn";
+  btn.style.borderColor=color||"#4ECDC4";
+  btn.style.color=color||"#4ECDC4";
+  btn.textContent="MIC";
+  btn.onclick=async function(){
+    if (mr&&mr.state==="recording") { mr.stop(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      chunks=[];
+      mr=new MediaRecorder(stream);
+      mr.ondataavailable=function(e){chunks.push(e.data);};
+      mr.onstop=async function(){
+        stream.getTracks().forEach(function(t){t.stop();});
+        btn.textContent="..."; btn.style.borderColor="#64748b"; btn.style.color="#64748b"; btn.style.animation="none";
+        const text = await transcribe(new Blob(chunks,{type:"audio/webm"}));
+        btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
+        if (text&&cb) cb(text);
+      };
+      mr.start();
+      btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
+    } catch(e){alert("Allow microphone access.");}
+  };
+  return btn;
+}
+
+function makeDots(color) {
+  const d=document.createElement("div"); d.className="dots";
+  [0,0.2,0.4].forEach(function(delay){
+    const dot=document.createElement("div"); dot.className="dot";
+    dot.style.background=color||"#4ECDC4";
+    dot.style.animation="bounce 1.2s "+delay+"s infinite";
+    d.appendChild(dot);
+  });
+  return d;
+}
+
+function mk(tag,text,style) {
+  const el=document.createElement(tag);
+  if (text) el.textContent=text;
+  if (style) el.style.cssText=style;
+  return el;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let authToken = localStorage.getItem("dl_token")||null;
+let authUser  = localStorage.getItem("dl_user")||null;
+let saved=[], chatLogs=[], sessionPhrases=0, sessionMinutes=0;
+let chatHistory=[], chatScenario=null, currentTab="frases";
+let flashIdx=0, guardadasTab="frases", isRegister=false;
+let shownPhrases={}; // {topic: ["de phrase", ...]} — para no repetir en "Generar 5 mas"
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function toggleAuthMode() {
+  isRegister=!isRegister;
+  document.getElementById("auth-mode-lbl").textContent=isRegister?"Modo: Registro":"Modo: Login";
+  document.querySelector(".login-toggle").textContent=isRegister?"Ya tienes cuenta? Login":"No tienes cuenta? Registrate";
+  document.getElementById("login-btn").textContent=isRegister?"Crear cuenta":"Iniciar sesion";
+}
+
+async function doAuth() {
+  const username=document.getElementById("login-user").value.trim();
+  const password=document.getElementById("login-pass").value.trim();
+  const errEl=document.getElementById("login-err");
+  errEl.textContent="";
+  if (!username||!password){errEl.textContent="Completa todos los campos.";return;}
+  document.getElementById("login-btn").textContent="Cargando...";
+  try {
+    const res=await fetch(isRegister?"/api/register":"/api/login",{
+      method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({username,password})
+    });
+    const data=await res.json();
+    if (data.error){errEl.textContent=data.error;document.getElementById("login-btn").textContent=isRegister?"Crear cuenta":"Iniciar sesion";return;}
+    authToken=data.token; authUser=data.username;
+    localStorage.setItem("dl_token",authToken);
+    localStorage.setItem("dl_user",authUser);
+    if (data.data) applyServerData(data.data);
+    showApp();
+  } catch(e){errEl.textContent="Error: "+e.message;document.getElementById("login-btn").textContent=isRegister?"Crear cuenta":"Iniciar sesion";}
+}
+
+async function doLogout() {
+  saveChatLog();
+  try {await fetch("/api/logout",{method:"POST",headers:{"x-token":authToken||""}});} catch(e){}
+  authToken=null; authUser=null;
+  saved=[]; chatLogs=[]; sessionPhrases=0; sessionMinutes=0; shownPhrases={};
+  chatHistory=[]; chatScenario=null;
+  localStorage.removeItem("dl_token"); localStorage.removeItem("dl_user");
+  document.getElementById("app").style.display="none";
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("user-chip").style.display="none";
+  document.getElementById("login-user").value="";
+  document.getElementById("login-pass").value="";
+  document.getElementById("login-btn").textContent="Iniciar sesion";
+}
+
+function applyServerData(data) {
+  if (Array.isArray(data.saved)) saved=data.saved;
+  if (Array.isArray(data.chatLogs)) chatLogs=data.chatLogs;
+  if (data.totalPhrases) sessionPhrases=data.totalPhrases;
+  if (data.totalMinutes) sessionMinutes=data.totalMinutes;
+}
+
+async function syncUp() {
+  if (!authToken) return;
+  try {
+    await fetch("/api/sync",{method:"POST",headers:{"content-type":"application/json","x-token":authToken},
+      body:JSON.stringify({saved,chatLogs,totalPhrases:sessionPhrases,totalMinutes:sessionMinutes})});
+  } catch(e){}
+}
+
+function showApp() {
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="flex";
+  const chip=document.getElementById("user-chip");
+  chip.style.display="flex";
+  document.getElementById("user-lbl").textContent=authUser;
+  updateBadge();
+  renderTabs();
+  showScreen("frases");
+}
+
+function updateBadge() {
+  document.getElementById("badge").style.display=saved.length?"block":"none";
+  document.getElementById("badge-n").textContent=saved.length;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+const TABS=[
+  {id:"frases",label:"Frases"},
+  {id:"conversar",label:"Conversar"},
+  {id:"corrigeme",label:"Corrigeme"},
+  {id:"noentendi",label:"No entendi"},
+  {id:"flashcards",label:"Flashcards"},
+  {id:"guardadas",label:"Guardadas"},
+  {id:"resumen",label:"Resumen"}
+];
+
+function renderTabs() {
+  const bar=document.getElementById("tabs");
+  bar.innerHTML="";
+  TABS.forEach(function(t){
+    const btn=document.createElement("button");
+    btn.className="tab "+(t.id===currentTab?"on":"off");
+    btn.textContent=t.label;
+    btn.onclick=function(){currentTab=t.id;renderTabs();showScreen(t.id);};
+    bar.appendChild(btn);
+  });
+}
+
+function scrollTabs(dir) {
+  document.getElementById("tabs").scrollBy({left:dir*140,behavior:"smooth"});
+}
+
+function showScreen(id) {
+  // Save chat if navigating away from conversar
+  if (id !== "conversar" && chatScenario) saveChatLog();
+  TABS.forEach(function(t){document.getElementById("s-"+t.id).classList.remove("active");});
+  document.getElementById("s-"+id).classList.add("active");
+  if(id==="frases") renderFrases();
+  else if(id==="conversar") renderConversar();
+  else if(id==="corrigeme") renderCorrigeme();
+  else if(id==="noentendi") renderNoEntendi();
+  else if(id==="flashcards") renderFlashcards();
+  else if(id==="guardadas") renderGuardadas();
+  else if(id==="resumen") renderResumen();
+}
+
+// ── FRASES ────────────────────────────────────────────────────────────────────
+const SITS=["Mi trabajo en data","Viajes y Europa","Emociones","No entendi repite","Vida diaria","Con amigos","Pedir ayuda","Tecnologia y AI"];
+
+function renderFrases() {
+  const el=document.getElementById("s-frases");
+  el.innerHTML="";
+  el.appendChild(mk("p","Elige un tema:","color:#64748b;font-size:14px;margin-bottom:14px;"));
+  const grid=document.createElement("div"); grid.className="grid2";
+  SITS.forEach(function(s){
+    const btn=document.createElement("button"); btn.className="sit-btn"; btn.textContent=s;
+    btn.onclick=function(){loadPhrases(s);};
+    grid.appendChild(btn);
+  });
+  el.appendChild(grid);
+}
+
+async function loadPhrases(sit) {
+  const el=document.getElementById("s-frases");
+  el.innerHTML="";
+  const top=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:14px;");
+  const back=document.createElement("button"); back.className="btn-back"; back.textContent="Back";
+  back.onclick=function(){ shownPhrases[sit]=[]; renderFrases(); };
+  top.appendChild(back); top.appendChild(mk("span",sit,"font-size:13px;color:#e2e8f0;font-weight:600;"));
+  el.appendChild(top);
+
+  const loading=document.createElement("div"); loading.className="loading-box";
+  loading.appendChild(makeDots("#F5A623"));
+  loading.appendChild(mk("p","Generando frases...","color:#64748b;font-size:13px;margin-top:12px;"));
+  el.appendChild(loading);
+
+  // Build exclusion list so AI doesn't repeat phrases
+  const excluded = shownPhrases[sit] || [];
+  const exclusionNote = excluded.length
+    ? " Do NOT repeat any of these phrases already shown: "+JSON.stringify(excluded)+"."
+    : "";
+
+  try {
+    const sys="You are a German language expert. Generate exactly 5 complete real German phrases for the given situation. Reply ONLY with a valid JSON array, no markdown: [{\"de\":\"German phrase\",\"es\":\"Spanish translation\",\"tip\":\"short tip\"}]. Level A2-B1."+exclusionNote;
+    const text=await ai(sys,[{role:"user",content:"Situation: "+sit}]);
+    const phrases=JSON.parse(text.replace(/```json|```/g,"").trim());
+    sessionPhrases+=phrases.length;
+
+    // Track shown phrases to avoid repetition
+    if (!shownPhrases[sit]) shownPhrases[sit]=[];
+    phrases.forEach(function(ph){ shownPhrases[sit].push(ph.de); });
+
+    el.removeChild(loading);
+
+    phrases.forEach(function(ph){
+      const card=document.createElement("div"); card.className="card";
+      const row=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;gap:8px;");
+      const de=mk("p",ph.de,"font-size:16px;font-weight:700;color:#fff;flex:1;line-height:1.4;");
+      const btnRow=mk("div","","display:flex;gap:4px;");
+      const playBtn=document.createElement("button"); playBtn.className="icon-btn"; playBtn.innerHTML="&#9654;"; playBtn.style.color="#94a3b8";
+      playBtn.onclick=function(){speak(ph.de);};
+      const isSaved=saved.some(function(x){return x.de===ph.de;});
+      const starBtn=document.createElement("button"); starBtn.className="icon-btn"; starBtn.innerHTML="&#9733;";
+      starBtn.style.color=isSaved?"#F5A623":"#334155";
+      starBtn.onclick=function(){
+        if(!saved.some(function(x){return x.de===ph.de;})){
+          saved.push(ph); starBtn.style.color="#F5A623"; updateBadge(); syncUp();
+        }
+      };
+      btnRow.appendChild(playBtn); btnRow.appendChild(starBtn);
+      row.appendChild(de); row.appendChild(btnRow); card.appendChild(row);
+      card.appendChild(mk("p",ph.es,"font-size:13px;color:#94a3b8;margin-top:5px;"));
+      if(ph.tip) card.appendChild(mk("p","Tip: "+ph.tip,"font-size:12px;color:#475569;font-style:italic;margin-top:5px;"));
+      el.appendChild(card);
+    });
+
+    const more=document.createElement("button");
+    more.style.cssText="width:100%;background:transparent;border:1px dashed rgba(255,255,255,0.12);color:#475569;border-radius:12px;padding:12px;font-size:13px;margin-top:4px;";
+    more.textContent="+ Generar 5 mas";
+    more.onclick=function(){loadPhrases(sit);};
+    el.appendChild(more);
+  } catch(e){
+    if(loading.parentNode) el.removeChild(loading);
+    el.appendChild(mk("p","Error: "+e.message,"color:#ef4444;font-size:13px;text-align:center;"));
+  }
+}
+
+// ── CONVERSAR ─────────────────────────────────────────────────────────────────
+const SCENARIOS=["Talking with a German friend","You explain your data analyst job to a colleague","Asking for clarification when you dont understand","Talking about your day","Job interview in Germany","Talking about your trip to Europe"];
+
+function renderConversar() {
+  if (chatScenario) return; // chat in progress — keep existing UI
+  const el=document.getElementById("s-conversar");
+  el.innerHTML="";
+  el.appendChild(mk("p","Elige un escenario:","color:#64748b;font-size:14px;margin-bottom:14px;"));
+  SCENARIOS.forEach(function(s){
+    const btn=document.createElement("button");
+    btn.style.cssText="display:block;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(78,205,196,0.15);border-radius:14px;padding:14px 16px;text-align:left;color:#e2e8f0;font-size:14px;font-weight:500;margin-bottom:10px;";
+    btn.textContent=s;
+    btn.onclick=function(){startChat(s);};
+    el.appendChild(btn);
+  });
+}
+
+// Idempotent save: updates today's entry for same scenario, or inserts new
+function saveChatLog() {
+  if (chatHistory.length>0&&chatScenario) {
+    const today=new Date().toLocaleDateString("es-CO");
+    const idx=chatLogs.findIndex(function(l){return l.scenario===chatScenario&&l.date===today;});
+    if (idx>=0) {
+      chatLogs[idx].messages=chatHistory.slice();
+    } else {
+      chatLogs.unshift({scenario:chatScenario,date:today,messages:chatHistory.slice()});
+      if(chatLogs.length>10) chatLogs=chatLogs.slice(0,10);
+    }
+    syncUp();
+  }
+}
+
+function startChat(scenario) {
+  chatScenario=scenario; chatHistory=[];
+  const el=document.getElementById("s-conversar");
+  el.innerHTML="";
+
+  const top=mk("div","","display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;");
+
+  const saveBtn=document.createElement("button");
+  saveBtn.style.cssText="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);color:#4ECDC4;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;";
+  saveBtn.textContent="Guardar";
+  saveBtn.onclick=function(){
+    saveChatLog();
+    saveBtn.textContent="Guardado!";
+    setTimeout(function(){saveBtn.textContent="Guardar";},1500);
+  };
+
+  const changeBtn=document.createElement("button"); changeBtn.className="btn-back"; changeBtn.textContent="Cambiar";
+  top.appendChild(changeBtn);
+  top.appendChild(saveBtn);
+  top.appendChild(mk("span",scenario,"font-size:12px;color:#475569;flex:1;"));
+  el.appendChild(top);
+
+  const win=document.createElement("div"); win.className="chat-win"; win.id="chat-win";
+  el.appendChild(win);
+
+  addBubble("Hallo! Scenario: "+scenario+"\n(Ready! Write in German or Spanish.)","bot");
+
+  const minTimer=setInterval(function(){sessionMinutes++;syncUp();},60000);
+
+  changeBtn.onclick=function(){
+    clearInterval(minTimer);
+    saveChatLog();
+    chatScenario=null; chatHistory=[];
+    renderConversar();
+  };
+
+  const bar=document.createElement("div"); bar.className="chat-bar";
+  const inp=document.createElement("input"); inp.className="chat-input"; inp.placeholder="Write in German...";
+  const sendBtn=document.createElement("button"); sendBtn.className="send-btn"; sendBtn.textContent="→";
+  const micBtn=makeMicBtn("#4ECDC4",function(text){inp.value=text;doSend(inp,sendBtn);});
+  inp.onkeydown=function(e){if(e.key==="Enter"&&!inp.disabled)doSend(inp,sendBtn);};
+  sendBtn.onclick=function(){doSend(inp,sendBtn);};
+  bar.appendChild(inp); bar.appendChild(micBtn); bar.appendChild(sendBtn);
+  el.appendChild(bar);
+}
+
+function addBubble(text, role) {
+  const win=document.getElementById("chat-win"); if(!win) return;
+  const row=document.createElement("div"); row.className="bubble-row "+role;
+  const wrapper=document.createElement("div");
+  wrapper.style.cssText="display:flex;flex-direction:column;align-items:"+(role==="user"?"flex-end":"flex-start")+";gap:4px;max-width:86%;";
+  const bub=document.createElement("div");
+  bub.style.cssText="padding:10px 14px;font-size:14px;line-height:1.65;white-space:pre-wrap;max-width:100%;border-radius:"+(role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px")+";background:"+(role==="user"?"rgba(78,205,196,0.1)":"rgba(255,255,255,0.06)")+";border:1px solid "+(role==="user"?"rgba(78,205,196,0.2)":"rgba(255,255,255,0.08)")+";color:#e2e8f0;";
+  bub.textContent=text;
+  const playBtn=document.createElement("button");
+  playBtn.style.cssText="background:none;border:none;font-size:12px;color:#475569;padding:0 4px;cursor:pointer;";
+  playBtn.textContent="▶ escuchar";
+  playBtn.onclick=function(){speak(text);};
+  wrapper.appendChild(bub); wrapper.appendChild(playBtn);
+  row.appendChild(wrapper); win.appendChild(row);
+  win.scrollTop=win.scrollHeight;
+}
+
+async function doSend(inp, sendBtn) {
+  const msg=inp.value.trim(); if(!msg) return;
+  inp.value=""; inp.disabled=true; sendBtn.disabled=true;
+  addBubble(msg,"user");
+  chatHistory.push({role:"user",content:msg});
+  const win=document.getElementById("chat-win");
+  const typingRow=document.createElement("div"); typingRow.className="bubble-row bot";
+  const typingBub=document.createElement("div");
+  typingBub.style.cssText="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px 16px 16px 4px;padding:12px 16px;";
+  typingBub.appendChild(makeDots("#4ECDC4"));
+  typingRow.appendChild(typingBub);
+  if(win){win.appendChild(typingRow);win.scrollTop=win.scrollHeight;}
+  try {
+    const sys="You are a German tutor playing the role of the OTHER person in this scenario: "+chatScenario+". The USER (Sebastian) is always the protagonist — a data analyst from Colombia learning German. YOU play the other person: friend, colleague, interviewer, etc. Reply in German at A2-B1 level. After your German reply add one line in parentheses: (Spanish translation). If Sebastian made German errors gently correct: Better: [correction]. Max 3-4 sentences. Keep the conversation going.";
+    const reply=await ai(sys,chatHistory);
+    if(win&&typingRow.parentNode) win.removeChild(typingRow);
+    addBubble(reply,"bot");
+    chatHistory.push({role:"assistant",content:reply});
+  } catch(e){
+    if(win&&typingRow.parentNode) win.removeChild(typingRow);
+    addBubble("Error: "+e.message,"bot");
+  }
+  inp.disabled=false; sendBtn.disabled=false;
+}
+
+// ── CORRIGEME ─────────────────────────────────────────────────────────────────
+function renderCorrigeme() {
+  const el=document.getElementById("s-corrigeme"); el.innerHTML="";
+  el.appendChild(mk("p","Escribe o graba lo que intentaste decir en aleman.","color:#64748b;font-size:14px;margin-bottom:14px;"));
+  const row=mk("div","","display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;");
+  const ta=document.createElement("textarea"); ta.rows=3; ta.placeholder="ej: Ich bin haben sehr mude heute...";
+  ta.style.cssText="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(248,113,113,0.25);border-radius:12px;padding:12px 14px;font-size:14px;color:#fff;outline:none;resize:none;font-family:inherit;";
+  const mic=makeMicBtn("#F87171",function(t){ta.value=t;doFix(ta,fixBtn,el);});
+  mic.style.borderColor="#F87171"; mic.style.color="#F87171";
+  row.appendChild(ta); row.appendChild(mic); el.appendChild(row);
+  const fixBtn=document.createElement("button");
+  fixBtn.style.cssText="width:100%;background:#F87171;color:#000;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;";
+  fixBtn.textContent="Fix my German";
+  fixBtn.onclick=function(){doFix(ta,fixBtn,el);};
+  el.appendChild(fixBtn);
+}
+
+async function doFix(ta, fixBtn, el) {
+  const text=ta.value.trim(); if(!text) return;
+  fixBtn.disabled=true; fixBtn.textContent=""; fixBtn.appendChild(makeDots("#F87171"));
+  const old=el.querySelector("#fix-result"); if(old) el.removeChild(old);
+  try {
+    const sys="You are a friendly German corrector. Reply ONLY with valid JSON, no markdown: {\"correcto\":\"correct German phrase\",\"errores\":\"what was wrong in Spanish max 2 lines\",\"alternativa\":\"more natural version\",\"pronunciacion\":\"simplified pronunciation\"}";
+    const reply=await ai(sys,[{role:"user",content:text}]);
+    const r=JSON.parse(reply.replace(/```json|```/g,"").trim());
+    const result=document.createElement("div"); result.id="fix-result"; result.style.marginTop="14px";
+
+    const box1=document.createElement("div");
+    box1.style.cssText="background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.18);border-radius:14px;padding:16px;margin-bottom:10px;";
+    box1.appendChild(mk("p","CORRECTO","font-size:11px;color:#4ade80;letter-spacing:2px;margin-bottom:6px;"));
+    const rowC=mk("div","","display:flex;justify-content:space-between;align-items:center;");
+    rowC.appendChild(mk("p",r.correcto,"font-size:20px;font-weight:700;color:#fff;flex:1;"));
+    const pc=document.createElement("button"); pc.className="icon-btn"; pc.innerHTML="&#9654;"; pc.style.color="#4ade80"; pc.style.fontSize="20px";
+    pc.onclick=function(){speak(r.correcto);}; rowC.appendChild(pc); box1.appendChild(rowC);
+    box1.appendChild(mk("p","/"+r.pronunciacion+"/","font-size:12px;color:#64748b;margin-top:4px;"));
+    result.appendChild(box1);
+
+    if(r.errores){
+      const box2=document.createElement("div");
+      box2.style.cssText="background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.18);border-radius:14px;padding:14px;margin-bottom:10px;";
+      box2.appendChild(mk("p","QUE MEJORAR","font-size:11px;color:#F87171;letter-spacing:2px;margin-bottom:5px;"));
+      box2.appendChild(mk("p",r.errores,"font-size:14px;color:#cbd5e1;"));
+      result.appendChild(box2);
+    }
+    if(r.alternativa){
+      const box3=document.createElement("div");
+      box3.style.cssText="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.18);border-radius:14px;padding:14px;margin-bottom:10px;";
+      box3.appendChild(mk("p","MAS NATURAL","font-size:11px;color:#A78BFA;letter-spacing:2px;margin-bottom:5px;"));
+      const rowA=mk("div","","display:flex;justify-content:space-between;align-items:center;");
+      rowA.appendChild(mk("p",r.alternativa,"font-size:15px;color:#e2e8f0;flex:1;"));
+      const pa=document.createElement("button"); pa.className="icon-btn"; pa.innerHTML="&#9654;"; pa.style.color="#A78BFA"; pa.style.fontSize="20px";
+      pa.onclick=function(){speak(r.alternativa);}; rowA.appendChild(pa); box3.appendChild(rowA);
+      result.appendChild(box3);
+    }
+    const reset=mk("button","Corregir otra frase","width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:10px;font-size:13px;");
+    reset.onclick=renderCorrigeme; result.appendChild(reset);
+    el.appendChild(result);
+  } catch(e){
+    el.appendChild(mk("p","Error: "+e.message,"color:#ef4444;font-size:13px;text-align:center;margin-top:10px;"));
+  }
+  fixBtn.disabled=false; fixBtn.textContent="Fix my German";
+}
+
+// ── NO ENTENDI ────────────────────────────────────────────────────────────────
+function renderNoEntendi() {
+  const el=document.getElementById("s-noentendi"); el.innerHTML="";
+  el.appendChild(mk("h3","No entendi","color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;"));
+  el.appendChild(mk("p","Escuchaste algo en aleman y no entiendes? Escribe o graba aqui.","color:#64748b;font-size:14px;margin-bottom:14px;"));
+  const row=mk("div","","display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;");
+  const ta=document.createElement("textarea"); ta.rows=3; ta.placeholder="Escribe lo que escuchaste...";
+  ta.style.cssText="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(78,205,196,0.25);border-radius:12px;padding:12px 14px;font-size:14px;color:#fff;outline:none;resize:none;font-family:inherit;";
+  const mic=makeMicBtn("#4ECDC4",function(t){ta.value=t;doExplain(ta,explainBtn,el);});
+  row.appendChild(ta); row.appendChild(mic); el.appendChild(row);
+  const explainBtn=document.createElement("button");
+  explainBtn.style.cssText="width:100%;background:#4ECDC4;color:#000;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;";
+  explainBtn.textContent="Explicame esto";
+  explainBtn.onclick=function(){doExplain(ta,explainBtn,el);};
+  el.appendChild(explainBtn);
+}
+
+async function doExplain(ta, btn, el) {
+  const text=ta.value.trim(); if(!text) return;
+  btn.disabled=true; btn.textContent=""; btn.appendChild(makeDots("#4ECDC4"));
+  const old=el.querySelector("#ni-result"); if(old) el.removeChild(old);
+  try {
+    const sys="You are a German language expert helping a Spanish speaker understand German. Reply ONLY with valid JSON, no markdown: {\"original\":\"the German text cleaned\",\"significado\":\"what it means in Spanish\",\"contexto\":\"when and why this is used\",\"palabras\":[{\"de\":\"key word\",\"es\":\"meaning\"}],\"respuesta\":\"how Sebastian could respond in German\",\"pronunciacion\":\"simplified pronunciation\"}";
+    const reply=await ai(sys,[{role:"user",content:text}]);
+    const r=JSON.parse(reply.replace(/```json|```/g,"").trim());
+    const result=document.createElement("div"); result.id="ni-result"; result.style.marginTop="16px";
+
+    const box1=document.createElement("div");
+    box1.style.cssText="background:rgba(78,205,196,0.07);border:1px solid rgba(78,205,196,0.18);border-radius:14px;padding:16px;margin-bottom:10px;";
+    const rowO=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;");
+    rowO.appendChild(mk("p",r.original,"font-size:18px;font-weight:700;color:#fff;flex:1;"));
+    const po=document.createElement("button"); po.className="icon-btn"; po.innerHTML="&#9654;"; po.style.color="#4ECDC4"; po.style.fontSize="20px";
+    po.onclick=function(){speak(r.original);}; rowO.appendChild(po); box1.appendChild(rowO);
+    box1.appendChild(mk("p","/"+r.pronunciacion+"/","font-size:12px;color:#64748b;margin-bottom:10px;"));
+    box1.appendChild(mk("p","SIGNIFICA:","font-size:11px;color:#4ECDC4;letter-spacing:2px;margin-bottom:4px;"));
+    box1.appendChild(mk("p",r.significado,"font-size:15px;color:#e2e8f0;"));
+
+    // Save to flashcards button
+    const saveRow=mk("div","","display:flex;justify-content:flex-end;margin-top:10px;");
+    const saveBtn=document.createElement("button");
+    saveBtn.style.cssText="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;";
+    saveBtn.textContent="&#9733; Guardar en flashcards";
+    saveBtn.innerHTML="&#9733; Guardar en flashcards";
+    saveBtn.onclick=function(){
+      const phrase={de:r.original,es:r.significado,tip:r.contexto||""};
+      if(!saved.some(function(x){return x.de===phrase.de;})){
+        saved.push(phrase); updateBadge(); syncUp();
+        saveBtn.textContent="Guardada!"; saveBtn.style.color="#4ade80"; saveBtn.style.borderColor="rgba(74,222,128,0.3)";
+        saveBtn.disabled=true;
+      } else {
+        saveBtn.textContent="Ya guardada";
+        saveBtn.disabled=true;
+      }
+    };
+    saveRow.appendChild(saveBtn);
+    box1.appendChild(saveRow);
+    result.appendChild(box1);
+
+    if(r.contexto){
+      const box2=document.createElement("div");
+      box2.style.cssText="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:10px;";
+      box2.appendChild(mk("p","CUANDO SE USA","font-size:11px;color:#94a3b8;letter-spacing:2px;margin-bottom:5px;"));
+      box2.appendChild(mk("p",r.contexto,"font-size:14px;color:#cbd5e1;"));
+      result.appendChild(box2);
+    }
+    if(r.palabras&&r.palabras.length){
+      const box3=document.createElement("div");
+      box3.style.cssText="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:10px;";
+      box3.appendChild(mk("p","PALABRAS CLAVE","font-size:11px;color:#94a3b8;letter-spacing:2px;margin-bottom:8px;"));
+      r.palabras.forEach(function(w){
+        const wr=mk("div","","display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);");
+        wr.appendChild(mk("span",w.de,"font-size:14px;font-weight:600;color:#fff;"));
+        wr.appendChild(mk("span",w.es,"font-size:13px;color:#94a3b8;"));
+        box3.appendChild(wr);
+      });
+      result.appendChild(box3);
+    }
+    if(r.respuesta){
+      const box4=document.createElement("div");
+      box4.style.cssText="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.18);border-radius:14px;padding:14px;margin-bottom:10px;";
+      box4.appendChild(mk("p","COMO PUEDES RESPONDER","font-size:11px;color:#A78BFA;letter-spacing:2px;margin-bottom:5px;"));
+      const rowR=mk("div","","display:flex;justify-content:space-between;align-items:center;");
+      rowR.appendChild(mk("p",r.respuesta,"font-size:15px;color:#e2e8f0;flex:1;"));
+      const pr=document.createElement("button"); pr.className="icon-btn"; pr.innerHTML="&#9654;"; pr.style.color="#A78BFA"; pr.style.fontSize="20px";
+      pr.onclick=function(){speak(r.respuesta);}; rowR.appendChild(pr); box4.appendChild(rowR);
+      result.appendChild(box4);
+    }
+    const reset=mk("button","Preguntar otra cosa","width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:10px;font-size:13px;");
+    reset.onclick=renderNoEntendi; result.appendChild(reset);
+    el.appendChild(result);
+  } catch(e){
+    el.appendChild(mk("p","Error: "+e.message,"color:#ef4444;font-size:13px;text-align:center;margin-top:10px;"));
+  }
+  btn.disabled=false; btn.textContent="Explicame esto";
+}
+
+// ── FLASHCARDS ────────────────────────────────────────────────────────────────
+function renderFlashcards() {
+  const el=document.getElementById("s-flashcards"); el.innerHTML="";
+  if(!saved.length){
+    el.innerHTML="<div style='text-align:center;padding:60px 0;color:#475569;'><p style='font-size:36px;margin-bottom:12px;'>&#9654;</p><p style='margin-bottom:8px;'>No tienes frases guardadas aun.</p><p style='font-size:13px;'>Ve a Frases o No entendi y guarda algunas.</p></div>";
+    return;
+  }
+  flashIdx=flashIdx%saved.length;
+  const ph=saved[flashIdx];
+  let flipped=false;
+
+  el.appendChild(mk("p",(flashIdx+1)+" / "+saved.length,"color:#475569;font-size:13px;text-align:center;margin-bottom:16px;"));
+
+  const card=document.createElement("div"); card.className="flashcard";
+  const front=mk("div","","");
+  front.appendChild(mk("p","ALEMAN","font-size:10px;color:rgba(245,166,35,0.5);letter-spacing:3px;margin-bottom:16px;"));
+  front.appendChild(mk("p",ph.de,"font-size:22px;font-weight:800;color:#fff;line-height:1.4;margin-bottom:12px;"));
+  const playF=document.createElement("button");
+  playF.style.cssText="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;border-radius:20px;padding:6px 16px;font-size:13px;";
+  playF.textContent="Escuchar";
+  playF.onclick=function(e){e.stopPropagation();speak(ph.de);};
+  front.appendChild(playF); card.appendChild(front);
+
+  const back=mk("div","","display:none;");
+  back.appendChild(mk("p","ESPANOL","font-size:10px;color:rgba(78,205,196,0.5);letter-spacing:3px;margin-bottom:16px;"));
+  back.appendChild(mk("p",ph.es,"font-size:20px;color:#e2e8f0;line-height:1.4;margin-bottom:8px;"));
+  if(ph.tip) back.appendChild(mk("p","Tip: "+ph.tip,"font-size:13px;color:#475569;font-style:italic;"));
+  card.appendChild(back);
+
+  card.onclick=function(){
+    flipped=!flipped;
+    front.style.display=flipped?"none":"";
+    back.style.display=flipped?"":"none";
+    card.style.borderColor=flipped?"rgba(78,205,196,0.3)":"rgba(245,166,35,0.2)";
+  };
+  el.appendChild(card);
+  el.appendChild(mk("p","Toca la tarjeta para ver la traduccion","color:#334155;font-size:12px;text-align:center;margin-bottom:20px;"));
+
+  const nav=mk("div","","display:flex;gap:10px;");
+  const prev=mk("button","Anterior","flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:12px;font-size:14px;font-weight:700;");
+  prev.onclick=function(){flashIdx=(flashIdx-1+saved.length)%saved.length;renderFlashcards();};
+  const next=mk("button","Siguiente","flex:1;background:#F5A623;border:none;color:#000;border-radius:12px;padding:12px;font-size:14px;font-weight:700;");
+  next.onclick=function(){flashIdx=(flashIdx+1)%saved.length;renderFlashcards();};
+  nav.appendChild(prev); nav.appendChild(next); el.appendChild(nav);
+
+  const shuffle=mk("button","Mezclar tarjetas","width:100%;background:transparent;border:1px dashed rgba(255,255,255,0.1);color:#475569;border-radius:12px;padding:10px;font-size:13px;margin-top:10px;");
+  shuffle.onclick=function(){saved.sort(function(){return Math.random()-0.5;});flashIdx=0;renderFlashcards();};
+  el.appendChild(shuffle);
+}
+
+// ── GUARDADAS ─────────────────────────────────────────────────────────────────
+function renderGuardadas() {
+  const el=document.getElementById("s-guardadas"); el.innerHTML="";
+  const subBar=mk("div","","display:flex;gap:8px;margin-bottom:16px;");
+  ["frases","chats"].forEach(function(t){
+    const btn=document.createElement("button");
+    btn.style.cssText="flex:1;padding:8px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:"+(guardadasTab===t?"#F5A623":"rgba(255,255,255,0.06)")+";color:"+(guardadasTab===t?"#000":"#475569")+";";
+    btn.textContent=t==="frases"?"Frases guardadas":"Chats guardados";
+    btn.onclick=function(){guardadasTab=t;renderGuardadas();};
+    subBar.appendChild(btn);
+  });
+  el.appendChild(subBar);
+
+  if(guardadasTab==="frases"){
+    if(!saved.length){
+      el.innerHTML+="<div style='text-align:center;padding:40px 0;color:#475569;'><p style='font-size:36px;margin-bottom:12px;'>&#9733;</p><p>No hay frases guardadas.</p><p style='font-size:13px;margin-top:8px;'>En Frases o No entendi, guarda frases con la estrella.</p></div>";
+      return;
+    }
+    const clearRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;");
+    clearRow.appendChild(mk("p",saved.length+" frase(s) guardada(s)","color:#64748b;font-size:13px;"));
+    const clearBtn=mk("button","Borrar todo","font-size:12px;color:#ef4444;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:4px 10px;");
+    clearBtn.onclick=function(){if(confirm("Borrar todas las frases?")){ saved=[];updateBadge();syncUp();renderGuardadas();}};
+    clearRow.appendChild(clearBtn); el.appendChild(clearRow);
+    saved.forEach(function(ph){
+      const card=document.createElement("div"); card.className="card";
+      card.style.cssText+="border-color:rgba(245,166,35,0.15);display:flex;justify-content:space-between;align-items:center;gap:12px;";
+      const txt=mk("div","","flex:1;");
+      txt.appendChild(mk("p",ph.de,"font-size:15px;font-weight:600;color:#fff;"));
+      txt.appendChild(mk("p",ph.es,"font-size:13px;color:#94a3b8;margin-top:4px;"));
+      const play=document.createElement("button"); play.className="icon-btn"; play.innerHTML="&#9654;"; play.style.color="#F5A623"; play.style.fontSize="20px";
+      play.onclick=function(){speak(ph.de);};
+      card.appendChild(txt); card.appendChild(play); el.appendChild(card);
+    });
+  } else {
+    if(!chatLogs.length){
+      el.innerHTML+="<div style='text-align:center;padding:40px 0;color:#475569;'><p style='font-size:36px;margin-bottom:12px;'>&#128172;</p><p>No hay chats guardados.</p><p style='font-size:13px;margin-top:8px;'>En Conversar, pulsa Guardar o Cambiar para guardar.</p></div>";
+      return;
+    }
+    chatLogs.forEach(function(log){
+      const card=document.createElement("div"); card.className="card"; card.style.cursor="pointer";
+      const header=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
+      header.appendChild(mk("p",log.scenario,"font-size:14px;font-weight:700;color:#fff;flex:1;"));
+      header.appendChild(mk("span",log.date,"font-size:11px;color:#475569;"));
+      card.appendChild(header);
+      card.appendChild(mk("p",log.messages.length+" mensajes","font-size:12px;color:#64748b;margin-bottom:10px;"));
+      const msgs=document.createElement("div"); msgs.style.display="none";
+      log.messages.forEach(function(m){
+        const isUser=m.role==="user";
+        const row=mk("div","","display:flex;justify-content:"+(isUser?"flex-end":"flex-start")+";margin-bottom:6px;");
+        const bub=mk("p",m.content,"max-width:90%;padding:8px 12px;font-size:13px;border-radius:12px;line-height:1.5;white-space:pre-wrap;");
+        bub.style.background=isUser?"rgba(78,205,196,0.1)":"rgba(255,255,255,0.06)";
+        bub.style.border="1px solid "+(isUser?"rgba(78,205,196,0.2)":"rgba(255,255,255,0.08)");
+        bub.style.color="#e2e8f0"; row.appendChild(bub); msgs.appendChild(row);
+      });
+      card.appendChild(msgs);
+      let open=false;
+      const toggle=mk("button","Ver conversacion","font-size:12px;color:#4ECDC4;background:none;border:none;padding:0;");
+      toggle.onclick=function(e){e.stopPropagation();open=!open;msgs.style.display=open?"block":"none";toggle.textContent=open?"Ocultar":"Ver conversacion";};
+      card.appendChild(toggle); el.appendChild(card);
+    });
+    const clearBtn=mk("button","Borrar historial","width:100%;margin-top:8px;font-size:12px;color:#ef4444;background:none;border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px;");
+    clearBtn.onclick=function(){if(confirm("Borrar historial de chats?")){ chatLogs=[];syncUp();renderGuardadas();}};
+    el.appendChild(clearBtn);
+  }
+}
+
+// ── RESUMEN ───────────────────────────────────────────────────────────────────
+function renderResumen() {
+  const el=document.getElementById("s-resumen"); el.innerHTML="";
+  el.appendChild(mk("h3","Tu progreso total","color:#fff;font-size:20px;margin-bottom:14px;"));
+  [{label:"Frases exploradas",value:sessionPhrases,color:"#F5A623"},{label:"Frases guardadas",value:saved.length,color:"#F87171"},{label:"Minutos practicados",value:sessionMinutes,color:"#4ECDC4"},{label:"Chats guardados",value:chatLogs.length,color:"#A78BFA"}].forEach(function(s){
+    const row=document.createElement("div"); row.className="stat-row"; row.style.borderColor=s.color+"20";
+    row.appendChild(mk("span",s.label,"font-size:14px;color:#cbd5e1;"));
+    row.appendChild(mk("span",String(s.value),"font-size:30px;font-weight:800;color:"+s.color+";"));
+    el.appendChild(row);
+  });
+  const tip=mk("div","","background:rgba(78,205,196,0.07);border:1px solid rgba(78,205,196,0.18);border-radius:14px;padding:16px;");
+  tip.appendChild(mk("p",sessionPhrases+saved.length+sessionMinutes===0?"Empieza a practicar y aqui veras tu progreso!":"Gut gemacht! La consistencia es la clave. Sigue adelante!","font-size:14px;color:#4ECDC4;"));
+  el.appendChild(tip);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener("keydown",function(e){
+  if(e.key==="Enter"&&document.getElementById("login-screen").style.display!=="none") doAuth();
+});
+
+if(authToken) {
+  fetch("/api/sync",{headers:{"x-token":authToken}}).then(function(r){return r.json();}).then(function(data){
+    if(data.ok&&data.data) applyServerData(data.data);
+    showApp();
+  }).catch(function(){
+    authToken=null; authUser=null;
+    localStorage.removeItem("dl_token"); localStorage.removeItem("dl_user");
+  });
+}
+</script>
+</body>
+</html>
