@@ -40,7 +40,7 @@ app.post("/api/register", (req,res) => {
   if (password.length<4) return res.json({error:"Password: minimo 4 caracteres."});
   const db = readDB();
   if (db.users[username]) return res.json({error:"Ese username ya existe."});
-  const emptyData = {saved:[],chatLogs:[],totalPhrases:0,totalMinutes:0};
+  const emptyData = {saved:[],chatLogs:[],totalPhrases:0,totalMinutes:0,dailyLog:{},shownPhrases:{},weeklyGoal:60};
   db.users[username] = {passwordHash:hashPw(password), createdAt:new Date().toISOString(), data:emptyData};
   const token = makeToken();
   db.sessions[token] = username;
@@ -77,12 +77,16 @@ app.get("/api/sync", (req,res) => {
 app.post("/api/sync", (req,res) => {
   const auth = getAuth(req);
   if (!auth) return res.json({error:"No autenticado."});
-  const {saved,chatLogs,totalPhrases,totalMinutes} = req.body||{};
+  const {saved,chatLogs,totalPhrases,totalMinutes,dailyLog,shownPhrases,weeklyGoal} = req.body||{};
+  const existing = auth.user.data || {};
   auth.db.users[auth.username].data = {
     saved: Array.isArray(saved)?saved:[],
     chatLogs: Array.isArray(chatLogs)?chatLogs:[],
     totalPhrases: Number(totalPhrases)||0,
-    totalMinutes: Number(totalMinutes)||0
+    totalMinutes: Number(totalMinutes)||0,
+    dailyLog: (dailyLog && typeof dailyLog==="object") ? dailyLog : (existing.dailyLog||{}),
+    shownPhrases: (shownPhrases && typeof shownPhrases==="object") ? shownPhrases : (existing.shownPhrases||{}),
+    weeklyGoal: Number(weeklyGoal)||60
   };
   writeDB(auth.db);
   res.json({ok:true});

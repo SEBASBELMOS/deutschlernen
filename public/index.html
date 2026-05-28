@@ -474,6 +474,8 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
     <div id="s-conversar" class="screen"></div>
     <div id="s-corrigeme" class="screen"></div>
     <div id="s-noentendi" class="screen"></div>
+    <div id="s-dictado" class="screen"></div>
+    <div id="s-gramatica" class="screen"></div>
     <div id="s-flashcards" class="screen"></div>
     <div id="s-guardadas" class="screen"></div>
     <div id="s-resumen" class="screen"></div>
@@ -606,6 +608,75 @@ function makeMicBtn(color, cb) {
   return btn;
 }
 
+// Mic button that records, transcribes, then scores against a target phrase.
+// Renders the score inline inside `host`.
+function makePronMicBtn(color, targetPhrase, host){
+  const btn=document.createElement("button");
+  btn.className="mic-btn";
+  btn.style.borderColor=color; btn.style.color=color;
+  btn.style.background="rgba("+hexToRgb(color)+",0.08)";
+  btn.style.minWidth="60px";
+  btn.textContent="MIC";
+  btn.onclick=async function(){
+    if(mr&&mr.state==="recording"){ mr.stop(); return; }
+    try {
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      chunks=[];
+      const mimeType=getBestMimeType();
+      mr = mimeType ? new MediaRecorder(stream,{mimeType:mimeType}) : new MediaRecorder(stream);
+      mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) chunks.push(e.data); };
+      mr.onstop=async function(){
+        stream.getTracks().forEach(function(t){t.stop();});
+        btn.textContent="..."; btn.style.borderColor="#64748b"; btn.style.color="#64748b"; btn.style.animation="none";
+        const usedType=mr.mimeType||mimeType||"audio/webm";
+        try {
+          const blob=new Blob(chunks,{type:usedType});
+          const transcript=await transcribe(blob, usedType);
+          btn.textContent="MIC"; btn.style.borderColor=color; btn.style.color=color;
+          renderPronScore(host, targetPhrase, transcript||"", color);
+        } catch(err){ showMicError(btn, color, err.message); }
+      };
+      mr.start(250);
+      btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
+    } catch(e){ alert("Permite el acceso al microfono."); }
+  };
+  return btn;
+}
+
+function renderPronScore(host, target, transcript, color){
+  // Remove previous score block if any
+  const old=host.querySelector(".pron-score"); if(old) old.remove();
+  function norm(s){ return (s||"").toLowerCase().replace(/[.,!?¿¡;:"'()]/g,"").replace(/\s+/g," ").trim(); }
+  const tw=norm(target).split(" "); const uw=norm(transcript).split(" ");
+  const total=tw.length||1; let correct=0;
+  const wordSpans=[];
+  tw.forEach(function(w,i){
+    const got=uw[i]||"";
+    const ok=got===w;
+    if(ok) correct++;
+    wordSpans.push({w:w, got:got, ok:ok});
+  });
+  const score=Math.round((correct/total)*100);
+  const box=document.createElement("div");
+  box.className="pron-score";
+  box.style.cssText="margin-top:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;";
+  const top=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
+  top.appendChild(mk("span","Pronunciacion","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:700;"));
+  top.appendChild(mk("span",score+"%","font-size:20px;font-weight:900;color:"+(score>=80?"#4ade80":score>=50?"#fbbf24":"#F87171")+";"));
+  box.appendChild(top);
+  const p=mk("p","","font-size:14px;line-height:1.6;font-weight:600;");
+  wordSpans.forEach(function(s){
+    const sp=document.createElement("span");
+    sp.textContent=(s.got||"_")+" ";
+    sp.style.color=s.ok?"#4ade80":"#F87171";
+    sp.style.textDecoration=s.ok?"none":"underline";
+    p.appendChild(sp);
+  });
+  box.appendChild(p);
+  if(transcript) box.appendChild(mk("p","Detectado: "+transcript,"font-size:11px;color:var(--muted);margin-top:6px;font-weight:500;"));
+  host.appendChild(box);
+}
+
 function showMicError(btn, color, msg) {
   btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
   // Muestra el error de forma visible sin interrumpir el flujo
@@ -646,6 +717,73 @@ let saved=[], chatLogs=[], sessionPhrases=0, sessionMinutes=0;
 let chatHistory=[], chatScenario=null, currentTab="frases";
 let flashIdx=0, guardadasTab="frases", isRegister=false;
 let shownPhrases={};
+let dailyLog={};
+let weeklyGoal=60;
+let flashReviewMode=true;   // true = solo pendientes hoy; false = todas
+let reviewQueue=[];          // indices into `saved` for current review session
+let guardadasFilter="";
+
+// ── SRS / activity helpers ────────────────────────────────────────────────────
+function todayKey(){
+  const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); const dd=String(d.getDate()).padStart(2,"0");
+  return y+"-"+m+"-"+dd;
+}
+function addDays(dateStr, n){
+  const d=new Date(dateStr+"T00:00:00"); d.setDate(d.getDate()+n);
+  const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); const dd=String(d.getDate()).padStart(2,"0");
+  return y+"-"+m+"-"+dd;
+}
+const BOX_INTERVALS=[0,1,3,7,14,30];
+function ensureSrsFields(ph){
+  if(typeof ph.box!=="number") ph.box=0;
+  if(!ph.nextReview) ph.nextReview=todayKey();
+  if(typeof ph.lapses!=="number") ph.lapses=0;
+  if(!ph.added) ph.added=new Date().toISOString();
+  if(!ph.source) ph.source="manual";
+  return ph;
+}
+function srsUpdate(ph, grade){
+  // grade: "fail" | "hard" | "good" | "easy"
+  ensureSrsFields(ph);
+  if(grade==="fail"){ ph.box=0; ph.lapses=(ph.lapses||0)+1; }
+  else if(grade==="hard"){ /* same box */ }
+  else if(grade==="good"){ ph.box=Math.min(5, ph.box+1); }
+  else if(grade==="easy"){ ph.box=Math.min(5, ph.box+2); }
+  const interval=BOX_INTERVALS[ph.box]||0;
+  ph.nextReview=addDays(todayKey(), interval);
+  ph.lastReviewed=new Date().toISOString();
+  return ph;
+}
+function logActivity(kind, amount){
+  // kind: "minutes" | "phrasesReviewed" | "drillsDone"
+  const k=todayKey();
+  if(!dailyLog[k]) dailyLog[k]={minutes:0,phrasesReviewed:0,drillsDone:0};
+  dailyLog[k][kind]=(dailyLog[k][kind]||0)+(amount||1);
+}
+function computeStreak(){
+  let streak=0; let cursor=todayKey();
+  // If today has activity, count it; else start from yesterday
+  const todayHas=dailyLog[cursor]&&(dailyLog[cursor].minutes>0||dailyLog[cursor].phrasesReviewed>0||dailyLog[cursor].drillsDone>0);
+  if(!todayHas){ cursor=addDays(cursor,-1); }
+  for(let i=0;i<400;i++){
+    const e=dailyLog[cursor];
+    if(e&&(e.minutes>0||e.phrasesReviewed>0||e.drillsDone>0)){ streak++; cursor=addDays(cursor,-1); }
+    else break;
+  }
+  return streak;
+}
+function weeklyMinutes(){
+  let sum=0; let cursor=todayKey();
+  for(let i=0;i<7;i++){
+    const e=dailyLog[cursor]; if(e) sum+=(e.minutes||0);
+    cursor=addDays(cursor,-1);
+  }
+  return sum;
+}
+function reviewDueCount(){
+  const t=todayKey();
+  return saved.filter(function(p){ensureSrsFields(p);return p.nextReview<=t;}).length;
+}
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function toggleAuthMode() {
@@ -682,6 +820,7 @@ async function doLogout() {
   try {await fetch("/api/logout",{method:"POST",headers:{"x-token":authToken||""}});} catch(e){}
   authToken=null; authUser=null;
   saved=[]; chatLogs=[]; sessionPhrases=0; sessionMinutes=0; shownPhrases={};
+  dailyLog={}; weeklyGoal=60;
   chatHistory=[]; chatScenario=null;
   localStorage.removeItem("dl_token"); localStorage.removeItem("dl_user");
   document.getElementById("app").style.display="none";
@@ -693,17 +832,20 @@ async function doLogout() {
 }
 
 function applyServerData(data) {
-  if (Array.isArray(data.saved)) saved=data.saved;
+  if (Array.isArray(data.saved)) { saved=data.saved; saved.forEach(ensureSrsFields); }
   if (Array.isArray(data.chatLogs)) chatLogs=data.chatLogs;
   if (data.totalPhrases) sessionPhrases=data.totalPhrases;
   if (data.totalMinutes) sessionMinutes=data.totalMinutes;
+  if (data.dailyLog && typeof data.dailyLog==="object") dailyLog=data.dailyLog;
+  if (data.shownPhrases && typeof data.shownPhrases==="object") shownPhrases=data.shownPhrases;
+  if (data.weeklyGoal) weeklyGoal=Number(data.weeklyGoal)||60;
 }
 
 async function syncUp() {
   if (!authToken) return;
   try {
     await fetch("/api/sync",{method:"POST",headers:{"content-type":"application/json","x-token":authToken},
-      body:JSON.stringify({saved,chatLogs,totalPhrases:sessionPhrases,totalMinutes:sessionMinutes})});
+      body:JSON.stringify({saved,chatLogs,totalPhrases:sessionPhrases,totalMinutes:sessionMinutes,dailyLog,shownPhrases,weeklyGoal})});
   } catch(e){}
 }
 
@@ -726,6 +868,8 @@ const TABS=[
   {id:"conversar",label:"🗣️ Conversar"},
   {id:"corrigeme",label:"✏️ Corrigeme"},
   {id:"noentendi",label:"🤔 No entendi"},
+  {id:"dictado",  label:"🎧 Dictado"},
+  {id:"gramatica",label:"📐 Gramatica"},
   {id:"flashcards",label:"🃏 Flashcards"},
   {id:"guardadas",label:"⭐ Guardadas"},
   {id:"resumen",  label:"📊 Resumen"}
@@ -747,13 +891,15 @@ function scrollTabs(dir) {
 }
 
 function showScreen(id) {
-  if (id!=="conversar"&&chatScenario) saveChatLog();
+  if (id!=="conversar"&&chatScenario) { runPostChatAnalysis(); saveChatLog(); }
   TABS.forEach(function(t){document.getElementById("s-"+t.id).classList.remove("active");});
   document.getElementById("s-"+id).classList.add("active");
   if(id==="frases") renderFrases();
   else if(id==="conversar") renderConversar();
   else if(id==="corrigeme") renderCorrigeme();
   else if(id==="noentendi") renderNoEntendi();
+  else if(id==="dictado") renderDictado();
+  else if(id==="gramatica") renderGramatica();
   else if(id==="flashcards") renderFlashcards();
   else if(id==="guardadas") renderGuardadas();
   else if(id==="resumen") renderResumen();
@@ -777,6 +923,14 @@ function renderFrases() {
   hdr.appendChild(mk("p","Elige un tema","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Frases de hoy","font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.02em;"));
   el.appendChild(hdr);
+
+  // Phrase of the day
+  const potd=document.createElement("div");
+  potd.style.cssText="background:linear-gradient(135deg,rgba(245,166,35,0.09),rgba(78,205,196,0.05));border:1px solid rgba(245,166,35,0.2);border-radius:16px;padding:16px;margin-bottom:16px;";
+  potd.id="potd-card";
+  el.appendChild(potd);
+  renderPotd(potd);
+
   const grid=document.createElement("div"); grid.className="grid2";
   SITS.forEach(function(s){
     const btn=document.createElement("button"); btn.className="sit-btn";
@@ -789,11 +943,61 @@ function renderFrases() {
   el.appendChild(grid);
 }
 
+async function renderPotd(host, forceFetch){
+  host.innerHTML="";
+  host.appendChild(mk("p","✨  FRASE DEL DIA","font-size:10px;color:#F5A623;letter-spacing:2.5px;margin-bottom:8px;font-weight:700;"));
+  const key="dl_potd_"+todayKey();
+  let cached=null;
+  if(!forceFetch){ try { cached=JSON.parse(localStorage.getItem(key)||"null"); } catch(e){} }
+  if(cached){ paintPotd(host, cached); return; }
+  const loading=mk("div","","display:flex;align-items:center;gap:8px;");
+  loading.appendChild(makeDots("#F5A623"));
+  loading.appendChild(mk("span","Generando...","font-size:12px;color:var(--muted);"));
+  host.appendChild(loading);
+  try {
+    const sys='Reply ONLY with valid JSON: {"de":"...","es":"...","tip":"short note <8 words"}. Generate ONE useful A2-B1 German phrase for daily life, varied each day. No markdown.';
+    const text=await ai(sys,[{role:"user",content:"Date seed: "+todayKey()+". Random theme."}], 200);
+    const clean=text.replace(/```json|```/g,"").trim();
+    const m=clean.match(/\{[\s\S]*\}/); if(!m) throw new Error("no JSON");
+    const obj=JSON.parse(m[0]);
+    localStorage.setItem(key, JSON.stringify(obj));
+    paintPotd(host, obj);
+  } catch(e){
+    host.removeChild(loading);
+    host.appendChild(mk("p","No pude cargar la frase del dia.","font-size:12px;color:var(--muted);"));
+  }
+}
+
+function paintPotd(host, ph){
+  // Clear loading children but keep header
+  while(host.childNodes.length>1) host.removeChild(host.lastChild);
+  const row=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;gap:8px;");
+  row.appendChild(mk("p",ph.de,"font-size:17px;font-weight:800;color:#fff;flex:1;line-height:1.4;letter-spacing:-0.01em;"));
+  const btns=mk("div","","display:flex;gap:2px;flex-shrink:0;");
+  const play=document.createElement("button"); play.className="icon-btn"; play.innerHTML="&#9654;"; play.style.color="#F5A623"; play.style.fontSize="18px";
+  play.onclick=function(){speak(ph.de);};
+  const isSaved=saved.some(function(x){return x.de===ph.de;});
+  const star=document.createElement("button"); star.className="icon-btn"; star.innerHTML="&#9733;"; star.style.fontSize="20px"; star.style.color=isSaved?"#F5A623":"#334155";
+  star.onclick=function(){
+    if(!saved.some(function(x){return x.de===ph.de;})){
+      saved.push(ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip||"",source:"frases"}));
+      star.style.color="#F5A623"; updateBadge(); syncUp();
+    }
+  };
+  const refresh=document.createElement("button"); refresh.className="icon-btn"; refresh.innerHTML="&#x21bb;"; refresh.style.fontSize="16px"; refresh.style.color="#64748b";
+  refresh.title="Generar otra";
+  refresh.onclick=function(){ localStorage.removeItem("dl_potd_"+todayKey()); renderPotd(host, true); };
+  btns.appendChild(play); btns.appendChild(star); btns.appendChild(refresh);
+  row.appendChild(btns); host.appendChild(row);
+  host.appendChild(mk("p",ph.es,"font-size:13px;color:#94a3b8;margin-top:4px;font-weight:500;"));
+  if(ph.tip) host.appendChild(mk("p","💡 "+ph.tip,"font-size:12px;color:#475569;font-style:italic;margin-top:6px;"));
+}
+
 async function loadPhrases(sit) {
   const el=document.getElementById("s-frases"); el.innerHTML="";
   const top=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:16px;");
   const back=document.createElement("button"); back.className="btn-back"; back.textContent="← Volver";
-  back.onclick=function(){shownPhrases[sit]=[];renderFrases();};
+  back.onclick=function(){renderFrases();};
   top.appendChild(back);
   top.appendChild(mk("span",sit,"font-size:13px;color:var(--text);font-weight:700;"));
   el.appendChild(top);
@@ -817,6 +1021,9 @@ async function loadPhrases(sit) {
     sessionPhrases+=phrases.length;
     if(!shownPhrases[sit]) shownPhrases[sit]=[];
     phrases.forEach(function(ph){shownPhrases[sit].push(ph.de);});
+    // Trim per-topic list to last 40 to keep db.json small
+    if(shownPhrases[sit].length>40) shownPhrases[sit]=shownPhrases[sit].slice(-40);
+    syncUp();
     el.removeChild(loading);
 
     phrases.forEach(function(ph,i){
@@ -832,7 +1039,8 @@ async function loadPhrases(sit) {
       starBtn.style.color=isSaved?"#F5A623":"#334155";
       starBtn.onclick=function(){
         if(!saved.some(function(x){return x.de===ph.de;})){
-          saved.push(ph); starBtn.style.color="#F5A623"; updateBadge(); syncUp();
+          const item=ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip,source:"frases"});
+          saved.push(item); starBtn.style.color="#F5A623"; updateBadge(); syncUp();
         }
       };
       btnRow.appendChild(playBtn); btnRow.appendChild(starBtn);
@@ -901,7 +1109,7 @@ function startChat(scenario) {
   const saveBtn=document.createElement("button");
   saveBtn.style.cssText="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);color:#4ECDC4;border-radius:10px;padding:6px 13px;font-size:12px;font-weight:700;transition:background 0.2s;";
   saveBtn.textContent="Guardar";
-  saveBtn.onclick=function(){saveChatLog();saveBtn.textContent="✓ Guardado";setTimeout(function(){saveBtn.textContent="Guardar";},1500);};
+  saveBtn.onclick=function(){saveChatLog();runPostChatAnalysis();saveBtn.textContent="✓ Guardado";setTimeout(function(){saveBtn.textContent="Guardar";},1500);};
   const changeBtn=document.createElement("button"); changeBtn.className="btn-back"; changeBtn.textContent="← Cambiar";
   top.appendChild(changeBtn); top.appendChild(saveBtn);
   top.appendChild(mk("span",scenario,"font-size:12px;color:var(--muted);flex:1;font-weight:500;"));
@@ -910,9 +1118,11 @@ function startChat(scenario) {
   const win=document.createElement("div"); win.className="chat-win"; win.id="chat-win"; el.appendChild(win);
   addBubble("Hallo! Scenario: "+scenario+"\n(Ready! Write in German or Spanish.)","bot");
 
-  const minTimer=setInterval(function(){sessionMinutes++;syncUp();},60000);
+  const minTimer=setInterval(function(){sessionMinutes++;logActivity("minutes",1);syncUp();},60000);
   changeBtn.onclick=function(){
-    clearInterval(minTimer); saveChatLog();
+    clearInterval(minTimer);
+    runPostChatAnalysis();
+    saveChatLog();
     chatScenario=null; chatHistory=[]; renderConversar();
   };
 
@@ -1010,6 +1220,14 @@ async function doFix(ta, fixBtn, el) {
     const pc=document.createElement("button"); pc.className="icon-btn"; pc.innerHTML="&#9654;"; pc.style.color="#4ade80"; pc.style.fontSize="20px";
     pc.onclick=function(){speak(r.correcto);}; rowC.appendChild(pc); box1.appendChild(rowC);
     box1.appendChild(mk("p","/"+r.pronunciacion+"/","font-size:12px;color:var(--muted);margin-top:6px;font-weight:500;"));
+
+    // Pronunciation practice
+    const pronRow=mk("div","","display:flex;align-items:center;gap:8px;margin-top:12px;");
+    const pronLbl=mk("span","🎤 Practicar pronunciacion","font-size:12px;color:#4ade80;font-weight:700;flex:1;");
+    const pronMic=makePronMicBtn("#4ade80", r.correcto, box1);
+    pronRow.appendChild(pronLbl); pronRow.appendChild(pronMic);
+    box1.appendChild(pronRow);
+
     result.appendChild(box1);
 
     if(r.errores){
@@ -1090,7 +1308,7 @@ async function doExplain(ta, btn, el) {
     saveBtn.style.cssText="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;transition:background 0.2s;";
     saveBtn.innerHTML="&#9733; Guardar en flashcards";
     saveBtn.onclick=function(){
-      const phrase={de:r.original,es:r.significado,tip:r.contexto||""};
+      const phrase=ensureSrsFields({de:r.original,es:r.significado,tip:r.contexto||"",source:"noentendi"});
       if(!saved.some(function(x){return x.de===phrase.de;})){
         saved.push(phrase); updateBadge(); syncUp();
         saveBtn.innerHTML="✓ Guardada"; saveBtn.style.color="#4ade80"; saveBtn.style.borderColor="rgba(74,222,128,0.3)"; saveBtn.disabled=true;
@@ -1126,6 +1344,10 @@ async function doExplain(ta, btn, el) {
       rowR.appendChild(mk("p",r.respuesta,"font-size:15px;color:var(--text);flex:1;font-weight:600;"));
       const pr=document.createElement("button"); pr.className="icon-btn"; pr.innerHTML="&#9654;"; pr.style.color="#A78BFA"; pr.style.fontSize="20px";
       pr.onclick=function(){speak(r.respuesta);}; rowR.appendChild(pr); box4.appendChild(rowR);
+      const pronRow=mk("div","","display:flex;align-items:center;gap:8px;margin-top:10px;");
+      pronRow.appendChild(mk("span","🎤 Practicar pronunciacion","font-size:12px;color:#A78BFA;font-weight:700;flex:1;"));
+      pronRow.appendChild(makePronMicBtn("#A78BFA", r.respuesta, box4));
+      box4.appendChild(pronRow);
       result.appendChild(box4);
     }
     const reset=mk("button","Preguntar otra cosa","width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:11px;font-size:13px;font-weight:600;transition:background 0.2s;");
@@ -1139,18 +1361,60 @@ async function doExplain(ta, btn, el) {
   btn.disabled=false; btn.textContent="Explicame esto 🔍";
 }
 
-// ── FLASHCARDS ────────────────────────────────────────────────────────────────
+// ── FLASHCARDS (SRS) ──────────────────────────────────────────────────────────
+function buildReviewQueue(){
+  const t=todayKey();
+  const indices=[];
+  saved.forEach(function(p,i){ ensureSrsFields(p); if(p.nextReview<=t) indices.push(i); });
+  // Order: lowest box first, then oldest nextReview
+  indices.sort(function(a,b){
+    const A=saved[a], B=saved[b];
+    if(A.box!==B.box) return A.box-B.box;
+    return (A.nextReview||"").localeCompare(B.nextReview||"");
+  });
+  return indices;
+}
+
 function renderFlashcards() {
   const el=document.getElementById("s-flashcards"); el.innerHTML="";
   if(!saved.length){
     el.innerHTML="<div style='text-align:center;padding:70px 0;color:var(--muted);'><div style='font-size:48px;margin-bottom:16px;'>🃏</div><p style='font-weight:700;font-size:15px;margin-bottom:8px;color:#94a3b8;'>Sin tarjetas aun</p><p style='font-size:13px;font-weight:500;'>Ve a Frases o No entendi y guarda algunas.</p></div>";
     return;
   }
-  flashIdx=flashIdx%saved.length;
-  const ph=saved[flashIdx];
+
+  // Mode toggle
+  const modeRow=mk("div","","display:flex;gap:8px;margin-bottom:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:4px;");
+  const dueN=reviewDueCount();
+  [{k:true,lbl:"🎯 Pendientes ("+dueN+")"},{k:false,lbl:"📚 Todas ("+saved.length+")"}].forEach(function(o){
+    const b=document.createElement("button");
+    b.style.cssText="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,color 0.2s,box-shadow 0.2s;";
+    b.textContent=o.lbl;
+    if(flashReviewMode===o.k){ b.style.background="#F5A623"; b.style.color="#000"; b.style.boxShadow="0 2px 10px rgba(245,166,35,0.3)"; }
+    else { b.style.background="transparent"; b.style.color="#64748b"; }
+    b.onclick=function(){ flashReviewMode=o.k; flashIdx=0; reviewQueue=[]; renderFlashcards(); };
+    modeRow.appendChild(b);
+  });
+  el.appendChild(modeRow);
+
+  let workingSet;
+  if(flashReviewMode){
+    if(!reviewQueue.length) reviewQueue=buildReviewQueue();
+    workingSet=reviewQueue;
+    if(!workingSet.length){
+      el.innerHTML+="<div style='text-align:center;padding:60px 0;color:var(--muted);'><div style='font-size:48px;margin-bottom:16px;'>🎉</div><p style='font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;'>Por hoy terminaste</p><p style='font-size:13px;font-weight:500;'>Vuelve mañana o cambia a Todas.</p></div>";
+      return;
+    }
+  } else {
+    workingSet=saved.map(function(_,i){return i;});
+  }
+
+  flashIdx=flashIdx%workingSet.length;
+  const phIdx=workingSet[flashIdx];
+  const ph=saved[phIdx];
+  ensureSrsFields(ph);
   let flipped=false;
 
-  const counter=mk("p",(flashIdx+1)+" de "+saved.length,"color:var(--muted);font-size:13px;text-align:center;margin-bottom:16px;font-weight:600;letter-spacing:0.02em;");
+  const counter=mk("p",(flashIdx+1)+" de "+workingSet.length+(flashReviewMode?" pendientes":"")+"  ·  Caja "+ph.box+"/5","color:var(--muted);font-size:12px;text-align:center;margin-bottom:14px;font-weight:600;letter-spacing:0.02em;");
   el.appendChild(counter);
 
   const card=document.createElement("div"); card.className="flashcard";
@@ -1175,25 +1439,57 @@ function renderFlashcards() {
     back.style.display=flipped?"":"none";
     card.style.borderColor=flipped?"rgba(78,205,196,0.35)":"rgba(245,166,35,0.2)";
     card.style.background=flipped?"linear-gradient(135deg,rgba(78,205,196,0.07),rgba(78,205,196,0.02))":"linear-gradient(135deg,rgba(245,166,35,0.09),rgba(245,166,35,0.03))";
+    if(flipped) gradeRow.style.display="grid"; else gradeRow.style.display="none";
   };
   el.appendChild(card);
-  el.appendChild(mk("p","Toca para ver la traduccion","color:var(--dim);font-size:12px;text-align:center;margin-bottom:20px;font-weight:500;"));
+  el.appendChild(mk("p","Toca para ver la traduccion y calificar","color:var(--dim);font-size:12px;text-align:center;margin-bottom:14px;font-weight:500;"));
 
-  const nav=mk("div","","display:flex;gap:10px;");
-  const prev=mk("button","← Anterior","flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:14px;padding:13px;font-size:14px;font-weight:700;transition:background 0.2s;");
-  prev.onmouseover=function(){this.style.background="rgba(255,255,255,0.1)";};
-  prev.onmouseout=function(){this.style.background="rgba(255,255,255,0.05)";};
-  prev.onclick=function(){flashIdx=(flashIdx-1+saved.length)%saved.length;renderFlashcards();};
-  const next=mk("button","Siguiente →","flex:1;background:#F5A623;border:none;color:#000;border-radius:14px;padding:13px;font-size:14px;font-weight:800;transition:background 0.2s,box-shadow 0.2s;box-shadow:0 4px 14px rgba(245,166,35,0.3);");
-  next.onmouseover=function(){this.style.background="#f7b84b";this.style.boxShadow="0 6px 20px rgba(245,166,35,0.4)";};
-  next.onmouseout=function(){this.style.background="#F5A623";this.style.boxShadow="0 4px 14px rgba(245,166,35,0.3)";};
-  next.onclick=function(){flashIdx=(flashIdx+1)%saved.length;renderFlashcards();};
-  nav.appendChild(prev); nav.appendChild(next); el.appendChild(nav);
+  // Grade row (visible after flip)
+  const gradeRow=document.createElement("div");
+  gradeRow.style.cssText="display:none;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;";
+  const grades=[
+    {k:"fail",  lbl:"Falle",   col:"#F87171", days:"hoy"},
+    {k:"hard",  lbl:"Dificil", col:"#fbbf24", days:BOX_INTERVALS[ph.box]+"d"},
+    {k:"good",  lbl:"Bien",    col:"#4ade80", days:BOX_INTERVALS[Math.min(5,ph.box+1)]+"d"},
+    {k:"easy",  lbl:"Facil",   col:"#4ECDC4", days:BOX_INTERVALS[Math.min(5,ph.box+2)]+"d"}
+  ];
+  grades.forEach(function(g){
+    const b=document.createElement("button");
+    b.style.cssText="background:rgba("+hexToRgb(g.col)+",0.1);border:1px solid "+g.col+"55;color:"+g.col+";border-radius:12px;padding:10px 6px;font-size:12px;font-weight:800;display:flex;flex-direction:column;gap:2px;transition:background 0.15s,transform 0.1s;";
+    b.innerHTML=g.lbl+"<span style='font-size:10px;font-weight:600;opacity:0.7;'>"+g.days+"</span>";
+    b.onclick=function(){
+      srsUpdate(ph, g.k);
+      logActivity("phrasesReviewed",1);
+      syncUp();
+      // advance: in review mode, remove this index from queue; in all-mode, just next
+      if(flashReviewMode){
+        reviewQueue=reviewQueue.filter(function(i){return i!==phIdx;});
+        flashIdx=0;
+      } else {
+        flashIdx=(flashIdx+1)%saved.length;
+      }
+      renderFlashcards();
+    };
+    gradeRow.appendChild(b);
+  });
+  el.appendChild(gradeRow);
 
-  const shuffle=mk("button","🔀  Mezclar tarjetas","width:100%;background:transparent;border:1px dashed rgba(255,255,255,0.1);color:var(--muted);border-radius:14px;padding:11px;font-size:13px;font-weight:600;margin-top:10px;transition:background 0.2s,border-color 0.2s;");
-  shuffle.onmouseover=function(){this.style.background="rgba(255,255,255,0.04)";this.style.borderColor="rgba(255,255,255,0.2)";};
-  shuffle.onmouseout=function(){this.style.background="transparent";this.style.borderColor="rgba(255,255,255,0.1)";};
-  shuffle.onclick=function(){saved.sort(function(){return Math.random()-0.5;});flashIdx=0;renderFlashcards();};
+  // Always-on navigation (small)
+  const nav=mk("div","","display:flex;gap:10px;margin-top:6px;");
+  const skip=mk("button","Saltar →","flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;padding:10px;font-size:13px;font-weight:700;");
+  skip.onclick=function(){
+    if(flashReviewMode){ reviewQueue.push(reviewQueue.shift()); }
+    else { flashIdx=(flashIdx+1)%saved.length; }
+    renderFlashcards();
+  };
+  nav.appendChild(skip); el.appendChild(nav);
+
+  const shuffle=mk("button","🔀  Mezclar","width:100%;background:transparent;border:1px dashed rgba(255,255,255,0.1);color:var(--muted);border-radius:14px;padding:10px;font-size:13px;font-weight:600;margin-top:10px;");
+  shuffle.onclick=function(){
+    if(flashReviewMode) reviewQueue.sort(function(){return Math.random()-0.5;});
+    else saved.sort(function(){return Math.random()-0.5;});
+    flashIdx=0; renderFlashcards();
+  };
   el.appendChild(shuffle);
 }
 
@@ -1212,7 +1508,7 @@ function renderGuardadas() {
     if(guardadasTab===t){
       btn.style.background="#F5A623"; btn.style.color="#000"; btn.style.boxShadow="0 2px 10px rgba(245,166,35,0.3)";
     } else {
-      btn.style.background="transparent"; btn.style.color=var_muted();
+      btn.style.background="transparent"; btn.style.color="#64748b";
     }
     btn.onclick=function(){guardadasTab=t;renderGuardadas();};
     subBar.appendChild(btn);
@@ -1224,24 +1520,24 @@ function renderGuardadas() {
       el.innerHTML+="<div style='text-align:center;padding:50px 0;color:var(--muted);'><div style='font-size:44px;margin-bottom:14px;'>⭐</div><p style='font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;'>Sin frases guardadas</p><p style='font-size:13px;font-weight:500;'>En Frases o No entendi, toca la estrella para guardar.</p></div>";
       return;
     }
-    const clearRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;");
-    clearRow.appendChild(mk("p",saved.length+" guardada(s)","color:var(--muted);font-size:13px;font-weight:600;"));
-    const clearBtn=mk("button","Borrar todo","font-size:12px;color:#ef4444;background:none;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:5px 11px;font-weight:600;transition:background 0.2s;");
-    clearBtn.onmouseover=function(){this.style.background="rgba(239,68,68,0.07)";};
-    clearBtn.onmouseout=function(){this.style.background="none";};
+    // Search + actions row
+    const searchRow=mk("div","","display:flex;gap:8px;align-items:center;margin-bottom:10px;");
+    const search=document.createElement("input"); search.type="text"; search.placeholder="Buscar..."; search.value=guardadasFilter;
+    search.style.cssText="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;font-size:13px;color:#fff;outline:none;font-family:inherit;font-weight:500;";
+    search.oninput=function(){ guardadasFilter=this.value; renderGuardadasList(listHost); };
+    searchRow.appendChild(search);
+    const exportBtn=mk("button","⤓ CSV","font-size:12px;color:#4ECDC4;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:8px;padding:7px 11px;font-weight:700;");
+    exportBtn.onclick=exportSavedCsv;
+    searchRow.appendChild(exportBtn);
+    const clearBtn=mk("button","🗑","font-size:14px;color:#ef4444;background:none;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:6px 10px;font-weight:600;");
+    clearBtn.title="Borrar todas";
     clearBtn.onclick=function(){if(confirm("Borrar todas las frases?")){saved=[];updateBadge();syncUp();renderGuardadas();}};
-    clearRow.appendChild(clearBtn); el.appendChild(clearRow);
-    saved.forEach(function(ph,i){
-      const card=document.createElement("div"); card.className="card";
-      card.style.borderColor="rgba(245,166,35,0.12)";
-      card.style.cssText+=";display:flex;justify-content:space-between;align-items:center;gap:12px;animation:fadeUp 0.2s "+(i*0.04)+"s both;";
-      const txt=mk("div","","flex:1;");
-      txt.appendChild(mk("p",ph.de,"font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.01em;"));
-      txt.appendChild(mk("p",ph.es,"font-size:13px;color:#94a3b8;margin-top:4px;font-weight:500;"));
-      const play=document.createElement("button"); play.className="icon-btn"; play.innerHTML="&#9654;"; play.style.color="#F5A623"; play.style.fontSize="20px";
-      play.onclick=function(){speak(ph.de);};
-      card.appendChild(txt); card.appendChild(play); el.appendChild(card);
-    });
+    searchRow.appendChild(clearBtn);
+    el.appendChild(searchRow);
+    el.appendChild(mk("p",saved.length+" guardada(s)","color:var(--muted);font-size:12px;font-weight:600;margin-bottom:10px;"));
+
+    const listHost=document.createElement("div"); el.appendChild(listHost);
+    renderGuardadasList(listHost);
   } else {
     if(!chatLogs.length){
       el.innerHTML+="<div style='text-align:center;padding:50px 0;color:var(--muted);'><div style='font-size:44px;margin-bottom:14px;'>💬</div><p style='font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;'>Sin chats guardados</p><p style='font-size:13px;font-weight:500;'>En Conversar, pulsa Guardar o Cambiar.</p></div>";
@@ -1262,7 +1558,7 @@ function renderGuardadas() {
         const bub=mk("p",m.content,"max-width:90%;padding:8px 12px;font-size:13px;border-radius:12px;line-height:1.55;white-space:pre-wrap;font-weight:500;");
         bub.style.background=isUser?"rgba(78,205,196,0.1)":"rgba(255,255,255,0.06)";
         bub.style.border="1px solid "+(isUser?"rgba(78,205,196,0.2)":"rgba(255,255,255,0.08)");
-        bub.style.color=var_text(); row.appendChild(bub); msgs.appendChild(row);
+        bub.style.color="#e2e8f0"; row.appendChild(bub); msgs.appendChild(row);
       });
       card.appendChild(msgs);
       let open=false;
@@ -1278,8 +1574,353 @@ function renderGuardadas() {
   }
 }
 
-function var_muted(){return "#64748b";}
-function var_text(){return "#e2e8f0";}
+function renderGuardadasList(host){
+  host.innerHTML="";
+  const q=guardadasFilter.trim().toLowerCase();
+  const filtered=saved.filter(function(ph){
+    if(!q) return true;
+    return (ph.de||"").toLowerCase().indexOf(q)>=0 || (ph.es||"").toLowerCase().indexOf(q)>=0;
+  });
+  if(!filtered.length){
+    host.appendChild(mk("p","Sin resultados para \""+q+"\"","color:var(--muted);font-size:13px;text-align:center;padding:30px 0;font-weight:500;"));
+    return;
+  }
+  filtered.forEach(function(ph,i){
+    ensureSrsFields(ph);
+    const card=document.createElement("div"); card.className="card";
+    card.style.borderColor="rgba(245,166,35,0.12)";
+    card.style.cssText+=";display:flex;justify-content:space-between;align-items:center;gap:12px;animation:fadeUp 0.2s "+(Math.min(i,10)*0.04)+"s both;";
+    const txt=mk("div","","flex:1;min-width:0;");
+    txt.appendChild(mk("p",ph.de,"font-size:15px;font-weight:700;color:#fff;letter-spacing:-0.01em;"));
+    txt.appendChild(mk("p",ph.es,"font-size:13px;color:#94a3b8;margin-top:4px;font-weight:500;"));
+    txt.appendChild(mk("p","caja "+ph.box+" · "+ph.nextReview,"font-size:10px;color:#475569;margin-top:4px;font-weight:600;letter-spacing:0.5px;"));
+    const right=mk("div","","display:flex;align-items:center;gap:4px;flex-shrink:0;");
+    const play=document.createElement("button"); play.className="icon-btn"; play.innerHTML="&#9654;"; play.style.color="#F5A623"; play.style.fontSize="20px";
+    play.onclick=function(){speak(ph.de);};
+    const del=document.createElement("button"); del.className="icon-btn"; del.innerHTML="&times;"; del.style.color="#475569"; del.style.fontSize="20px";
+    del.title="Eliminar";
+    del.onclick=function(){
+      const idx=saved.indexOf(ph); if(idx>=0){ saved.splice(idx,1); updateBadge(); syncUp(); renderGuardadas(); }
+    };
+    right.appendChild(play); right.appendChild(del);
+    card.appendChild(txt); card.appendChild(right); host.appendChild(card);
+  });
+}
+
+function exportSavedCsv(){
+  if(!saved.length) return;
+  function esc(s){ s=String(s||""); if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"'; return s; }
+  const lines=["de,es,tip,box,nextReview"];
+  saved.forEach(function(p){ ensureSrsFields(p); lines.push([esc(p.de),esc(p.es),esc(p.tip||""),p.box,p.nextReview].join(",")); });
+  const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="deutschlernen-frases-"+todayKey()+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
+}
+
+// ── POST-CHAT ANALYSIS ────────────────────────────────────────────────────────
+let _postChatRunning=false;
+async function runPostChatAnalysis(){
+  if(_postChatRunning) return;
+  if(!chatHistory||chatHistory.length<4) return; // need at least 2 user turns + 2 bot
+  const userTurns=chatHistory.filter(function(m){return m.role==="user";});
+  if(userTurns.length<2) return;
+  _postChatRunning=true;
+  // Build modal overlay
+  const overlay=document.createElement("div");
+  overlay.style.cssText="position:fixed;inset:0;background:rgba(6,6,14,0.85);backdrop-filter:blur(8px);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;";
+  const box=document.createElement("div");
+  box.style.cssText="background:#0c0c18;border:1px solid rgba(245,166,35,0.25);border-radius:18px;padding:20px;max-width:560px;width:100%;margin-top:30px;box-shadow:0 12px 40px rgba(0,0,0,0.5);";
+  const head=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;");
+  head.appendChild(mk("p","🔍  ANALISIS DEL CHAT","font-size:11px;color:#F5A623;letter-spacing:2.5px;font-weight:700;"));
+  const closeBtn=mk("button","✕","background:none;border:none;color:#64748b;font-size:18px;font-weight:700;");
+  closeBtn.onclick=function(){overlay.remove();};
+  head.appendChild(closeBtn); box.appendChild(head);
+  const loading=mk("div","","display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px 0;");
+  loading.appendChild(makeDots("#F5A623"));
+  loading.appendChild(mk("p","Analizando tu conversacion...","color:var(--muted);font-size:13px;font-weight:500;"));
+  box.appendChild(loading);
+  overlay.appendChild(box); document.body.appendChild(overlay);
+
+  try {
+    const transcript=chatHistory.map(function(m){return (m.role==="user"?"Sebastian":"Otro")+": "+m.content;}).join("\n");
+    const sys='Analyze this German conversation. Sebastian is the learner (Spanish speaker, A2). Reply ONLY with valid JSON, no markdown: {"errors":[{"wrong":"","right":"","why":"short Spanish explanation"}],"vocab":[{"de":"","es":""}],"suggestedPhrases":[{"de":"","es":"","tip":"<8 words"}]}. Max 4 errors, 5 vocab items, 3 suggested phrases. If no errors, return empty array.';
+    const reply=await ai(sys,[{role:"user",content:transcript}], 1200);
+    const clean=reply.replace(/```json|```/g,"").trim();
+    const m=clean.match(/\{[\s\S]*\}/); if(!m) throw new Error("no JSON");
+    const r=JSON.parse(m[0]);
+    loading.remove();
+
+    if(Array.isArray(r.errors) && r.errors.length){
+      const b=document.createElement("div");
+      b.style.cssText="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
+      b.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:#F87171;letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      r.errors.forEach(function(e){
+        const row=mk("div","","padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);");
+        row.appendChild(mk("p","✗ "+e.wrong,"font-size:13px;color:#F87171;font-weight:600;text-decoration:line-through;"));
+        row.appendChild(mk("p","✓ "+e.right,"font-size:14px;color:#4ade80;font-weight:700;margin-top:2px;"));
+        if(e.why) row.appendChild(mk("p",e.why,"font-size:11px;color:var(--muted);margin-top:3px;font-weight:500;"));
+        b.appendChild(row);
+      });
+      box.appendChild(b);
+    }
+    if(Array.isArray(r.vocab) && r.vocab.length){
+      const b=document.createElement("div");
+      b.style.cssText="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:10px;";
+      b.appendChild(mk("p","🔑  VOCABULARIO","font-size:10px;color:#94a3b8;letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      r.vocab.forEach(function(w){
+        const row=mk("div","","display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);");
+        row.appendChild(mk("span",w.de,"font-size:13px;font-weight:700;color:#fff;"));
+        row.appendChild(mk("span",w.es,"font-size:12px;color:#94a3b8;font-weight:500;"));
+        b.appendChild(row);
+      });
+      box.appendChild(b);
+    }
+    if(Array.isArray(r.suggestedPhrases) && r.suggestedPhrases.length){
+      const b=document.createElement("div");
+      b.style.cssText="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
+      b.appendChild(mk("p","💬  FRASES PARA GUARDAR","font-size:10px;color:#A78BFA;letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      r.suggestedPhrases.forEach(function(ph){
+        const card=mk("div","","background:rgba(255,255,255,0.03);border-radius:10px;padding:10px;margin-top:6px;display:flex;gap:8px;align-items:center;");
+        const t=mk("div","","flex:1;");
+        t.appendChild(mk("p",ph.de,"font-size:13px;font-weight:700;color:#fff;"));
+        t.appendChild(mk("p",ph.es,"font-size:12px;color:#94a3b8;margin-top:2px;font-weight:500;"));
+        const star=document.createElement("button"); star.className="icon-btn"; star.innerHTML="&#9733;"; star.style.fontSize="18px";
+        star.style.color=saved.some(function(x){return x.de===ph.de;})?"#F5A623":"#334155";
+        star.onclick=function(){
+          if(!saved.some(function(x){return x.de===ph.de;})){
+            saved.push(ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip||"",source:"conversar"}));
+            star.style.color="#F5A623"; updateBadge(); syncUp();
+          }
+        };
+        card.appendChild(t); card.appendChild(star); b.appendChild(card);
+      });
+      box.appendChild(b);
+    }
+    if(!(r.errors||[]).length && !(r.vocab||[]).length && !(r.suggestedPhrases||[]).length){
+      box.appendChild(mk("p","🎉 Sin observaciones. Sigue asi.","color:#4ade80;font-size:14px;text-align:center;padding:20px 0;font-weight:600;"));
+    }
+    const ok=mk("button","Cerrar","width:100%;background:#F5A623;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;margin-top:8px;");
+    ok.onclick=function(){overlay.remove();}; box.appendChild(ok);
+  } catch(e){
+    loading.remove();
+    box.appendChild(mk("p","No pude analizar: "+e.message,"color:#ef4444;font-size:13px;text-align:center;padding:20px 0;font-weight:500;"));
+    const ok=mk("button","Cerrar","width:100%;background:rgba(255,255,255,0.06);color:#94a3b8;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;margin-top:4px;");
+    ok.onclick=function(){overlay.remove();}; box.appendChild(ok);
+  }
+  _postChatRunning=false;
+}
+
+// ── DICTADO ───────────────────────────────────────────────────────────────────
+let _dictadoTarget=null;
+function renderDictado() {
+  const el=document.getElementById("s-dictado"); el.innerHTML="";
+  const hdr=mk("div","","margin-bottom:16px;");
+  hdr.appendChild(mk("p","ENTRENA TU OIDO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("h2","Dictado","font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.02em;"));
+  hdr.appendChild(mk("p","Escucha en aleman y escribe lo que oyes.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  el.appendChild(hdr);
+
+  const card=document.createElement("div"); card.className="card";
+  card.style.cssText+=";padding:18px;border-color:rgba(78,205,196,0.2);";
+  const playBtn=document.createElement("button");
+  playBtn.style.cssText="width:100%;background:#4ECDC4;color:#000;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;box-shadow:0 4px 16px rgba(78,205,196,0.3);margin-bottom:12px;";
+  playBtn.textContent="▶  Escuchar frase";
+  card.appendChild(playBtn);
+
+  const ta=document.createElement("textarea"); ta.rows=3; ta.placeholder="Escribe lo que escuchaste...";
+  ta.style.cssText="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:12px;font-size:14px;color:#fff;outline:none;resize:none;font-family:inherit;font-weight:500;margin-bottom:10px;";
+  card.appendChild(ta);
+
+  const actions=mk("div","","display:flex;gap:8px;");
+  const checkBtn=mk("button","Comprobar","flex:1;background:#F5A623;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;box-shadow:0 4px 14px rgba(245,166,35,0.3);");
+  const newBtn=mk("button","Otra frase","background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:700;");
+  actions.appendChild(checkBtn); actions.appendChild(newBtn); card.appendChild(actions);
+  el.appendChild(card);
+
+  const result=document.createElement("div"); result.style.marginTop="14px"; el.appendChild(result);
+
+  async function pickTarget(){
+    result.innerHTML="";
+    ta.value="";
+    playBtn.textContent="Generando..."; playBtn.disabled=true;
+    try {
+      if(saved.length>=5 && Math.random()<0.6){
+        // Prefer cards with lower box (más difíciles para Sebastian)
+        const pool=saved.slice().sort(function(a,b){ensureSrsFields(a);ensureSrsFields(b);return a.box-b.box;}).slice(0, Math.max(5, Math.floor(saved.length/2)));
+        _dictadoTarget=pool[Math.floor(Math.random()*pool.length)];
+      } else {
+        const sys='Reply ONLY with valid JSON: {"de":"...","es":"..."}. Generate ONE A2-B1 German phrase, 4-9 words, useful, common. No markdown.';
+        const text=await ai(sys,[{role:"user",content:"random topic, seed: "+Date.now()}], 200);
+        const m=text.replace(/```json|```/g,"").trim().match(/\{[\s\S]*\}/);
+        _dictadoTarget=JSON.parse(m[0]);
+      }
+      playBtn.textContent="▶  Escuchar frase";
+    } catch(e){
+      playBtn.textContent="▶  Escuchar frase";
+      result.appendChild(mk("p","Error: "+e.message,"color:#ef4444;font-size:13px;text-align:center;font-weight:500;"));
+    }
+    playBtn.disabled=false;
+  }
+
+  playBtn.onclick=function(){ if(_dictadoTarget) speak(_dictadoTarget.de); };
+  newBtn.onclick=pickTarget;
+  checkBtn.onclick=function(){
+    if(!_dictadoTarget) return;
+    const user=ta.value.trim();
+    if(!user) return;
+    result.innerHTML="";
+    const target=_dictadoTarget.de.trim();
+    // Word-level comparison (normalize: lowercase, strip punctuation)
+    function norm(s){ return s.toLowerCase().replace(/[.,!?¿¡;:"'()]/g,"").replace(/\s+/g," ").trim(); }
+    const tWords=norm(target).split(" "); const uWords=norm(user).split(" ");
+    const total=tWords.length; let correct=0;
+    const wrap=document.createElement("div");
+    wrap.style.cssText="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:10px;";
+    wrap.appendChild(mk("p","TU RESPUESTA","font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:6px;"));
+    const wrapWords=mk("p","","font-size:16px;line-height:1.6;font-weight:600;");
+    tWords.forEach(function(w,i){
+      const got=uWords[i]||"";
+      const ok=got===w;
+      if(ok) correct++;
+      const sp=document.createElement("span");
+      sp.textContent=(got||"_")+" ";
+      sp.style.color=ok?"#4ade80":"#F87171";
+      sp.style.textDecoration=ok?"none":"underline";
+      wrapWords.appendChild(sp);
+    });
+    wrap.appendChild(wrapWords);
+    result.appendChild(wrap);
+
+    const score=Math.round((correct/total)*100);
+    const sBox=document.createElement("div");
+    sBox.style.cssText="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;";
+    sBox.appendChild(mk("div","Score","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;"));
+    sBox.appendChild(mk("span",score+"%","font-size:28px;font-weight:900;color:"+(score>=80?"#4ade80":score>=50?"#fbbf24":"#F87171")+";"));
+    result.appendChild(sBox);
+
+    const orig=document.createElement("div");
+    orig.style.cssText="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.2);border-radius:14px;padding:14px;";
+    orig.appendChild(mk("p","ORIGINAL","font-size:10px;color:#4ECDC4;letter-spacing:2px;font-weight:700;margin-bottom:6px;"));
+    orig.appendChild(mk("p",target,"font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.01em;"));
+    if(_dictadoTarget.es) orig.appendChild(mk("p",_dictadoTarget.es,"font-size:13px;color:#94a3b8;margin-top:4px;font-weight:500;"));
+    result.appendChild(orig);
+
+    logActivity("phrasesReviewed",1);
+    syncUp();
+  };
+
+  pickTarget();
+}
+
+// ── GRAMATICA ─────────────────────────────────────────────────────────────────
+const GRAMMAR_TOPICS=[
+  {label:"Articulos der/die/das", icon:"🔤", key:"articles"},
+  {label:"Perfekt (haben/sein)",  icon:"⏪", key:"perfekt"},
+  {label:"Wortstellung",          icon:"🔀", key:"wortstellung"},
+  {label:"Adjektivendungen",      icon:"🎯", key:"adjendings"},
+  {label:"Verbos separables",     icon:"✂️", key:"separable"},
+  {label:"Praeteritum",           icon:"📜", key:"praeteritum"}
+];
+let _gramDrills=[], _gramIdx=0, _gramCorrect=0;
+
+function renderGramatica() {
+  const el=document.getElementById("s-gramatica"); el.innerHTML="";
+  const hdr=mk("div","","margin-bottom:16px;");
+  hdr.appendChild(mk("p","DRILLS DE GRAMATICA","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("h2","Gramatica","font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.02em;"));
+  hdr.appendChild(mk("p","Elige un tema y resuelve 5 ejercicios.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  el.appendChild(hdr);
+  const grid=document.createElement("div"); grid.className="grid2";
+  GRAMMAR_TOPICS.forEach(function(t){
+    const btn=document.createElement("button"); btn.className="sit-btn";
+    btn.appendChild(mk("span",t.icon,"font-size:22px;line-height:1;"));
+    btn.appendChild(mk("span",t.label,"font-size:12px;font-weight:600;color:var(--text);"));
+    btn.onclick=function(){loadGrammarDrills(t);};
+    grid.appendChild(btn);
+  });
+  el.appendChild(grid);
+}
+
+async function loadGrammarDrills(topic){
+  const el=document.getElementById("s-gramatica"); el.innerHTML="";
+  const top=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:16px;");
+  const back=document.createElement("button"); back.className="btn-back"; back.textContent="← Volver";
+  back.onclick=renderGramatica;
+  top.appendChild(back);
+  top.appendChild(mk("span",topic.label,"font-size:13px;color:var(--text);font-weight:700;"));
+  el.appendChild(top);
+
+  const loading=document.createElement("div"); loading.className="loading-box";
+  const dw=mk("div","","display:flex;justify-content:center;margin-bottom:12px;"); dw.appendChild(makeDots("#A78BFA"));
+  loading.appendChild(dw);
+  loading.appendChild(mk("p","Generando ejercicios...","color:var(--muted);font-size:13px;font-weight:500;"));
+  el.appendChild(loading);
+
+  try {
+    const sys='Generate 5 German grammar multiple-choice drills for topic: '+topic.label+'. Reply ONLY with a valid JSON array, no markdown: [{"prompt":"German sentence with ___ blank","options":["a","b","c","d"],"answer":"correct option exactly","explain":"<15 words Spanish"}]. Level A2-B1. Options must be plausible distractors.';
+    const text=await ai(sys,[{role:"user",content:"topic: "+topic.label}], 1400);
+    _gramDrills=parseJSONArray(text);
+    _gramIdx=0; _gramCorrect=0;
+    el.removeChild(loading);
+    renderDrillStep(el, topic);
+  } catch(e){
+    if(loading.parentNode) el.removeChild(loading);
+    el.appendChild(mk("p","Error: "+e.message,"color:#ef4444;font-size:13px;text-align:center;font-weight:500;"));
+  }
+}
+
+function renderDrillStep(el, topic){
+  // Clear all but the top nav
+  while(el.children.length>1) el.removeChild(el.lastChild);
+
+  if(_gramIdx>=_gramDrills.length){
+    const done=document.createElement("div");
+    done.style.cssText="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:16px;padding:24px;text-align:center;";
+    done.appendChild(mk("div","🎉","font-size:48px;margin-bottom:8px;"));
+    done.appendChild(mk("p","Terminaste!","font-size:18px;font-weight:800;color:#fff;margin-bottom:6px;"));
+    done.appendChild(mk("p",_gramCorrect+" / "+_gramDrills.length+" correctas","font-size:14px;color:#A78BFA;font-weight:700;"));
+    el.appendChild(done);
+    const again=mk("button","Otra ronda","width:100%;background:#A78BFA;color:#000;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;margin-top:12px;");
+    again.onclick=function(){loadGrammarDrills(topic);};
+    el.appendChild(again);
+    logActivity("drillsDone", _gramDrills.length); syncUp();
+    return;
+  }
+
+  const d=_gramDrills[_gramIdx];
+  const counter=mk("p","Ejercicio "+(_gramIdx+1)+" / "+_gramDrills.length,"color:var(--muted);font-size:12px;font-weight:600;margin-bottom:10px;letter-spacing:0.5px;");
+  el.appendChild(counter);
+
+  const card=document.createElement("div"); card.className="card"; card.style.cssText+=";padding:18px;border-color:rgba(167,139,250,0.2);";
+  card.appendChild(mk("p",d.prompt,"font-size:18px;font-weight:800;color:#fff;line-height:1.4;margin-bottom:14px;letter-spacing:-0.01em;"));
+  const opts=mk("div","","display:flex;flex-direction:column;gap:8px;");
+  let answered=false;
+  d.options.forEach(function(opt){
+    const b=document.createElement("button");
+    b.style.cssText="text-align:left;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;transition:background 0.15s,border-color 0.15s;cursor:pointer;";
+    b.textContent=opt;
+    b.onclick=function(){
+      if(answered) return; answered=true;
+      const ok=opt===d.answer;
+      if(ok){ _gramCorrect++; b.style.background="rgba(74,222,128,0.12)"; b.style.borderColor="#4ade80"; b.style.color="#4ade80"; }
+      else { b.style.background="rgba(248,113,113,0.12)"; b.style.borderColor="#F87171"; b.style.color="#F87171"; }
+      // Mark correct option green
+      Array.prototype.slice.call(opts.children).forEach(function(other){
+        if(other.textContent===d.answer && other!==b){ other.style.background="rgba(74,222,128,0.12)"; other.style.borderColor="#4ade80"; other.style.color="#4ade80"; }
+      });
+      const ex=mk("p","💡 "+(d.explain||""),"font-size:12px;color:var(--muted);margin-top:10px;font-style:italic;line-height:1.5;font-weight:500;");
+      card.appendChild(ex);
+      const next=mk("button",(_gramIdx+1<_gramDrills.length?"Siguiente →":"Ver resultado"),"width:100%;background:#A78BFA;color:#000;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:800;margin-top:10px;");
+      next.onclick=function(){ _gramIdx++; renderDrillStep(el, topic); };
+      card.appendChild(next);
+    };
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+  el.appendChild(card);
+}
 
 // ── RESUMEN ───────────────────────────────────────────────────────────────────
 function renderResumen() {
@@ -1289,19 +1930,49 @@ function renderResumen() {
   hdr.appendChild(mk("h2","Resumen","font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.02em;"));
   el.appendChild(hdr);
 
+  // Streak banner
+  const streak=computeStreak();
+  const streakBox=document.createElement("div");
+  streakBox.style.cssText="background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(248,113,113,0.06));border:1px solid rgba(245,166,35,0.25);border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;";
+  streakBox.appendChild(mk("span","🔥","font-size:32px;flex-shrink:0;"));
+  const sCol=mk("div","","flex:1;");
+  sCol.appendChild(mk("p","RACHA","font-size:10px;color:#F5A623;letter-spacing:2.5px;font-weight:700;"));
+  sCol.appendChild(mk("p",streak+(streak===1?" dia":" dias")+" seguidos","font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.02em;margin-top:2px;"));
+  if(streak===0) sCol.appendChild(mk("p","Practica hoy para empezar","font-size:12px;color:var(--muted);margin-top:2px;font-weight:500;"));
+  streakBox.appendChild(sCol);
+  el.appendChild(streakBox);
+
+  // Weekly goal
+  const wk=weeklyMinutes();
+  const pct=Math.min(100, Math.round((wk/weeklyGoal)*100));
+  const goalBox=document.createElement("div");
+  goalBox.style.cssText="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.2);border-radius:16px;padding:16px 18px;margin-bottom:14px;";
+  const gTop=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;");
+  const gL=mk("div","","");
+  gL.appendChild(mk("p","🎯 META SEMANAL","font-size:10px;color:#4ECDC4;letter-spacing:2.5px;font-weight:700;"));
+  gL.appendChild(mk("p",wk+" / "+weeklyGoal+" min","font-size:18px;font-weight:800;color:#fff;margin-top:2px;letter-spacing:-0.01em;"));
+  gTop.appendChild(gL);
+  gTop.appendChild(mk("span",pct+"%","font-size:22px;font-weight:900;color:#4ECDC4;"));
+  goalBox.appendChild(gTop);
+  const bar=mk("div","","background:rgba(255,255,255,0.06);border-radius:8px;height:8px;overflow:hidden;");
+  const fill=mk("div","","background:linear-gradient(90deg,#4ECDC4,#4ade80);height:100%;width:"+pct+"%;transition:width 0.4s;border-radius:8px;");
+  bar.appendChild(fill); goalBox.appendChild(bar);
+  el.appendChild(goalBox);
+
   [
     {label:"Frases exploradas", value:sessionPhrases, color:"#F5A623", icon:"📖"},
     {label:"Frases guardadas",  value:saved.length,   color:"#F87171", icon:"⭐"},
+    {label:"Pendientes hoy",    value:reviewDueCount(), color:"#fbbf24", icon:"🎯"},
     {label:"Minutos practicados",value:sessionMinutes, color:"#4ECDC4", icon:"⏱️"},
     {label:"Chats guardados",   value:chatLogs.length, color:"#A78BFA", icon:"💬"}
   ].forEach(function(s,i){
     const row=document.createElement("div"); row.className="stat-row";
     row.style.borderColor=s.color+"22";
-    row.style.animation="fadeUp 0.25s "+(i*0.07)+"s both";
+    row.style.animation="fadeUp 0.25s "+(i*0.05)+"s both";
     const left=mk("div","","display:flex;align-items:center;gap:10px;");
     left.appendChild(mk("span",s.icon,"font-size:20px;"));
     left.appendChild(mk("span",s.label,"font-size:14px;color:#cbd5e1;font-weight:600;"));
-    const val=mk("span",String(s.value),"font-size:32px;font-weight:900;color:"+s.color+";letter-spacing:-0.03em;");
+    const val=mk("span",String(s.value),"font-size:30px;font-weight:900;color:"+s.color+";letter-spacing:-0.03em;");
     row.appendChild(left); row.appendChild(val);
     el.appendChild(row);
   });
