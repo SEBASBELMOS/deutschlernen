@@ -6,7 +6,9 @@ const crypto = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MIMO_KEY = process.env.MIMO_KEY;
+const AI_KEY = process.env.AI_KEY || process.env.GROQ_KEY || process.env.OPENROUTER_KEY || process.env.MIMO_KEY;
+const AI_URL = process.env.AI_URL || "https://api.groq.com/openai/v1/chat/completions";
+const AI_MODEL = process.env.AI_MODEL || "llama-3.3-70b-versatile";
 const ASSEMBLY_KEY = process.env.ASSEMBLY_KEY;
 const DB_FILE = path.join(__dirname, "db.json");
 
@@ -92,16 +94,27 @@ app.post("/api/sync", (req,res) => {
   res.json({ok:true});
 });
 
-// MiMo proxy
+// AI proxy (OpenAI-compatible — defaults to OpenRouter free model)
 app.post("/api/chat", async (req,res) => {
   try {
-    const r = await fetch("https://api.xiaomimimo.com/v1/chat/completions", {
+    const body = Object.assign({}, req.body||{}, {model: AI_MODEL});
+    const r = await fetch(AI_URL, {
       method:"POST",
-      headers:{"content-type":"application/json","authorization":"Bearer "+MIMO_KEY},
-      body:JSON.stringify(req.body)
+      headers:{
+        "content-type":"application/json",
+        "authorization":"Bearer "+AI_KEY
+      },
+      body:JSON.stringify(body)
     });
-    res.json(await r.json());
-  } catch(err) { res.status(500).json({error:{message:err.message}}); }
+    const data = await r.json();
+    if (data.error) {
+      console.error("[AI proxy] "+r.status+" "+AI_MODEL+":", JSON.stringify(data.error));
+    }
+    res.json(data);
+  } catch(err) {
+    console.error("[AI proxy] fetch failed:", err.message);
+    res.status(500).json({error:{message:err.message}});
+  }
 });
 
 // AssemblyAI proxies
