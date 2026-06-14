@@ -18,6 +18,9 @@
   --gold-text: #F5A623;
   --teal-text: #4ECDC4;
   --purple-text: #A78BFA;
+  --green-text: #4ade80;
+  --red-text: #F87171;
+  --amber-text: #fbbf24;
   --bg: #07070f;
   --surface: rgba(255,255,255,0.04);
   --border: rgba(255,255,255,0.08);
@@ -47,6 +50,9 @@ html.light-mode {
   --gold-text: #8a5900;
   --teal-text: #005a5a;
   --purple-text: #6d28d9;
+  --green-text: #16a34a;
+  --red-text: #dc2626;
+  --amber-text: #b45309;
   --modal-bg: #ffffff;
   --modal-post-bg: #ffffff;
   --tooltip-bg: #ffffff;
@@ -711,12 +717,12 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .cs-chip.gen { color:var(--gen); background:var(--gen-bg); border-color:var(--gen-line); }
 .cs-ex { font-size:13px; margin:6px 0; padding-left:11px; border-left:2px solid var(--border); color:var(--text2); line-height:1.5; }
 .cs-err { border-radius:10px; padding:11px 12px; margin:7px 0; background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.2); font-size:13px; color:var(--text2); line-height:1.5; }
-.cs-err s { color:#F87171; } .cs-err .fix { color:#4ade80; font-weight:700; }
+.cs-err s { color:var(--red-text); } .cs-err .fix { color:var(--green-text); font-weight:700; }
 .cs-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
 .cs-opt { font-size:15px; font-weight:700; padding:13px; border-radius:12px; border:1.5px solid var(--border); background:rgba(255,255,255,0.04); color:var(--text); transition:transform 0.05s; }
 .cs-opt:active { transform:scale(0.98); }
-.cs-opt.correct { border-color:var(--akk); background:var(--akk-bg); color:#4ade80; }
-.cs-opt.wrong { border-color:#F87171; background:rgba(248,113,113,0.1); color:#F87171; }
+.cs-opt.correct { border-color:var(--akk); background:var(--akk-bg); color:var(--green-text); }
+.cs-opt.wrong { border-color:#F87171; background:rgba(248,113,113,0.1); color:var(--red-text); }
 .cs-opt.dim { opacity:0.4; }
 .cs-blank { display:inline-block; min-width:48px; border-bottom:2px dashed var(--muted); text-align:center; font-weight:800; color:var(--gold-text); }
 @media (max-width:480px){ .cs-opts { grid-template-columns:1fr; } .cs-legend { grid-template-columns:1fr; } }
@@ -1592,10 +1598,10 @@ function renderHörverstehenResults(container){
     var correct=ans===q.correct;
     var box=mk("div","","margin-bottom:10px;padding:12px;border-radius:10px;background:"+(correct?"rgba(74,222,128,0.06)":"rgba(248,113,113,0.06)")+";border:1px solid "+(correct?"rgba(74,222,128,0.15)":"rgba(248,113,113,0.15)")+";text-align:left;");
     box.appendChild(mk("p",q.q,"font-size:12px;color:var(--text);font-weight:600;margin-bottom:4px;"));
-    if(correct) box.appendChild(mk("p","✅ "+q.options[q.correct],"font-size:12px;color:#4ade80;font-weight:600;"));
+    if(correct) box.appendChild(mk("p","✅ "+q.options[q.correct],"font-size:12px;color:var(--green-text);font-weight:600;"));
     else {
-      box.appendChild(mk("p","❌ Elegiste: "+q.options[ans],"font-size:12px;color:#F87171;font-weight:500;margin-bottom:2px;"));
-      box.appendChild(mk("p","✅ Correcta: "+q.options[q.correct],"font-size:12px;color:#4ade80;font-weight:600;"));
+      box.appendChild(mk("p","❌ Elegiste: "+q.options[ans],"font-size:12px;color:var(--red-text);font-weight:500;margin-bottom:2px;"));
+      box.appendChild(mk("p","✅ Correcta: "+q.options[q.correct],"font-size:12px;color:var(--green-text);font-weight:600;"));
     }
     c.appendChild(box);
   });
@@ -1641,11 +1647,11 @@ function renderFalseFriend(container){
   var item=fa.list[fa.idx];
   container.innerHTML="";
   var c=mk("div","","padding:4px 0;");
-  c.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:#F87171;letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
+  c.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:var(--red-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
   c.appendChild(mk("p",String(fa.idx+1)+"/"+fa.total,"font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
   // German word
   var wordBox=mk("div","","text-align:center;padding:24px 16px;border-radius:16px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);margin-bottom:16px;");
-  wordBox.appendChild(mk("p","¿Qué significa?","font-size:11px;color:#F87171;font-weight:700;letter-spacing:1.5px;margin-bottom:6px;"));
+  wordBox.appendChild(mk("p","¿Qué significa?","font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:6px;"));
   wordBox.appendChild(mk("p",item.de,"font-size:28px;font-weight:900;color:var(--text);letter-spacing:-0.02em;"));
   wordBox.appendChild(mk("p","/ˈfalsɔɐ̯ ˈfʁɔʏnt/","font-size:12px;color:var(--muted);font-weight:500;margin-top:4px;"));
   c.appendChild(wordBox);
@@ -1671,7 +1677,7 @@ function renderFalseFriend(container){
       var expl=mk("p","⚠️ Suena a «"+item.fake.replace(/\(.*\)/,"").trim()+"» pero NO: "+item.de+" significa «"+item.es+"»","font-size:11px;color:var(--muted);font-weight:500;line-height:1.5;margin-top:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.03);");
       c.appendChild(expl);
       // Next
-      var nextBtn=mk("button",fa.idx<fa.total-1?"Siguiente →":"Ver resultados →","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(248,113,113,0.12);color:#F87171;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;");
+      var nextBtn=mk("button",fa.idx<fa.total-1?"Siguiente →":"Ver resultados →","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(248,113,113,0.12);color:var(--red-text);font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;");
       nextBtn.onclick=function(){fa.idx++;renderFalseFriend(container);};
       c.appendChild(nextBtn);
     };
@@ -1685,7 +1691,7 @@ function renderFalseFriendsResults(container){
   var pct=Math.round(fa.score/fa.total*100);
   var color=pct>=80?"#4ade80":pct>=50?"#F5A623":"#F87171";
   var c=mk("div","","text-align:center;padding:16px 0;");
-  c.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:#F87171;letter-spacing:2.5px;font-weight:700;margin-bottom:6px;"));
+  c.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:var(--red-text);letter-spacing:2.5px;font-weight:700;margin-bottom:6px;"));
   c.appendChild(mk("p",fa.score+"/"+fa.total,"font-size:44px;font-weight:900;color:"+color+";line-height:1;font-variant-numeric:tabular-nums;margin-bottom:4px;"));
   c.appendChild(mk("p",pct>=80?"🎉 Muy bien!":pct>=50?"👍 Regular, seguí practicando":"💪 A prestar atención","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
   var pBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:6px;height:6px;overflow:hidden;margin:0 20px 14px;");
@@ -1693,13 +1699,13 @@ function renderFalseFriendsResults(container){
   c.appendChild(pBar);
   // Show wrong items
   if(fa.wrongs.length){
-    var wHdr=mk("p","Para repasar:","font-size:11px;color:#F87171;font-weight:700;margin-bottom:6px;text-align:left;padding:0 20px;");
+    var wHdr=mk("p","Para repasar:","font-size:11px;color:var(--red-text);font-weight:700;margin-bottom:6px;text-align:left;padding:0 20px;");
     c.appendChild(wHdr);
     fa.wrongs.forEach(function(w){
       c.appendChild(mk("p","<b>"+w.de+"</b> → "+w.es+" (no: "+w.fake+")","font-size:12px;color:var(--text);font-weight:500;line-height:1.5;margin-bottom:2px;text-align:left;padding:0 20px;"));
     });
   }
-  var retry=mk("button","🔄 Otra ronda","width:100%;padding:14px;border-radius:12px;border:none;background:rgba(248,113,113,0.12);color:#F87171;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;");
+  var retry=mk("button","🔄 Otra ronda","width:100%;padding:14px;border-radius:12px;border:none;background:rgba(248,113,113,0.12);color:var(--red-text);font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;");
   retry.onclick=function(){startFalseFriends(container);};
   c.appendChild(retry);
   container.appendChild(c);
@@ -1845,7 +1851,7 @@ function showReviewComplete(){
     c.className="card";
     c.style.cssText="background:linear-gradient(135deg,rgba(74,222,128,0.12),rgba(78,205,196,0.06));border:1px solid rgba(74,222,128,0.25);border-radius:var(--r-lg,16px);padding:24px;text-align:center;margin-bottom:10px;animation:winPop 0.45s var(--ease-spring) both;";
     c.appendChild(mk("p","🎉","font-size:40px;margin-bottom:6px;"));
-    c.appendChild(mk("p","¡Repaso completo!","font-size:18px;font-weight:800;color:#4ade80;margin-bottom:4px;"));
+    c.appendChild(mk("p","¡Repaso completo!","font-size:18px;font-weight:800;color:var(--green-text);margin-bottom:4px;"));
     c.appendChild(mk("p","Hiciste todas las actividades del plan.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:10px;"));
     var stepsDone=mk("div","","display:flex;justify-content:center;gap:10px;font-size:12px;");
     plan.steps.forEach(function(s){
@@ -2148,13 +2154,13 @@ function renderHoy(){
     ctaCard.appendChild(mk("p",String(due),"font-size:38px;font-weight:900;color:var(--gold-text);line-height:1;font-variant-numeric:tabular-nums;"));
     ctaCard.appendChild(mk("p","tarjetas pendientes","font-size:14px;color:var(--gold-text);font-weight:700;margin-top:4px;"));
     ctaCard.appendChild(mk("p","Tocá para repasar ahora","font-size:12px;color:var(--muted);margin-top:6px;"));
-    if(streak>0) ctaCard.appendChild(mk("p","⚠️ Tu racha de "+streak+" está en riesgo","font-size:11px;color:#F87171;font-weight:700;margin-top:8px;"));
+    if(streak>0) ctaCard.appendChild(mk("p","⚠️ Tu racha de "+streak+" está en riesgo","font-size:11px;color:var(--red-text);font-weight:700;margin-top:8px;"));
     el.appendChild(ctaCard);
   } else if(allDone){
     const winCard=document.createElement("div"); winCard.className="card";
     winCard.style.cssText="background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(74,222,128,0.03));border:1px solid rgba(74,222,128,0.2);border-radius:var(--r-lg,16px);padding:24px;text-align:center;margin-bottom:10px;animation:winPop 0.45s var(--ease-spring) both;";
     winCard.appendChild(mk("p","🎉","font-size:40px;"));
-    winCard.appendChild(mk("p","¡Por hoy terminaste!","font-size:18px;font-weight:800;color:#4ade80;margin-top:6px;"));
+    winCard.appendChild(mk("p","¡Por hoy terminaste!","font-size:18px;font-weight:800;color:var(--green-text);margin-top:6px;"));
     const sumToday=todayLog.phrasesReviewed||0;
     winCard.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;"));
     el.appendChild(winCard);
@@ -2333,7 +2339,7 @@ function renderHoy(){
     el.insertBefore(ffContainer,el.lastChild);
     startFalseFriends(ffContainer);
   };
-  ffCard.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:#F87171;letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
+  ffCard.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:var(--red-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
   ffCard.appendChild(mk("p","Palabras que suenan igual pero NO","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
   ffCard.appendChild(mk("p","bekommen≠become, Gift≠gift, Rat≠rata...","font-size:11px;color:var(--muted);font-weight:500;"));
   el.appendChild(ffCard);
@@ -2692,7 +2698,7 @@ async function doFix(ta, fixBtn, el) {
 
     const box1=document.createElement("div");
     box1.className="result-box green";
-    box1.appendChild(mk("p","✅  CORRECTO","font-size:10px;color:#4ade80;letter-spacing:2px;margin-bottom:8px;font-weight:700;"));
+    box1.appendChild(mk("p","✅  CORRECTO","font-size:10px;color:var(--green-text);letter-spacing:2px;margin-bottom:8px;font-weight:700;"));
     const rowC=mk("div","","display:flex;justify-content:space-between;align-items:center;gap:8px;");
     rowC.appendChild(mk("p",r.correcto,"font-size:20px;font-weight:800;color:var(--text);flex:1;letter-spacing:-0.01em;"));
     const pc=document.createElement("button"); pc.className="icon-btn"; pc.setAttribute("aria-label","Escuchar");pc.innerHTML="&#9654;"; pc.style.color="#4ade80"; pc.style.fontSize="20px";
@@ -2701,7 +2707,7 @@ async function doFix(ta, fixBtn, el) {
 
     // Pronunciation practice
     const pronRow=mk("div","","display:flex;align-items:center;gap:8px;margin-top:12px;");
-    const pronLbl=mk("span","🎤 Practicar pronunciacion","font-size:12px;color:#4ade80;font-weight:700;flex:1;");
+    const pronLbl=mk("span","🎤 Practicar pronunciacion","font-size:12px;color:var(--green-text);font-weight:700;flex:1;");
     const pronMic=makePronMicBtn("#4ade80", r.correcto, box1);
     pronRow.appendChild(pronLbl); pronRow.appendChild(pronMic);
     box1.appendChild(pronRow);
@@ -2712,7 +2718,7 @@ async function doFix(ta, fixBtn, el) {
       const box2=document.createElement("div");
       box2.className="result-box red";
       box2.style.padding="16px";
-      box2.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:#F87171;letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
+      box2.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:var(--red-text);letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
       box2.appendChild(mk("p",r.errores,"font-size:14px;color:var(--text2);font-weight:500;line-height:1.6;"));
       result.appendChild(box2);
     }
@@ -2908,7 +2914,7 @@ function renderGenCard(el, hdr){
   var row=mk("div","","display:flex;gap:10px;justify-content:center;margin-bottom:16px;");
   var articles=[
     {art:"der", color:"#60a5fa", bg:"rgba(96,165,250,0.1)", border:"rgba(96,165,250,0.3)"},
-    {art:"die", color:"#f87171", bg:"rgba(248,113,113,0.1)", border:"rgba(248,113,113,0.3)"},
+    {art:"die", color:"#F87171", bg:"rgba(248,113,113,0.1)", border:"rgba(248,113,113,0.3)"},
     {art:"das", color:"#4ade80", bg:"rgba(74,222,128,0.1)", border:"rgba(74,222,128,0.3)"}
   ];
   articles.forEach(function(a){
@@ -2922,7 +2928,7 @@ function renderGenCard(el, hdr){
       // Show feedback
       var fb=document.createElement("div"); fb.className="card";
       fb.style.cssText="text-align:center;padding:16px;margin-bottom:10px;border-radius:var(--r-lg,16px);background:"+(correct?"rgba(74,222,128,0.08)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"rgba(74,222,128,0.2)":"rgba(248,113,113,0.2)")+";animation:fadeUp 0.2s ease;";
-      fb.appendChild(mk("p",correct?"\u2713 Correcto!":"\u2717 Incorrecto","font-size:16px;font-weight:800;color:"+(correct?"#4ade80":"#f87171")+";margin-bottom:4px;"));
+      fb.appendChild(mk("p",correct?"\u2713 Correcto!":"\u2717 Incorrecto","font-size:16px;font-weight:800;color:"+(correct?"#4ade80":"#F87171")+";margin-bottom:4px;"));
       fb.appendChild(mk("p","La respuesta correcta es: "+(n.article==="der"?"\ud83d\udd35":n.article==="die"?"\ud83d\udd34":"\ud83d\udfe2")+" "+n.article+" "+n.noun,"font-size:14px;color:var(--text);font-weight:500;"));
       // Replace buttons with feedback + Siguiente button
       el.removeChild(row);
@@ -2951,7 +2957,7 @@ function renderGenResults(el){
     _genMissed.forEach(function(n){ logError("genero", n.noun, n.article+" "+n.noun, n.meaning ? "Significa: "+n.meaning : ""); });
   }
   var total=_genRight+_genWrong, pct=total>0?Math.round(_genRight/total*100):0;
-  var scoreColor=pct>=80?"#4ade80":pct>=50?"#F5A623":"#f87171";
+  var scoreColor=pct>=80?"#4ade80":pct>=50?"#F5A623":"#F87171";
   var resultCard=document.createElement("div"); resultCard.className="card";
   resultCard.style.cssText="text-align:center;padding:28px;margin-bottom:16px;";
   resultCard.appendChild(mk("p",_genRight+"/"+total,"font-size:42px;font-weight:900;color:"+scoreColor+";line-height:1;font-variant-numeric:tabular-nums;"));
@@ -2963,7 +2969,7 @@ function renderGenResults(el){
     var missCard=document.createElement("div"); missCard.className="card";
     missCard.appendChild(mk("p","Para repasar","font-size:10px;color:#f87171;letter-spacing:1.5px;font-weight:700;margin-bottom:8px;"));
     _genMissed.forEach(function(n){
-      var artColor=n.article==="der"?"#60a5fa":n.article==="die"?"#f87171":"#4ade80";
+      var artColor=n.article==="der"?"#60a5fa":n.article==="die"?"#F87171":"#4ade80";
       var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;");
       row.appendChild(mk("span",n.article+" "+n.noun+(n.plural?" ("+n.plural+")":""),"font-size:14px;font-weight:600;color:"+artColor+";"));
       var save=document.createElement("button");
@@ -3043,7 +3049,7 @@ function renderConCard(el, hdr){
       _conResults[_conIdx]=correct;
       var fb=document.createElement("div"); fb.className="card";
       fb.style.cssText="padding:16px;margin-bottom:10px;border-radius:var(--r-lg,14px);background:"+(correct?"rgba(74,222,128,0.08)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"rgba(74,222,128,0.2)":"rgba(248,113,113,0.2)")+";animation:fadeUp 0.2s ease;";
-      fb.appendChild(mk("p",correct?"\u2713 Correcto! \u2014 "+d.fullSentence:"\u2717 Incorrecto \u2014 "+d.fullSentence,"font-size:14px;font-weight:700;color:"+(correct?"#4ade80":"#f87171")+";margin-bottom:6px;line-height:1.5;"));
+      fb.appendChild(mk("p",correct?"\u2713 Correcto! \u2014 "+d.fullSentence:"\u2717 Incorrecto \u2014 "+d.fullSentence,"font-size:14px;font-weight:700;color:"+(correct?"#4ade80":"#F87171")+";margin-bottom:6px;line-height:1.5;"));
       fb.appendChild(mk("p","\ud83d\udca1 "+d.tip,"font-size:12px;color:var(--text);font-weight:500;line-height:1.5;background:rgba(167,139,250,0.08);padding:8px 12px;border-radius:8px;"));
       el.removeChild(row);
       el.insertBefore(fb, el.querySelector(".card").nextSibling);
@@ -3066,7 +3072,7 @@ function renderConResults(el){
   hdr.appendChild(mk("h2","\ud83d\udd17 Resultados","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
   var total=_conRight+_conWrong, pct=total>0?Math.round(_conRight/total*100):0;
-  var scoreColor=pct>=80?"#4ade80":pct>=50?"#F5A623":"#f87171";
+  var scoreColor=pct>=80?"#4ade80":pct>=50?"#F5A623":"#F87171";
   var resultCard=document.createElement("div"); resultCard.className="card";
   resultCard.style.cssText="text-align:center;padding:28px;margin-bottom:16px;";
   resultCard.appendChild(mk("p",_conRight+"/"+total,"font-size:42px;font-weight:900;color:"+scoreColor+";line-height:1;font-variant-numeric:tabular-nums;"));
@@ -3078,7 +3084,7 @@ function renderConResults(el){
   sumCard.style.cssText="margin-bottom:16px;";
   sumCard.appendChild(mk("p","Lo que practicaste:","font-size:11px;color:var(--purple-text);letter-spacing:1.5px;font-weight:700;margin-bottom:8px;"));
   _conData.forEach(function(d,i){
-    var color=_conResults[i]?"#4ade80":"#f87171";
+    var color=_conResults[i]?"#4ade80":"#F87171";
     var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;");
     row.appendChild(mk("span",(i+1)+". "+d.fullSentence,"font-weight:600;color:"+color+";flex:1;line-height:1.4;"));
     sumCard.appendChild(row);
@@ -3538,7 +3544,7 @@ function renderVocabTable(host){
       {text:ph.es, style:"color:var(--text);"},
       {text:ph.category||"-", style:"color:var(--gold-text);font-weight:600;font-size:11px;"},
       {text:String(ph.box), style:"color:"+(boxColors[ph.box]||"#94a3b8")+";font-weight:800;text-align:center;"},
-      {text:ph.nextReview, style:(ph.nextReview<=today?"color:#F87171;font-weight:700;":"color:var(--muted);")},
+      {text:ph.nextReview, style:(ph.nextReview<=today?"color:var(--red-text);font-weight:700;":"color:var(--muted);")},
       {text:String(ph.lapses||0), style:"color:var(--muted);text-align:center;"}
     ];
     vals.forEach(function(v){
@@ -3640,7 +3646,7 @@ function renderSettings(){
 
   // Level
   const lvlCard=document.createElement("div"); lvlCard.className="card";
-  lvlCard.appendChild(mk("p","📚  Nivel actual","font-size:10px;color:#4ade80;letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  lvlCard.appendChild(mk("p","📚  Nivel actual","font-size:10px;color:var(--green-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
   const lvlRow=mk("div","","display:flex;gap:8px;");
   ["A2","B1","B2"].forEach(function(l){
     const btn=mk("button",l,"flex:1;padding:10px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.2s;");
@@ -3699,11 +3705,11 @@ async function runPostChatAnalysis(){
     if(Array.isArray(r.errors) && r.errors.length){
       const b=document.createElement("div");
       b.style.cssText="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
-      b.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:#F87171;letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      b.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:var(--red-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
       r.errors.forEach(function(e){
         const row=mk("div","","padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);");
-        row.appendChild(mk("p","✗ "+e.wrong,"font-size:13px;color:#F87171;font-weight:600;text-decoration:line-through;"));
-        row.appendChild(mk("p","✓ "+e.right,"font-size:14px;color:#4ade80;font-weight:700;margin-top:2px;"));
+        row.appendChild(mk("p","✗ "+e.wrong,"font-size:13px;color:var(--red-text);font-weight:600;text-decoration:line-through;"));
+        row.appendChild(mk("p","✓ "+e.right,"font-size:14px;color:var(--green-text);font-weight:700;margin-top:2px;"));
         if(e.why) row.appendChild(mk("p",e.why,"font-size:11px;color:var(--muted);margin-top:3px;font-weight:500;"));
         b.appendChild(row);
       });
@@ -3743,7 +3749,7 @@ async function runPostChatAnalysis(){
       box.appendChild(b);
     }
     if(!(r.errors||[]).length && !(r.vocab||[]).length && !(r.suggestedPhrases||[]).length){
-      box.appendChild(mk("p","🎉 Sin observaciones. Sigue asi.","color:#4ade80;font-size:14px;text-align:center;padding:20px 0;font-weight:600;"));
+      box.appendChild(mk("p","🎉 Sin observaciones. Sigue asi.","color:var(--green-text);font-size:14px;text-align:center;padding:20px 0;font-weight:600;"));
     }
     const ok=mk("button","Cerrar","width:100%;background:#F5A623;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;margin-top:8px;");
     ok.onclick=closeModal; box.appendChild(ok);
@@ -4783,7 +4789,7 @@ function renderResumen() {
   // ── Top Lapses ──
   const topLapsed=[...state.session.saved].filter(function(p){return p.lapses>0;}).sort(function(a,b){return b.lapses-a.lapses;}).slice(0,5);
   const lapsCard=document.createElement("div"); lapsCard.className="card";
-  lapsCard.appendChild(mk("p","⚠️  MAS FALLADAS","font-size:10px;color:#F87171;letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  lapsCard.appendChild(mk("p","⚠️  MAS FALLADAS","font-size:10px;color:var(--red-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
   if(topLapsed.length){
     topLapsed.forEach(function(p,i){
       const row=mk("div","","display:flex;align-items:center;gap:10px;padding:8px 0;"+(i<topLapsed.length-1?"border-bottom:1px solid rgba(255,255,255,0.04);":""));
@@ -4792,7 +4798,7 @@ function renderResumen() {
       txt.appendChild(mk("p",p.de,"font-size:14px;color:var(--text);font-weight:700;"));
       txt.appendChild(mk("p",p.es,"font-size:12px;color:var(--muted);margin-top:1px;"));
       row.appendChild(txt);
-      row.appendChild(mk("span",p.lapses+"x","font-size:16px;font-weight:900;color:#F87171;"));
+      row.appendChild(mk("span",p.lapses+"x","font-size:16px;font-weight:900;color:var(--red-text);"));
       lapsCard.appendChild(row);
     });
   } else {
@@ -4838,7 +4844,7 @@ function renderResumen() {
     var fjHdr=document.createElement("div");
     fjHdr.style.cssText="display:flex;justify-content:space-between;align-items:center;cursor:pointer;";
     fjHdr.setAttribute("role","button"); fjHdr.setAttribute("tabindex","0"); fjHdr.setAttribute("aria-expanded","false");
-    fjHdr.appendChild(mk("p","📓  DIARIO DE ERRORES","font-size:10px;color:#F87171;letter-spacing:2px;font-weight:700;"));
+    fjHdr.appendChild(mk("p","📓  DIARIO DE ERRORES","font-size:10px;color:var(--red-text);letter-spacing:2px;font-weight:700;"));
     var fjArrow=mk("span","▼","font-size:12px;color:var(--muted);transition:transform 0.2s;");
     fjHdr.appendChild(fjArrow);
     fjCard.appendChild(fjHdr);
@@ -4868,7 +4874,7 @@ function renderResumen() {
             var row=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px;");
             var left=mk("div","","flex:1;");
             left.appendChild(mk("span",e.original,"font-weight:700;color:var(--text);"));
-            if(e.correction) left.appendChild(mk("span"," → "+e.correction,"font-weight:500;color:#F87171;"));
+            if(e.correction) left.appendChild(mk("span"," → "+e.correction,"font-weight:500;color:var(--red-text);"));
             row.appendChild(left);
             row.appendChild(mk("span",e.date,"font-size:10px;color:var(--dim);"));
             fjBody.appendChild(row);
@@ -4919,7 +4925,7 @@ function renderInsight(host){
       if(!obj||!obj.learned) throw "bad";
       var htmlStr="<div style='padding:10px 0;'>"+
         "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--teal-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>📖 Aprendiste</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+obj.learned+"</p></div>"+
-        "<div style='margin-bottom:12px;'><p style='font-size:11px;color:#F87171;font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>⚠️ Error recurrente</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+obj.error+"</p></div>"+
+        "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>⚠️ Error recurrente</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+obj.error+"</p></div>"+
         "<div style='background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:12px;padding:12px;'><p style='font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>💡 Consejo</p><p style='font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;'>"+obj.tip+"</p></div>"+
         "<p style='font-size:10px;color:var(--dim);margin-top:12px;'>Semana del "+week+" · Actualizado hoy</p></div>";
       try{ localStorage.setItem(cacheKey,JSON.stringify({html:htmlStr,ts:Date.now()})); }catch(e){}
