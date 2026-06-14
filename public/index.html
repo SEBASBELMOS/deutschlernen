@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +18,13 @@
   --surface: rgba(255,255,255,0.04);
   --border: rgba(255,255,255,0.08);
   --text: #e2e8f0;
+  --text2: #cbd5e1;
   --muted: #64748b;
   --dim: #334155;
+  --modal-bg: #1a1a2e;
+  --modal-post-bg: #0c0c18;
+  --tooltip-bg: #2a1f4a;
+  --tooltip-accent: #A78BFA;
   /* ── Design tokens (SKILL_UI_UX) ── */
   --t-xs:11px; --t-sm:13px; --t-base:15px; --t-md:17px; --t-lg:20px; --t-xl:25px; --t-2xl:32px; --t-3xl:42px;
   --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:64px;
@@ -33,7 +38,12 @@ html.light-mode {
   --surface: rgba(0,0,0,0.03);
   --border: rgba(0,0,0,0.08);
   --text: #1e293b;
+  --text2: #475569;
   --dim: #94a3b8;
+  --modal-bg: #ffffff;
+  --modal-post-bg: #ffffff;
+  --tooltip-bg: #ffffff;
+  --tooltip-accent: #6d28d9;
 }
 html.light-mode body::before { opacity:0.35; }
 html.light-mode .card { background:rgba(255,255,255,0.7); border-color:rgba(0,0,0,0.06); }
@@ -44,6 +54,9 @@ html.light-mode .sit-btn { background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0
 html.light-mode .sit-btn:hover { background:rgba(0,0,0,0.06); }
 html.light-mode .send-btn { background:rgba(78,205,196,0.12);color:#4ECDC4; }
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+/* Keyboard focus ring (WCAG 2.4.7) — only on keyboard nav, never on mouse/touch */
+:focus-visible { outline:2px solid var(--gold); outline-offset:2px; border-radius:4px; }
+button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline:none; }
 html { scroll-behavior:smooth; }
 body {
   background:var(--bg);
@@ -212,8 +225,8 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 /* ── UTILITY CLASSES ───────────────────────────────────────────────────────── */
 .surface-modal { position:fixed;inset:0;z-index:9002;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:24px; }
 .surface-modal.post { background:rgba(6,6,14,0.85);backdrop-filter:blur(8px);z-index:9000;align-items:flex-start;padding:24px 14px;overflow-y:auto; }
-.modal-box { background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:24px;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,0.6); }
-.modal-box.post { background:#0c0c18;border-color:rgba(245,166,35,0.25);max-width:560px;margin-top:30px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+.modal-box { background:var(--modal-bg);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:24px;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,0.6); }
+.modal-box.post { background:var(--modal-post-bg);border-color:rgba(245,166,35,0.25);max-width:560px;margin-top:30px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,0.5); }
 
 .btn-solid { border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:800;transition:background 0.2s,transform 0.1s,box-shadow 0.2s;cursor:pointer; }
 .btn-solid:active { transform:scale(0.97); }
@@ -234,7 +247,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .bubble-save-btn { background:none;border:none;font-size:11px;color:#F5A623;padding:0 4px;cursor:pointer;font-weight:600;transition:color 0.15s; }
 .bubble-save-btn:hover { color:#f7b84b; }
 
-.lectura-topic-btn { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;border-radius:var(--r-pill,999px);padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s; }
+.lectura-topic-btn { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);border-radius:var(--r-pill,999px);padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s; }
 .lectura-topic-btn:hover { border-color:rgba(167,139,250,0.4);color:var(--text); }
 
 .gen-btn-teal { background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);color:#4ECDC4; }
@@ -290,7 +303,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .pill-btn { font-size:12px;font-weight:700;padding:7px 12px;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer;transition:all 0.15s; }
 .pill-btn.on { background:#fff;color:#000;border-color:var(--text); }
 
-.grade-btn { border-radius:12px;padding:10px 6px;font-size:12px;font-weight:800;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;transition:background 0.15s,border-color 0.15s;cursor:pointer; }
+.grade-btn { border-radius:12px;padding:10px 6px;font-size:12px;font-weight:800;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text);transition:background 0.15s,border-color 0.15s;cursor:pointer; }
 
 .fix-btn-lg { width:100%;color:#000;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:0.01em;transition:background 0.2s,transform 0.1s,box-shadow 0.2s;cursor:pointer; }
 .fix-btn-lg:active { transform:scale(0.97); }
@@ -659,7 +672,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .cs-tlbl .cs-dot { width:8px; height:8px; border-radius:50%; }
 .cs-tval { padding:12px 14px; border-left:1px solid var(--border); }
 .cs-bigword { font-size:17px; font-weight:800; color:var(--text); }
-.cs-exde { font-size:13px; margin-top:3px; color:#cbd5e1; font-weight:600; }
+.cs-exde { font-size:13px; margin-top:3px; color:var(--text2); font-weight:600; }
 .cs-exes { font-size:11px; color:var(--muted); margin-top:1px; }
 .cs-acc { border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden; background:rgba(255,255,255,0.03); }
 .cs-acc summary { cursor:pointer; padding:13px 15px; font-size:14px; font-weight:700; color:var(--text); list-style:none; display:flex; justify-content:space-between; align-items:center; }
@@ -672,8 +685,8 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .cs-chip.akk { color:var(--akk); background:var(--akk-bg); border-color:var(--akk-line); }
 .cs-chip.dat { color:var(--dat); background:var(--dat-bg); border-color:var(--dat-line); }
 .cs-chip.gen { color:var(--gen); background:var(--gen-bg); border-color:var(--gen-line); }
-.cs-ex { font-size:13px; margin:6px 0; padding-left:11px; border-left:2px solid var(--border); color:#cbd5e1; line-height:1.5; }
-.cs-err { border-radius:10px; padding:11px 12px; margin:7px 0; background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.2); font-size:13px; color:#cbd5e1; line-height:1.5; }
+.cs-ex { font-size:13px; margin:6px 0; padding-left:11px; border-left:2px solid var(--border); color:var(--text2); line-height:1.5; }
+.cs-err { border-radius:10px; padding:11px 12px; margin:7px 0; background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.2); font-size:13px; color:var(--text2); line-height:1.5; }
 .cs-err s { color:#F87171; } .cs-err .fix { color:#4ade80; font-weight:700; }
 .cs-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
 .cs-opt { font-size:15px; font-weight:700; padding:13px; border-radius:12px; border:1.5px solid var(--border); background:rgba(255,255,255,0.04); color:var(--text); transition:transform 0.05s; }
@@ -751,7 +764,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
       <div id="login-err" class="login-err"></div>
       <input id="login-user" class="login-input" placeholder="Username" type="text" autocomplete="username"/>
       <input id="login-pass" class="login-input" placeholder="Password" type="password" autocomplete="current-password"/>
-      <button class="login-btn" id="login-btn" onclick="doAuth()">Iniciar sesion</button>
+      <button class="login-btn" id="login-btn" onclick="doAuth()">Iniciar sesión</button>
       <button class="login-toggle" onclick="toggleAuthMode()">No tienes cuenta? Registrate</button>
       <p id="auth-mode-lbl" style="text-align:center;font-size:11px;color:var(--dim);margin-top:10px;font-weight:500;">Modo: Login</p>
     </div>
@@ -1779,7 +1792,7 @@ function toggleAuthMode() {
   state.app.isRegister=!state.app.isRegister;
   document.getElementById("auth-mode-lbl").textContent=state.app.isRegister?"Modo: Registro":"Modo: Login";
   document.querySelector(".login-toggle").textContent=state.app.isRegister?"Ya tienes cuenta? Login":"No tienes cuenta? Registrate";
-  document.getElementById("login-btn").textContent=state.app.isRegister?"Crear cuenta":"Iniciar sesion";
+  document.getElementById("login-btn").textContent=state.app.isRegister?"Crear cuenta":"Iniciar sesión";
 }
 
 async function doAuth() {
@@ -1796,14 +1809,14 @@ async function doAuth() {
       body:JSON.stringify({username,password})
     });
     const data=await res.json();
-    if (data.error){errEl.textContent=data.error;btn.disabled=false;btn.textContent=state.app.isRegister?"Crear cuenta":"Iniciar sesion";return;}
+    if (data.error){errEl.textContent=data.error;btn.disabled=false;btn.textContent=state.app.isRegister?"Crear cuenta":"Iniciar sesión";return;}
     state.app.authToken=data.token; state.app.authUser=data.username;
     localStorage.setItem("dl_token",state.app.authToken);
     localStorage.setItem("dl_user",state.app.authUser);
     if (data.data) applyServerData(data.data);
     if (data.serverInfo) state.app.serverInfo=data.serverInfo;
     showApp();
-  } catch(e){errEl.textContent="Error al conectar. Verifica tu conexion.";btn.disabled=false;btn.textContent=state.app.isRegister?"Crear cuenta":"Iniciar sesion";}
+  } catch(e){errEl.textContent="Error al conectar. Verifica tu conexión.";btn.disabled=false;btn.textContent=state.app.isRegister?"Crear cuenta":"Iniciar sesión";}
 }
 
 async function doLogout() {
@@ -1821,7 +1834,7 @@ async function doLogout() {
   document.getElementById("user-chip").style.display="none";
   document.getElementById("login-user").value="";
   document.getElementById("login-pass").value="";
-  document.getElementById("login-btn").textContent="Iniciar sesion";
+  document.getElementById("login-btn").textContent="Iniciar sesión";
 }
 
 function applyServerData(data) {
@@ -2620,7 +2633,7 @@ async function doFix(ta, fixBtn, el) {
       box2.className="result-box red";
       box2.style.padding="16px";
       box2.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:#F87171;letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
-      box2.appendChild(mk("p",r.errores,"font-size:14px;color:#cbd5e1;font-weight:500;line-height:1.6;"));
+      box2.appendChild(mk("p",r.errores,"font-size:14px;color:var(--text2);font-weight:500;line-height:1.6;"));
       result.appendChild(box2);
     }
     if(r.alternativa){
@@ -2708,7 +2721,7 @@ async function doExplain(ta, btn, el) {
       box2.className="result-box dark";
       box2.style.padding="16px";
       box2.appendChild(mk("p","📌  CUANDO SE USA","font-size:10px;color:#94a3b8;letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
-      box2.appendChild(mk("p",r.contexto,"font-size:14px;color:#cbd5e1;font-weight:500;line-height:1.6;"));
+      box2.appendChild(mk("p",r.contexto,"font-size:14px;color:var(--text2);font-weight:500;line-height:1.6;"));
       result.appendChild(box2);
     }
     if(r.palabras&&r.palabras.length){
@@ -3074,16 +3087,16 @@ function renderFlashcards() {
     if(flipped) gradeRow.style.display="grid"; else gradeRow.style.display="none";
   };
   el.appendChild(card);
-  el.appendChild(mk("p","Toca para ver la traduccion y calificar","color:var(--dim);font-size:12px;text-align:center;margin-bottom:14px;font-weight:500;"));
+  el.appendChild(mk("p","Toca para ver la traducción y calificar","color:var(--dim);font-size:12px;text-align:center;margin-bottom:14px;font-weight:500;"));
 
   // Grade row (visible after flip)
   const gradeRow=document.createElement("div");
   gradeRow.style.cssText="display:none;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;";
   const grades=[
-    {k:"fail",  lbl:"Falle",   col:"#F87171", days:"hoy"},
+    {k:"fail",  lbl:"Fallé",   col:"#F87171", days:"hoy"},
     {k:"hard",  lbl:"Dificil", col:"#fbbf24", days:BOX_INTERVALS[ph.box]+"d"},
     {k:"good",  lbl:"Bien",    col:"#4ade80", days:BOX_INTERVALS[Math.min(5,ph.box+1)]+"d"},
-    {k:"easy",  lbl:"Facil",   col:"#4ECDC4", days:BOX_INTERVALS[Math.min(5,ph.box+2)]+"d"}
+    {k:"easy",  lbl:"Fácil",   col:"#4ECDC4", days:BOX_INTERVALS[Math.min(5,ph.box+2)]+"d"}
   ];
   state.flashcards._gradeBtns=[];
   grades.forEach(function(g){
@@ -3170,7 +3183,7 @@ function renderGuardadas() {
     searchRow.appendChild(createBtn);
     const catFilter=document.createElement("select");
     catFilter.className="input-field";
-    catFilter.style.cssText="font-size:12px;font-weight:600;padding:6px 8px;color:#e2e8f0;max-width:130px;";
+    catFilter.style.cssText="font-size:12px;font-weight:600;padding:6px 8px;color:var(--text);max-width:130px;";
     ["Todas","Sin categoría",...CATEGORIES].forEach(function(c){const o=document.createElement("option");o.value=c;o.textContent=c;if(c===state.guardadas.guardadasFilterCat)o.selected=true;catFilter.appendChild(o);});
     catFilter.onchange=function(){state.guardadas.guardadasFilterCat=this.value;renderGuardadasList(listHost);};
     searchRow.appendChild(catFilter);
@@ -3218,7 +3231,7 @@ function renderGuardadas() {
         const bub=mk("p",m.content,"max-width:90%;padding:8px 12px;font-size:13px;border-radius:12px;line-height:1.55;white-space:pre-wrap;font-weight:500;");
         bub.style.background=isUser?"rgba(78,205,196,0.1)":"rgba(255,255,255,0.06)";
         bub.style.border="1px solid "+(isUser?"rgba(78,205,196,0.2)":"rgba(255,255,255,0.08)");
-        bub.style.color="#e2e8f0"; row.appendChild(bub); msgs.appendChild(row);
+        bub.style.color="var(--text)"; row.appendChild(bub); msgs.appendChild(row);
       });
       card.appendChild(msgs);
       let open=false;
@@ -3279,7 +3292,7 @@ function renderGuardadasList(host){
     catRow.appendChild(catLbl); catRow.appendChild(catBtn);
     // Inline category select (hidden by default)
     var catSelect=document.createElement("select");
-    catSelect.style.cssText="display:none;font-size:11px;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid rgba(245,166,35,0.3);border-radius:8px;padding:4px 6px;color:#e2e8f0;outline:none;font-family:inherit;";
+    catSelect.style.cssText="display:none;font-size:11px;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid rgba(245,166,35,0.3);border-radius:8px;padding:4px 6px;color:var(--text);outline:none;font-family:inherit;";
     [""].concat(CATEGORIES).forEach(function(c){
       var o=document.createElement("option");o.value=c;o.textContent=c||"Sin categoría";
       if(c===ph.category)o.selected=true;catSelect.appendChild(o);
@@ -3341,7 +3354,7 @@ function openCreateModal(){
   const catSel=document.createElement("select");
   catSel.className="input-field";
   catSel.style.fontSize="13px";
-  catSel.style.color="#e2e8f0";
+  catSel.style.color="var(--text)";
   catSel.style.marginBottom="16px";
   catSel.style.fontWeight="500";
   [""].concat(CATEGORIES).forEach(function(c){
@@ -3552,7 +3565,7 @@ async function runPostChatAnalysis(){
   overlay.className="modal-overlay";
   overlay.style.cssText="position:fixed;inset:0;background:rgba(6,6,14,0.85);backdrop-filter:blur(8px);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;";
   const box=document.createElement("div");
-  box.style.cssText="background:#0c0c18;border:1px solid rgba(245,166,35,0.25);border-radius:18px;padding:20px;max-width:560px;width:100%;margin-top:30px;box-shadow:0 12px 40px rgba(0,0,0,0.5);";
+  box.style.cssText="background:var(--modal-post-bg);border:1px solid rgba(245,166,35,0.25);border-radius:18px;padding:20px;max-width:560px;width:100%;margin-top:30px;box-shadow:0 12px 40px rgba(0,0,0,0.5);";
   const head=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;");
   head.appendChild(mk("p","🔍  ANALISIS DEL CHAT","font-size:11px;color:#F5A623;letter-spacing:2.5px;font-weight:700;"));
   const closeBtn=mk("button","✕","background:none;border:none;color:#64748b;font-size:18px;font-weight:700;");
@@ -3726,6 +3739,7 @@ function generateLectura(topicId,host){
     copyBtn.className="gen-btn gen-btn-muted";
     copyBtn.textContent="📋 Copiar texto";
     copyBtn.onclick=function(){navigator.clipboard.writeText(obj.text).then(function(){showToast("Texto copiado","success");}).catch(function(){showToast("No se pudo copiar","error");});};
+    ta.appendChild(copyBtn);
     // New text button
     var newBtn=document.createElement("button");
     newBtn.className="gen-btn gen-btn-muted";
@@ -3790,7 +3804,7 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
     if(top<8){top=rect.bottom+10;}
     if(left+180>window.innerWidth) left=window.innerWidth-190;
     if(left<8) left=8;
-    tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:#2a1f4a;border:1px solid rgba(167,139,250,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
+    tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:var(--tooltip-bg);border:1px solid rgba(167,139,250,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
     var wordRow=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
     wordRow.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
     var spinner=mk("span","⏳","font-size:14px;color:var(--muted);animation:pulse 0.8s infinite;");
@@ -3833,7 +3847,7 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
         starBtn.onclick=function(e){e.stopPropagation();doSave();};
         row2.appendChild(starBtn);
         tt.appendChild(row2);
-        tt.appendChild(mk("p",es,"font-size:12px;color:#A78BFA;font-weight:600;margin-top:2px;"));
+        tt.appendChild(mk("p",es,"font-size:12px;color:var(--tooltip-accent);font-weight:600;margin-top:2px;"));
       })
       .catch(function(){
         // Fallback: manual input popup
@@ -3849,7 +3863,7 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
   if(top<8){top=rect.bottom+10;}
   if(left+180>window.innerWidth) left=window.innerWidth-190;
   if(left<8) left=8;
-  tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:#2a1f4a;border:1px solid rgba(167,139,250,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
+  tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:var(--tooltip-bg);border:1px solid rgba(167,139,250,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
   var wordRow=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
   wordRow.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
   var saveMini=document.createElement("button");
@@ -3867,7 +3881,7 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
   saveMini.onclick=function(e){e.stopPropagation();doSaveMini();};
   wordRow.appendChild(saveMini);
   tt.appendChild(wordRow);
-  tt.appendChild(mk("p",knownTranslation,"font-size:12px;color:#A78BFA;font-weight:600;margin-top:2px;"));
+  tt.appendChild(mk("p",knownTranslation,"font-size:12px;color:var(--tooltip-accent);font-weight:600;margin-top:2px;"));
   document.body.appendChild(tt);
   setTimeout(function(){window.addEventListener("scroll",function doh(){hideLecturaTranslation();window.removeEventListener("scroll",doh);});},50);
   tt.onclick=function(){hideLecturaTranslation();};
@@ -4109,7 +4123,7 @@ function renderDrillStep(el, topic){
   let answered=false;
   d.options.forEach(function(opt){
     const b=document.createElement("button");
-    b.style.cssText="text-align:left;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;transition:background 0.15s,border-color 0.15s;cursor:pointer;";
+    b.style.cssText="text-align:left;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text);border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;transition:background 0.15s,border-color 0.15s;cursor:pointer;";
     b.textContent=opt;
     b.onclick=function(){
       if(answered) return; answered=true;
@@ -4297,10 +4311,10 @@ function casosIdentificar(host){
     + '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:500;">El femenino y el neutro casi no se mueven. Tu energía va al masculino:</p>'
     + '<p style="font-size:22px;font-weight:800;letter-spacing:0.02em;margin-bottom:14px;"><span class="c-nom">der</span> → <span class="c-akk">den</span> → <span class="c-dat">dem</span> → <span class="c-gen">des</span></p>'
     + '<div style="border-left:3px solid var(--border);padding-left:12px;">'
-    + '<p style="margin:6px 0;font-size:14px;color:#cbd5e1;"><span class="c-nom">Der</span> Laptop ist neu. <span style="color:var(--muted);font-size:12px;">— ¿quién es nuevo? Nominativ.</span></p>'
-    + '<p style="margin:6px 0;font-size:14px;color:#cbd5e1;">Ich benutze <span class="c-akk">den</span> Laptop. <span style="color:var(--muted);font-size:12px;">— recibe la acción. Akkusativ.</span></p>'
-    + '<p style="margin:6px 0;font-size:14px;color:#cbd5e1;">Ich arbeite mit <span class="c-dat">dem</span> Laptop. <span style="color:var(--muted);font-size:12px;">— "mit" manda Dativ.</span></p>'
-    + '<p style="margin:6px 0;font-size:14px;color:#cbd5e1;">Die Tastatur <span class="c-gen">des</span> Laptops ist gut. <span style="color:var(--muted);font-size:12px;">— ¿de quién? Genitiv (+s).</span></p>'
+    + '<p style="margin:6px 0;font-size:14px;color:var(--text2);"><span class="c-nom">Der</span> Laptop ist neu. <span style="color:var(--muted);font-size:12px;">— ¿quién es nuevo? Nominativ.</span></p>'
+    + '<p style="margin:6px 0;font-size:14px;color:var(--text2);">Ich benutze <span class="c-akk">den</span> Laptop. <span style="color:var(--muted);font-size:12px;">— recibe la acción. Akkusativ.</span></p>'
+    + '<p style="margin:6px 0;font-size:14px;color:var(--text2);">Ich arbeite mit <span class="c-dat">dem</span> Laptop. <span style="color:var(--muted);font-size:12px;">— "mit" manda Dativ.</span></p>'
+    + '<p style="margin:6px 0;font-size:14px;color:var(--text2);">Die Tastatur <span class="c-gen">des</span> Laptops ist gut. <span style="color:var(--muted);font-size:12px;">— ¿de quién? Genitiv (+s).</span></p>'
     + '</div>';
   host.appendChild(c2);
 }
@@ -4340,7 +4354,7 @@ function paintCasosTable(out, note){
   const n=CASOS_NOUNS[state.casos.casosNounIdx];
   const arts=CASOS_ART[state.casos.casosArt][n.gen];
   const genName={m:'masculino',f:'femenino',n:'neutro'}[n.gen];
-  note.innerHTML="Género: <b style='color:#cbd5e1'>"+genName+"</b>"
+  note.innerHTML="Género: <b style='color:var(--text2)'>"+genName+"</b>"
     +(n.weak?" · ojo, sustantivo débil (-n en Akk/Dat/Gen)":"")
     +(n.gen==='f'?" · el femenino casi no cambia":"");
   const frames=[
@@ -4493,7 +4507,7 @@ function casosChoose(q,o,opts,btn){
   fb.style.display="block";
   fb.style.cssText="margin-top:14px;display:block;border-radius:12px;padding:13px;font-size:14px;background:"+(correct?"var(--akk-bg)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"var(--akk-line)":"rgba(248,113,113,0.25)")+";";
   fb.innerHTML='<div style="font-weight:800;color:'+(correct?"#4ade80":"#F87171")+';margin-bottom:5px;">'+(correct?'✓ Correcto':'✗ Casi · la respuesta es '+q.ok)+'</div>'
-    +'<div style="color:#cbd5e1;line-height:1.5;">'+tag+q.why+'</div>';
+    +'<div style="color:var(--text2);line-height:1.5;">'+tag+q.why+'</div>';
   document.getElementById("cs-next").style.display="flex";
 }
 
@@ -4504,7 +4518,7 @@ function casosRenderTrad(q,mount){
     +'<button id="cs-rev" style="font-size:14px;font-weight:700;padding:10px 16px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);">Ver respuesta</button>'
     +'<div id="cs-ans" style="display:none;margin-top:14px;padding:13px;border-radius:12px;background:var(--akk-bg);border:1px solid var(--akk-line);">'
       +'<div style="font-size:16px;font-weight:600;color:var(--text);">'+q.de+'</div>'
-      +'<div style="margin-top:6px;font-size:13px;color:#cbd5e1;line-height:1.5;">'+q.why+'</div>'
+      +'<div style="margin-top:6px;font-size:13px;color:var(--text2);line-height:1.5;">'+q.why+'</div>'
       +'<div style="margin-top:12px;display:flex;gap:8px;">'
         +'<button id="cs-got" style="font-size:13px;font-weight:700;padding:9px 14px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);">La tenía ✓</button>'
         +'<button id="cs-miss" style="font-size:13px;font-weight:700;padding:9px 14px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);">Fallé</button>'
@@ -4589,7 +4603,7 @@ function renderResumen() {
     row.style.animation="fadeUp 0.25s "+(i*0.05)+"s both";
     const left=mk("div","","display:flex;align-items:center;gap:10px;");
     left.appendChild(mk("span",s.icon,"font-size:20px;"));
-    left.appendChild(mk("span",s.label,"font-size:14px;color:#cbd5e1;font-weight:600;"));
+    left.appendChild(mk("span",s.label,"font-size:14px;color:var(--text2);font-weight:600;"));
     const val=mk("span",String(s.value),"font-size:30px;font-weight:900;color:"+s.color+";letter-spacing:-0.03em;");
     row.appendChild(left); row.appendChild(val);
     el.appendChild(row);
