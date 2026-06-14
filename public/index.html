@@ -871,7 +871,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 // ── AI proxy ──────────────────────────────────────────────────────────────────
 async function ai(system, messages, maxTokens) {
   const res = await fetch("/api/chat", {
-    method:"POST", headers:{"content-type":"application/json"},
+    method:"POST", headers:{"content-type":"application/json","x-token":state.app.authToken||""},
     body:JSON.stringify({model:"mimo-v2-flash",max_tokens:maxTokens||1000,temperature:0.7,
       messages:[{role:"system",content:system}].concat(messages)})
   });
@@ -940,7 +940,7 @@ function speakGerman(text) {
 // ── AssemblyAI ────────────────────────────────────────────────────────────────
 async function transcribe(blob, mimeType) {
   if (!blob || blob.size < 1000) throw new Error("Audio muy corto, habla un poco mas.");
-  const headers = {"content-type": mimeType || "audio/webm"};
+  const headers = {"content-type": mimeType || "audio/webm", "x-token": state.app.authToken||""};
 
   const upRes = await fetch("/api/upload", {method:"POST", headers:headers, body:blob});
   const up = await upRes.json();
@@ -948,7 +948,7 @@ async function transcribe(blob, mimeType) {
 
   const txRes = await fetch("/api/transcript", {
     method:"POST",
-    headers:{"content-type":"application/json"},
+    headers:{"content-type":"application/json","x-token":state.app.authToken||""},
     body:JSON.stringify({audio_url:up.upload_url, language_code:"de"})
   });
   const tx = await txRes.json();
@@ -956,7 +956,7 @@ async function transcribe(blob, mimeType) {
 
   for (let i=0; i<25; i++) {
     await new Promise(function(r){setTimeout(r,2500);});
-    const p = await (await fetch("/api/transcript/"+tx.id)).json();
+    const p = await (await fetch("/api/transcript/"+tx.id, {headers:{"x-token":state.app.authToken||""}})).json();
     if (p.status==="completed") return p.text || "";
     if (p.status==="error") throw new Error("AssemblyAI error: "+(p.error||"desconocido"));
   }

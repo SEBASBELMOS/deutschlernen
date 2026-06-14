@@ -3,6 +3,7 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const {createClient} = require("@supabase/supabase-js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,7 +13,19 @@ const CATEGORIES_SET = new Set(CATEGORIES);
 const AI_URL = process.env.AI_URL || "https://api.groq.com/openai/v1/chat/completions";
 const AI_MODEL = process.env.AI_MODEL || "llama-3.3-70b-versatile";
 const ASSEMBLY_KEY = process.env.ASSEMBLY_KEY;
-const DB_FILE = path.join(__dirname, "db.json");
+const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.json");
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+const usingSupabase = Boolean(SUPABASE_URL && SUPABASE_SERVICE_KEY);
+const requiresManagedStorage = Boolean(process.env.SPACE_ID || process.env.HF_SPACE_ID || process.env.NODE_ENV === "production");
+
+if (requiresManagedStorage && !usingSupabase) {
+  const missing = [];
+  if (!SUPABASE_URL) missing.push("SUPABASE_URL");
+  if (!SUPABASE_SERVICE_KEY) missing.push("SUPABASE_SERVICE_KEY");
+  throw new Error("Supabase is required in production/HF Space. Missing: " + missing.join(", ") + ". Refusing to fall back to db.json.");
+}
 
 function readDB() {
   try {
@@ -25,6 +38,136 @@ function writeDB(db) {
   fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
   fs.renameSync(tmp, DB_FILE);
 }
+
+function createFileStorage() {
+  return {
+    async getUser(username) {
+      const db = readDB();
+      return {db, user:db.users[username] || null};
+    },
+    async createUser(username, passwordHash, data) {
+      const db = readDB();
+      if (db.users[username]) return false;
+      db.users[username] = {passwordHash, createdAt:new Date().toISOString(), data};
+      writeDB(db);
+      return true;
+    },
+    async updatePasswordHash(username, passwordHash) {
+      const db = readDB();
+      if (!db.users[username]) return;
+      db.users[username].passwordHash = passwordHash;
+      writeDB(db);
+    },
+    async updateUserData(username, data) {
+      const db = readDB();
+      if (!db.users[username]) return;
+      db.users[username].data = data;
+      writeDB(db);
+    },
+    async createSession(token, username) {
+      const db = readDB();
+      db.sessions[token] = {username, lastUsed:Date.now()};
+      writeDB(db);
+    },
+    async getSession(token) {
+      const db = readDB();
+      let entry = db.sessions[token];
+      if (!entry) return null;
+      if (typeof entry === "string") entry = {username:entry, lastUsed:Date.now()};
+      const user = db.users[entry.username];
+      if (!user) return null;
+      return {db, token, username:entry.username, lastUsed:entry.lastUsed, user};
+    },
+    async refreshSession(token, username) {
+      const db = readDB();
+      db.sessions[token] = {username, lastUsed:Date.now()};
+      writeDB(db);
+    },
+    async deleteSession(token) {
+      const db = readDB();
+      delete db.sessions[token];
+      writeDB(db);
+    },
+    async cleanupExpiredSessions() {
+      const db = readDB();
+      const now = Date.now();
+      let changed = false;
+      for (const [token, entry] of Object.entries(db.sessions)) {
+        if (typeof entry === "string") continue;
+        if (now - entry.lastUsed > THIRTY_DAYS) {
+          delete db.sessions[token];
+          changed = true;
+        }
+      }
+      if (changed) writeDB(db);
+    }
+  };
+}
+
+function toAppUser(row) {
+  if (!row) return null;
+  return {passwordHash:row.password_hash, createdAt:row.created_at, data:row.data || {}};
+}
+
+function sessionLastUsedMs(value) {
+  if (typeof value === "number") return value;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function createSupabaseStorage() {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {auth:{persistSession:false}});
+  return {
+    async getUser(username) {
+      const {data, error} = await supabase.from("users").select("username,password_hash,data,created_at").eq("username", username).maybeSingle();
+      if (error) throw error;
+      return {user:toAppUser(data)};
+    },
+    async createUser(username, passwordHash, data) {
+      const {error} = await supabase.from("users").insert({username, password_hash:passwordHash, data, created_at:new Date().toISOString()});
+      if (!error) return true;
+      if (error.code === "23505") return false;
+      throw error;
+    },
+    async updatePasswordHash(username, passwordHash) {
+      const {error} = await supabase.from("users").update({password_hash:passwordHash}).eq("username", username);
+      if (error) throw error;
+    },
+    async updateUserData(username, data) {
+      const {error} = await supabase.from("users").update({data}).eq("username", username);
+      if (error) throw error;
+    },
+    async createSession(token, username) {
+      const {error} = await supabase.from("sessions").insert({token, username, last_used:new Date().toISOString()});
+      if (error) throw error;
+    },
+    async getSession(token) {
+      const {data, error} = await supabase.from("sessions").select("token,username,last_used").eq("token", token).maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const userRow = await this.getUser(data.username);
+      if (!userRow.user) return null;
+      return {token:data.token, username:data.username, lastUsed:sessionLastUsedMs(data.last_used), user:userRow.user};
+    },
+    async refreshSession(token) {
+      const {error} = await supabase.from("sessions").update({last_used:new Date().toISOString()}).eq("token", token);
+      if (error) throw error;
+    },
+    async deleteSession(token) {
+      const {error} = await supabase.from("sessions").delete().eq("token", token);
+      if (error) throw error;
+    },
+    async cleanupExpiredSessions() {
+      const cutoff = new Date(Date.now() - THIRTY_DAYS).toISOString();
+      const {error} = await supabase.from("sessions").delete().lt("last_used", cutoff);
+      if (error) throw error;
+    }
+  };
+}
+
+const storage = usingSupabase ? createSupabaseStorage() : createFileStorage();
+console.log("Storage:", usingSupabase ? "Supabase" : "db.json");
+
 function hashPw(pw, salt) {
   if (!salt) salt = crypto.randomBytes(16).toString("hex");
   return "scrypt:" + salt + ":" + crypto.scryptSync(pw, salt, 64).toString("hex");
@@ -40,25 +183,26 @@ function verifyPw(pw, stored) {
   return stored === crypto.createHash("sha256").update("dl26_"+pw).digest("hex");
 }
 function makeToken() { return crypto.randomBytes(32).toString("hex"); }
-function getAuth(req) {
+async function getAuth(req) {
   const token = req.headers["x-token"]||"";
   if (!token) return null;
-  const db = readDB();
-  let entry = db.sessions[token];
+  const entry = await storage.getSession(token);
   if (!entry) return null;
-  if (typeof entry === "string") entry = {username:entry, lastUsed:Date.now()};
-  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
   if (Date.now() - entry.lastUsed > THIRTY_DAYS) {
-    delete db.sessions[token];
-    writeDB(db);
+    await storage.deleteSession(token);
     return null;
   }
-  entry.lastUsed = Date.now();
-  const u = db.users[entry.username];
-  if (!u) return null;
-  db.sessions[token] = entry;
-  writeDB(db);
-  return {username:entry.username, user:u, db, token};
+  await storage.refreshSession(token, entry.username);
+  return {username:entry.username, user:entry.user, token};
+}
+
+async function requireAuth(req, res) {
+  const auth = await getAuth(req);
+  if (!auth) {
+    res.status(401).json({error:"No autenticado."});
+    return null;
+  }
+  return auth;
 }
 
 const rateLimits = new Map();
@@ -78,19 +222,8 @@ function checkRateLimit(ip, endpoint) {
 function clearRateLimit(ip, endpoint) {
   rateLimits.delete(ip + ":" + endpoint);
 }
-function cleanupExpiredSessions() {
-  const db = readDB();
-  const now = Date.now();
-  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-  let changed = false;
-  for (const [token, entry] of Object.entries(db.sessions)) {
-    if (typeof entry === "string") continue;
-    if (now - entry.lastUsed > THIRTY_DAYS) {
-      delete db.sessions[token];
-      changed = true;
-    }
-  }
-  if (changed) writeDB(db);
+async function cleanupExpiredSessions() {
+  await storage.cleanupExpiredSessions();
 }
 setInterval(function(){
   const now = Date.now();
@@ -110,89 +243,112 @@ app.use(express.raw({type:["audio/*","application/octet-stream","video/*"], limi
 app.use(express.static(path.join(__dirname, "public")));
 
 // Auth
-app.post("/api/register", (req,res) => {
-  const {username,password} = req.body||{};
-  if (!username||!password) return res.json({error:"Completa todos los campos."});
-  if (username.length<3) return res.json({error:"Username: minimo 3 caracteres."});
-  if (password.length<4) return res.json({error:"Password: minimo 4 caracteres."});
-  if (!checkRateLimit(req.ip, "register"))
-    return res.status(429).json({error:"Demasiados intentos. Espera 15 minutos."});
-  const db = readDB();
-  if (db.users[username]) return res.json({error:"Ese username ya existe."});
-  const emptyData = {saved:[],chatLogs:[],totalPhrases:0,totalMinutes:0,dailyLog:{},shownPhrases:{},weeklyGoal:60};
-  db.users[username] = {passwordHash:hashPw(password), createdAt:new Date().toISOString(), data:emptyData};
-  const token = makeToken();
-  db.sessions[token] = {username, lastUsed:Date.now()};
-  writeDB(db);
-  clearRateLimit(req.ip, "register");
-  res.json({ok:true, token, username, data:emptyData, serverInfo:{model:AI_MODEL}});
-});
-
-app.post("/api/login", (req,res) => {
-  const {username,password} = req.body||{};
-  if (!username||!password) return res.json({error:"Completa todos los campos."});
-  if (!checkRateLimit(req.ip, "login"))
-    return res.status(429).json({error:"Demasiados intentos. Espera 15 minutos."});
-  const db = readDB();
-  const user = db.users[username];
-  if (!user) return res.json({error:"Usuario no encontrado."});
-  if (!verifyPw(password, user.passwordHash)) return res.json({error:"Password incorrecto."});
-  if (!user.passwordHash.startsWith("scrypt:")) {
-    user.passwordHash = hashPw(password);
+app.post("/api/register", async (req,res) => {
+  try {
+    const {username,password} = req.body||{};
+    if (!username||!password) return res.json({error:"Completa todos los campos."});
+    if (username.length<3) return res.json({error:"Username: minimo 3 caracteres."});
+    if (password.length<4) return res.json({error:"Password: minimo 4 caracteres."});
+    if (!checkRateLimit(req.ip, "register"))
+      return res.status(429).json({error:"Demasiados intentos. Espera 15 minutos."});
+    const emptyData = {saved:[],chatLogs:[],totalPhrases:0,totalMinutes:0,dailyLog:{},shownPhrases:{},weeklyGoal:60};
+    const created = await storage.createUser(username, hashPw(password), emptyData);
+    if (!created) return res.json({error:"Ese username ya existe."});
+    const token = makeToken();
+    await storage.createSession(token, username);
+    clearRateLimit(req.ip, "register");
+    res.json({ok:true, token, username, data:emptyData, serverInfo:{model:AI_MODEL}});
+  } catch(err) {
+    console.error("[register]", err);
+    res.status(500).json({error:"Internal server error"});
   }
-  const token = makeToken();
-  db.sessions[token] = {username, lastUsed:Date.now()};
-  writeDB(db);
-  clearRateLimit(req.ip, "login");
-  res.json({ok:true, token, username, data:user.data, serverInfo:{model:AI_MODEL}});
 });
 
-app.post("/api/logout", (req,res) => {
-  const token = req.headers["x-token"]||"";
-  if (token) { const db=readDB(); delete db.sessions[token]; writeDB(db); }
-  res.json({ok:true});
+app.post("/api/login", async (req,res) => {
+  try {
+    const {username,password} = req.body||{};
+    if (!username||!password) return res.json({error:"Completa todos los campos."});
+    if (!checkRateLimit(req.ip, "login"))
+      return res.status(429).json({error:"Demasiados intentos. Espera 15 minutos."});
+    const {user} = await storage.getUser(username);
+    if (!user) return res.json({error:"Usuario no encontrado."});
+    if (!verifyPw(password, user.passwordHash)) return res.json({error:"Password incorrecto."});
+    if (!user.passwordHash.startsWith("scrypt:")) {
+      await storage.updatePasswordHash(username, hashPw(password));
+    }
+    const token = makeToken();
+    await storage.createSession(token, username);
+    clearRateLimit(req.ip, "login");
+    res.json({ok:true, token, username, data:user.data, serverInfo:{model:AI_MODEL}});
+  } catch(err) {
+    console.error("[login]", err);
+    res.status(500).json({error:"Internal server error"});
+  }
+});
+
+app.post("/api/logout", async (req,res) => {
+  try {
+    const token = req.headers["x-token"]||"";
+    if (token) await storage.deleteSession(token);
+    res.json({ok:true});
+  } catch(err) {
+    console.error("[logout]", err);
+    res.status(500).json({error:"Internal server error"});
+  }
 });
 
 // Sync
-app.get("/api/sync", (req,res) => {
-  const auth = getAuth(req);
-  if (!auth) return res.json({error:"No autenticado."});
-  res.json({ok:true, data:auth.user.data, serverInfo:{model:AI_MODEL}});
+app.get("/api/sync", async (req,res) => {
+  try {
+    const auth = await getAuth(req);
+    if (!auth) return res.json({error:"No autenticado."});
+    res.json({ok:true, data:auth.user.data, serverInfo:{model:AI_MODEL}});
+  } catch(err) {
+    console.error("[sync:get]", err);
+    res.status(500).json({error:"Internal server error"});
+  }
 });
 
-app.post("/api/sync", (req,res) => {
-  const auth = getAuth(req);
-  if (!auth) return res.json({error:"No autenticado."});
-  const body = req.body||{};
-  if (!Array.isArray(body.saved)) return res.status(400).json({error:"saved debe ser un array."});
-  for (const item of body.saved) {
-    if (!item || typeof item !== "object" || typeof item.de !== "string" || typeof item.es !== "string")
-      return res.status(400).json({error:"Cada frase debe tener 'de' y 'es' como string."});
-    if (typeof item.category !== "string" || !CATEGORIES_SET.has(item.category)) item.category = "";
+app.post("/api/sync", async (req,res) => {
+  try {
+    const auth = await getAuth(req);
+    if (!auth) return res.json({error:"No autenticado."});
+    const body = req.body||{};
+    if (!Array.isArray(body.saved)) return res.status(400).json({error:"saved debe ser un array."});
+    for (const item of body.saved) {
+      if (!item || typeof item !== "object" || typeof item.de !== "string" || typeof item.es !== "string")
+        return res.status(400).json({error:"Cada frase debe tener 'de' y 'es' como string."});
+      if (typeof item.category !== "string" || !CATEGORIES_SET.has(item.category)) item.category = "";
+    }
+    if (!Array.isArray(body.chatLogs)) return res.status(400).json({error:"chatLogs debe ser un array."});
+    if (body.errorJournal && !Array.isArray(body.errorJournal)) return res.status(400).json({error:"errorJournal debe ser un array."});
+    const {saved,chatLogs,totalPhrases,totalMinutes,dailyLog,shownPhrases,weeklyGoal,level,grammarStats,errorJournal} = body;
+    const existing = auth.user.data || {};
+    const nextData = {
+      saved: saved,
+      chatLogs: chatLogs,
+      totalPhrases: Number(totalPhrases)||0,
+      totalMinutes: Number(totalMinutes)||0,
+      dailyLog: (dailyLog && typeof dailyLog==="object") ? dailyLog : (existing.dailyLog||{}),
+      shownPhrases: (shownPhrases && typeof shownPhrases==="object") ? shownPhrases : (existing.shownPhrases||{}),
+      weeklyGoal: Number(weeklyGoal)||60,
+      level: level,
+      grammarStats: (grammarStats && typeof grammarStats==="object") ? grammarStats : (existing.grammarStats||{}),
+      errorJournal: Array.isArray(errorJournal) ? errorJournal : (existing.errorJournal||[])
+    };
+    await storage.updateUserData(auth.username, nextData);
+    res.json({ok:true});
+  } catch(err) {
+    console.error("[sync:post]", err);
+    res.status(500).json({error:"Internal server error"});
   }
-  if (!Array.isArray(body.chatLogs)) return res.status(400).json({error:"chatLogs debe ser un array."});
-  if (body.errorJournal && !Array.isArray(body.errorJournal)) return res.status(400).json({error:"errorJournal debe ser un array."});
-  const {saved,chatLogs,totalPhrases,totalMinutes,dailyLog,shownPhrases,weeklyGoal,level,grammarStats,errorJournal} = body;
-  const existing = auth.user.data || {};
-  auth.db.users[auth.username].data = {
-    saved: saved,
-    chatLogs: chatLogs,
-    totalPhrases: Number(totalPhrases)||0,
-    totalMinutes: Number(totalMinutes)||0,
-    dailyLog: (dailyLog && typeof dailyLog==="object") ? dailyLog : (existing.dailyLog||{}),
-    shownPhrases: (shownPhrases && typeof shownPhrases==="object") ? shownPhrases : (existing.shownPhrases||{}),
-    weeklyGoal: Number(weeklyGoal)||60,
-    level: level,
-    grammarStats: (grammarStats && typeof grammarStats==="object") ? grammarStats : (existing.grammarStats||{}),
-    errorJournal: Array.isArray(errorJournal) ? errorJournal : (existing.errorJournal||[])
-  };
-  writeDB(auth.db);
-  res.json({ok:true});
 });
 
 // AI proxy (OpenAI-compatible — defaults to OpenRouter free model)
 app.post("/api/chat", async (req,res) => {
   try {
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
     const body = Object.assign({}, req.body||{}, {model: AI_MODEL});
     const r = await fetch(AI_URL, {
       method:"POST",
@@ -216,6 +372,8 @@ app.post("/api/chat", async (req,res) => {
 // AssemblyAI proxies
 app.post("/api/upload", async (req,res) => {
   try {
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
     const contentType = req.headers["content-type"] || "audio/webm";
     const r = await fetch("https://api.assemblyai.com/v2/upload", {
       method:"POST",
@@ -228,6 +386,8 @@ app.post("/api/upload", async (req,res) => {
 
 app.post("/api/transcript", async (req,res) => {
   try {
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
     const r = await fetch("https://api.assemblyai.com/v2/transcript", {
       method:"POST",
       headers:{authorization:ASSEMBLY_KEY,"content-type":"application/json"},
@@ -239,6 +399,8 @@ app.post("/api/transcript", async (req,res) => {
 
 app.get("/api/transcript/:id", async (req,res) => {
   try {
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
     const r = await fetch("https://api.assemblyai.com/v2/transcript/"+req.params.id, {
       headers:{authorization:ASSEMBLY_KEY}
     });
@@ -246,6 +408,6 @@ app.get("/api/transcript/:id", async (req,res) => {
   } catch(err) { res.status(500).json({error:err.message}); }
 });
 
-cleanupExpiredSessions();
+cleanupExpiredSessions().catch(err => console.error("[sessions cleanup]", err));
 
 app.listen(PORT, () => console.log("DeutschLernen at http://localhost:"+PORT));

@@ -5,9 +5,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "verify:auth-sync": "node scripts/verify-auth-sync.js",
+    "verify:auth-sync:supabase": "node scripts/verify-auth-sync.js --supabase"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2"
   }
