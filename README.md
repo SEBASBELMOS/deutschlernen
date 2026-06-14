@@ -12,7 +12,8 @@ Single-file vanilla JS frontend, Express backend. No frameworks, no build step.
 - **Correct me** — Paste or record broken German and get a correction, a more natural alternative and pronunciation practice with scoring.
 - **I didn't catch that** — Type what you heard and receive a full breakdown (meaning, context, key words, suggested reply).
 - **Dictation** — TTS reads a phrase, you type it back, word-by-word comparison with a score.
-- **Grammar** — Multiple-choice drills for der/die/das articles, Perfekt, Wortstellung, Adjektivendungen, separable verbs and Präteritum.
+- **Grammar** — AI multiple-choice drills for der/die/das articles, Perfekt, Wortstellung, Adjektivendungen, separable verbs and Präteritum.
+- **Cases** — Offline 4-case trainer (Nominativ/Akkusativ/Dativ/Genitiv) with colour-coded functions. Four sub-tabs: a decision flow to identify the case, an article transformer table, an express rules accordion, and a curated quiz (~57 questions). No AI — works offline.
 - **Flashcards with SRS** — A five-box Leitner system (intervals of 0/1/3/7/14/30 days). Switch between "due today" and "all". Grade with Fallé / Difícil / Bien / Fácil.
 - **Saved** — Saved phrases and chat history. Live search and CSV export.
 - **Summary** — Daily streak, weekly minutes goal and progress counters.

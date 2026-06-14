@@ -5,3 +5,8 @@ CLAUDE.md
 db.json
 .env.last
 .claude/
+# Local AI runtime state
+.atl/
+.mcp.json
+.opencode/
+openspec/
