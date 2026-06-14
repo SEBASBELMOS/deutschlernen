@@ -271,6 +271,9 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 
 .lectura-save-btn { width:100%;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;border-radius:var(--r-pill,999px);padding:10px;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s; }
 .lectura-save-btn:hover { background:rgba(245,166,35,0.2); }
+.lectura-word { background:none;border:none;font:inherit;color:var(--text);padding:0 1px;cursor:pointer;border-bottom:1px dashed rgba(167,139,250,0.35);border-radius:3px;display:inline;transition:background 0.15s, border-color 0.15s; }
+.lectura-word:hover { background:rgba(167,139,250,0.15); }
+.lectura-word.active { background:rgba(167,139,250,0.22); border-bottom-color:var(--purple); }
 
 .cat-edit-btn { background:none;border:none;font-size:12px;cursor:pointer;padding:0;opacity:0.5;transition:opacity 0.15s; }
 .cat-edit-btn:hover { opacity:1; }
@@ -2132,6 +2135,15 @@ function renderHoy(){
     el.appendChild(tipCard);
   }
 
+  // ── Cómo mejorar (insight accionable, compartido con Resumen) ──
+  var imp=getInsightData();
+  const impCard=document.createElement("div"); impCard.className="card";
+  impCard.style.cssText="margin-bottom:10px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.05);";
+  impCard.appendChild(mk("p","💡 CÓMO MEJORAR","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+  impCard.appendChild(mk("p",imp.error,"font-size:13px;color:var(--text2);font-weight:600;line-height:1.5;margin-bottom:6px;"));
+  impCard.appendChild(mk("p","→ "+imp.tip,"font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;"));
+  el.appendChild(impCard);
+
   // ── Mini daily progress + adaptive goal ──
   const progCard=document.createElement("div"); progCard.className="card";
   var goalHdr=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;");
@@ -3704,18 +3716,16 @@ function generateLectura(topicId,host){
       var cleanW=w.replace(/[.,!?;:"'()]/g,"");
       var btn=document.createElement("button");
       btn.type="button";
+      btn.className="lectura-word";
       btn.textContent=w;
-      btn.style.cssText="background:none;border:none;font:inherit;color:var(--text);padding:0;cursor:pointer;border-bottom:1px dashed rgba(167,139,250,0.3);transition:background 0.15s,border-color 0.15s,color 0.15s;border-radius:2px;display:inline;";
-      btn.onmouseover=function(){this.style.background="rgba(167,139,250,0.12)";this.style.color="var(--text)";};
-      btn.onmouseout=function(){if(state.lectura._lecturaTarget!==i){this.style.background="";this.style.color="var(--text)";}};
       btn.onclick=function(e){
         e.stopPropagation();
-        if(state.lectura._lecturaTarget===i){state.lectura._lecturaTarget=-1;this.style.background="";this.style.color="var(--text)";this.style.borderBottomColor="rgba(167,139,250,0.3)";hideLecturaTranslation();return;}
-        if(state.lectura._lecturaTarget>=0){var prev=textEl.querySelectorAll("button")[state.lectura._lecturaTarget];if(prev){prev.style.background="";prev.style.color="var(--text)";prev.style.borderBottomColor="rgba(167,139,250,0.3)";}}
+        var wasActive=btn.classList.contains("active");
+        var prevActive=textEl.querySelector(".lectura-word.active");
+        if(prevActive) prevActive.classList.remove("active");
+        if(wasActive){ state.lectura._lecturaTarget=-1; hideLecturaTranslation(); return; }
+        btn.classList.add("active");
         state.lectura._lecturaTarget=i;
-        this.style.background="rgba(167,139,250,0.2)";
-        this.style.color="var(--text)";
-        this.style.borderBottomColor="var(--purple)";
         var trans=wordMap[cleanW.toLowerCase()]||state.lectura._wordCache[cleanW.toLowerCase()]||null;
         // Find sentence containing this word for context
         var contextSentence="";
@@ -4828,23 +4838,25 @@ function getWeekKey(){
   var w=Math.floor((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/604800000);
   return d.getFullYear()+"-W"+(w<10?"0":"")+w;
 }
-function renderInsight(host){
-  host.innerHTML="";
-  host.style.maxHeight="2000px";
-  var week=getWeekKey();
+function getInsightData(){
   var topLapses=[...state.session.saved].filter(function(p){return p.lapses>0;}).sort(function(a,b){return b.lapses-a.lapses;}).slice(0,5);
-  var gStats=state.session.saved.filter(function(p){return (p.lapses||0)>=2||(p.box||0)<=1;}).slice(0,8);
   var gram=state.grammar.grammarStats||{};
-  var gramKeys=Object.keys(gram);
   var weakestGrammar=null, weakestRate=1;
-  gramKeys.forEach(function(k){var s=gram[k];var total=(s.right||0)+(s.wrong||0);if(total){var rate=(s.right||0)/total;if(rate<weakestRate){weakestRate=rate;weakestGrammar=k;}}});
-  var wDays=0;
-  var weekReviews=0, weekDrills=0, weekMinutes=0;
+  Object.keys(gram).forEach(function(k){var s=gram[k];var total=(s.right||0)+(s.wrong||0);if(total){var rate=(s.right||0)/total;if(rate<weakestRate){weakestRate=rate;weakestGrammar=k;}}});
+  var wDays=0, weekReviews=0, weekDrills=0, weekMinutes=0;
   for(var i=6;i>=0;i--){ var k=addDays(todayKey(),-i); var e=state.session.dailyLog[k]||{}; if(e.minutes||e.phrasesReviewed||e.drillsDone) wDays++; weekMinutes+=(e.minutes||0); weekReviews+=(e.phrasesReviewed||0); weekDrills+=(e.drillsDone||0); }
   var learned="Esta semana estuviste activo "+wDays+" de 7 días: "+weekMinutes+" min, "+weekReviews+" flashcards y "+weekDrills+" drills.";
   var error=topLapses.length?"La tarjeta que más se repite es “"+topLapses[0].de+"” ("+(topLapses[0].lapses||0)+" fallos).":"Todavía no hay una palabra claramente problemática.";
   if(weakestGrammar) error+=" Gramática más débil: "+weakestGrammar+".";
   var tip=topLapses.length?"Hoy repasá primero las más falladas y después hacé 1 ronda corta de gramática.":"Guardá 5 frases nuevas y hacé una ronda de flashcards para crear historial real.";
+  return {learned:learned, error:error, tip:tip};
+}
+function renderInsight(host){
+  host.innerHTML="";
+  host.style.maxHeight="2000px";
+  var week=getWeekKey();
+  var d=getInsightData();
+  var learned=d.learned, error=d.error, tip=d.tip;
   host.innerHTML="<div style='padding:10px 0;'>"+
     "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--teal-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>📖 Qué hiciste</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+learned+"</p></div>"+
     "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>⚠️ Qué conviene reforzar</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+error+"</p></div>"+
