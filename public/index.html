@@ -577,6 +577,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
   border:1px solid rgba(245,166,35,0.2);
   border-radius:22px;
   padding:36px 28px;
+  perspective:1000px;
   text-align:center;
   margin-bottom:16px;
   animation:flipIn 0.35s cubic-bezier(0.16,1,0.3,1);
@@ -586,6 +587,20 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 }
 .flashcard:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(0,0,0,0.35); }
 .flashcard:active { transform:scale(0.98); }
+
+/* ── FLIP 3D ── */
+.flashcard-face { backface-visibility:hidden; }
+.flashcard-inner {
+  transition:transform 0.25s cubic-bezier(.16,1,.3,1);
+  transform-style:preserve-3d;
+  display:grid;
+}
+.flashcard-front { grid-area:1/1; }
+.flashcard-back {
+  grid-area:1/1;
+  transform:rotateY(180deg);
+}
+.flashcard.flipped .flashcard-inner { transform:rotateY(180deg); }
 
 /* ── SECTION HEADER ──────────────────────────────────────────────────────── */
 .section-title {
@@ -2065,6 +2080,26 @@ function renderHoy(){
   }
   el.appendChild(streakBox);
 
+  // ── Due cards CTA ──
+  if(!allDone&&due>0){
+    const ctaCard=document.createElement("div"); ctaCard.className="card hover-lift";
+    ctaCard.style.cssText="background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04));border:1px solid rgba(245,166,35,0.25);border-radius:var(--r-lg,16px);padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;";
+    ctaCard.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
+    ctaCard.appendChild(mk("p",String(due),"font-size:38px;font-weight:900;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums;"));
+    ctaCard.appendChild(mk("p","tarjetas pendientes","font-size:14px;color:var(--gold);font-weight:700;margin-top:4px;"));
+    ctaCard.appendChild(mk("p","Tocá para repasar ahora","font-size:12px;color:var(--muted);margin-top:6px;"));
+    if(streak>0) ctaCard.appendChild(mk("p","⚠️ Tu racha de "+streak+" está en riesgo","font-size:11px;color:#F87171;font-weight:700;margin-top:8px;"));
+    el.appendChild(ctaCard);
+  } else if(allDone){
+    const winCard=document.createElement("div"); winCard.className="card";
+    winCard.style.cssText="background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(74,222,128,0.03));border:1px solid rgba(74,222,128,0.2);border-radius:var(--r-lg,16px);padding:24px;text-align:center;margin-bottom:10px;animation:winPop 0.45s var(--ease-spring) both;";
+    winCard.appendChild(mk("p","🎉","font-size:40px;"));
+    winCard.appendChild(mk("p","¡Por hoy terminaste!","font-size:18px;font-weight:800;color:#4ade80;margin-top:6px;"));
+    const sumToday=todayLog.phrasesReviewed||0;
+    winCard.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;"));
+    el.appendChild(winCard);
+  }
+
   // ── Level progress ──
   var lvlPct=computeLevelProgress();
   var lvlLabel=state.app.level==="A2"?"A2→B1":state.app.level==="B1"?"B1→B2":"B2+";
@@ -2125,26 +2160,6 @@ function renderHoy(){
     tipCard.appendChild(tipMsg);
     if(tip.tab) tipCard.onclick=function(){state.app.currentTab=tip.tab;renderTabs();showScreen(tip.tab);};
     el.appendChild(tipCard);
-  }
-
-  // ── Due cards CTA ──
-  if(!allDone&&due>0){
-    const ctaCard=document.createElement("div"); ctaCard.className="card hover-lift";
-    ctaCard.style.cssText="background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04));border:1px solid rgba(245,166,35,0.25);border-radius:var(--r-lg,16px);padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;";
-    ctaCard.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
-    ctaCard.appendChild(mk("p",String(due),"font-size:38px;font-weight:900;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums;"));
-    ctaCard.appendChild(mk("p","tarjetas pendientes","font-size:14px;color:var(--gold);font-weight:700;margin-top:4px;"));
-    ctaCard.appendChild(mk("p","Tocá para repasar ahora","font-size:12px;color:var(--muted);margin-top:6px;"));
-    if(streak>0) ctaCard.appendChild(mk("p","⚠️ Tu racha de "+streak+" está en riesgo","font-size:11px;color:#F87171;font-weight:700;margin-top:8px;"));
-    el.appendChild(ctaCard);
-  } else if(allDone){
-    const winCard=document.createElement("div"); winCard.className="card";
-    winCard.style.cssText="background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(74,222,128,0.03));border:1px solid rgba(74,222,128,0.2);border-radius:var(--r-lg,16px);padding:24px;text-align:center;margin-bottom:10px;animation:winPop 0.45s var(--ease-spring) both;";
-    winCard.appendChild(mk("p","🎉","font-size:40px;"));
-    winCard.appendChild(mk("p","¡Por hoy terminaste!","font-size:18px;font-weight:800;color:#4ade80;margin-top:6px;"));
-    const sumToday=todayLog.phrasesReviewed||0;
-    winCard.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;"));
-    el.appendChild(winCard);
   }
 
   // ── Mini daily progress + adaptive goal ──
@@ -3064,35 +3079,45 @@ function renderFlashcards() {
 
   const card=document.createElement("div"); card.className="flashcard";
   state.flashcards._flashcardEl=card;
-  const front=mk("div","","");
+  const inner=document.createElement("div"); inner.className="flashcard-inner";
+  card.appendChild(inner);
+
+  const front=mk("div","",""); front.className="flashcard-face flashcard-front";
   front.appendChild(mk("p","🇩🇪  ALEMAN","font-size:10px;color:rgba(245,166,35,0.6);letter-spacing:3px;margin-bottom:20px;font-weight:700;"));
   front.appendChild(mk("p",ph.de,"font-size:22px;font-weight:900;color:var(--text);line-height:1.4;margin-bottom:16px;letter-spacing:-0.02em;"));
   const playF=document.createElement("button");
   playF.style.cssText="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);color:#F5A623;border-radius:20px;padding:7px 18px;font-size:13px;font-weight:700;transition:background 0.2s;";
   playF.textContent="▶ Escuchar";
   playF.onclick=function(e){e.stopPropagation();speak(ph.de);};
-  front.appendChild(playF); card.appendChild(front);
+  front.appendChild(playF); inner.appendChild(front);
 
-  const back=mk("div","","display:none;");
+  const back=mk("div","",""); back.className="flashcard-face flashcard-back";
   back.appendChild(mk("p","🇪🇸  ESPANOL","font-size:10px;color:rgba(78,205,196,0.6);letter-spacing:3px;margin-bottom:20px;font-weight:700;"));
   back.appendChild(mk("p",ph.es,"font-size:20px;color:var(--text);line-height:1.45;margin-bottom:10px;font-weight:600;"));
   if(ph.tip) back.appendChild(mk("p","💡 "+ph.tip,"font-size:13px;color:var(--muted);font-style:italic;font-weight:500;"));
-  card.appendChild(back);
+  inner.appendChild(back);
 
   card.onclick=function(){
     flipped=!flipped;
-    front.style.display=flipped?"none":"";
-    back.style.display=flipped?"":"none";
+    card.classList.toggle("flipped",flipped);
     card.style.borderColor=flipped?"rgba(78,205,196,0.35)":"rgba(245,166,35,0.2)";
     card.style.background=flipped?"linear-gradient(135deg,rgba(78,205,196,0.07),rgba(78,205,196,0.02))":"linear-gradient(135deg,rgba(245,166,35,0.09),rgba(245,166,35,0.03))";
-    if(flipped) gradeRow.style.display="grid"; else gradeRow.style.display="none";
+    if(flipped){
+      gradeRow.style.opacity="1";
+      gradeRow.style.pointerEvents="auto";
+      gradeRow.style.filter="blur(0)";
+    } else {
+      gradeRow.style.opacity="0.3";
+      gradeRow.style.pointerEvents="none";
+      gradeRow.style.filter="blur(2px)";
+    }
   };
   el.appendChild(card);
   el.appendChild(mk("p","Toca para ver la traducción y calificar","color:var(--dim);font-size:12px;text-align:center;margin-bottom:14px;font-weight:500;"));
 
   // Grade row (visible after flip)
   const gradeRow=document.createElement("div");
-  gradeRow.style.cssText="display:none;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;";
+  gradeRow.style.cssText="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;opacity:0.3;pointer-events:none;filter:blur(2px);transition:opacity 0.25s cubic-bezier(.16,1,.3,1),filter 0.25s";
   const grades=[
     {k:"fail",  lbl:"Fallé",   col:"#F87171", days:"hoy"},
     {k:"hard",  lbl:"Dificil", col:"#fbbf24", days:BOX_INTERVALS[ph.box]+"d"},
