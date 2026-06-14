@@ -650,6 +650,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .cs-subbar::-webkit-scrollbar { display:none; }
 .cs-subtab { flex:0 0 auto; border:1px solid var(--border); background:rgba(255,255,255,0.04); color:var(--muted); font-size:12px; font-weight:700; padding:8px 13px; border-radius:20px; white-space:nowrap; transition:background 0.2s,color 0.2s; }
 .cs-subtab.on { background:#fff; color:#000; border-color:var(--text); }
+.light-mode .cs-subtab { border-color:rgba(0,0,0,0.18); background:rgba(0,0,0,0.03); }
 .c-nom { color:var(--nom); font-weight:700; } .c-akk { color:var(--akk); font-weight:700; }
 .c-dat { color:var(--dat); font-weight:700; } .c-gen { color:var(--gen); font-weight:700; }
 .cs-step { border:1px solid var(--border); border-left-width:4px; border-radius:12px; padding:13px 14px; background:rgba(255,255,255,0.03); margin-bottom:8px; }
@@ -2600,7 +2601,7 @@ function renderCorrigeme() {
 }
 
 async function doFix(ta, fixBtn, el) {
-  const text=ta.value.trim(); if(!text) return;
+  const text=ta.value.trim(); if(!text){ showToast("Escribe algo primero","error"); return; }
   ta.disabled=true; fixBtn.disabled=true; fixBtn.textContent=""; fixBtn.appendChild(makeDots("#F87171"));
   const old=el.querySelector("#fix-result"); if(old) el.removeChild(old);
   try {
@@ -2682,7 +2683,7 @@ function renderNoEntendi() {
 }
 
 async function doExplain(ta, btn, el) {
-  const text=ta.value.trim(); if(!text) return;
+  const text=ta.value.trim(); if(!text){ showToast("Escribe algo primero","error"); return; }
   ta.disabled=true; btn.disabled=true; btn.textContent=""; btn.appendChild(makeDots("#4ECDC4"));
   const old=el.querySelector("#ni-result"); if(old) el.removeChild(old);
   try {
@@ -3408,8 +3409,9 @@ function renderVocabTable(host){
     if(va>vb) return state.guardadas.vocabSortAsc?1:-1;
     return 0;
   });
+  host.style.overflowX="auto"; host.style.webkitOverflowScrolling="touch";
   const table=document.createElement("table");
-  table.style.cssText="width:100%;border-collapse:collapse;font-size:13px;";
+  table.style.cssText="width:100%;min-width:520px;border-collapse:collapse;font-size:13px;";
   const thead=document.createElement("thead");
   const hrow=document.createElement("tr");
   ["de","es","cat","box","nextReview","lapses"].forEach(function(col){
@@ -3948,7 +3950,7 @@ function renderDictado() {
   checkBtn.onclick=function(){
     if(!state.dictado._dictadoTarget) return;
     const user=ta.value.trim();
-    if(!user) return;
+    if(!user){ showToast("Escribe lo que escuchaste","error"); return; }
     result.innerHTML="";
     const target=state.dictado._dictadoTarget.de.trim();
     // Word-level comparison (normalize: lowercase, strip punctuation)
