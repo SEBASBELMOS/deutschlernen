@@ -230,6 +230,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 }
 
 /* ── UTILITY CLASSES ───────────────────────────────────────────────────────── */
+.sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
 .surface-modal { position:fixed;inset:0;z-index:9002;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:24px; }
 .surface-modal.post { background:rgba(6,6,14,0.85);backdrop-filter:blur(8px);z-index:9000;align-items:flex-start;padding:24px 14px;overflow-y:auto; }
 .modal-box { background:var(--modal-bg);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:24px;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,0.6); }
@@ -1141,13 +1142,53 @@ function mk(tag,text,style) {
   return el;
 }
 
+function getFocusableEls(root){
+  return Array.prototype.slice.call(root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(function(el){
+    return !el.disabled && el.offsetParent!==null;
+  });
+}
+
+function trapFocus(modalEl,onClose){
+  var previous=document.activeElement;
+  function focusFirst(){
+    var focusable=getFocusableEls(modalEl);
+    (focusable[0]||modalEl).focus();
+  }
+  function onKey(e){
+    if(e.key==="Escape"){
+      e.preventDefault(); e.stopPropagation();
+      onClose();
+      return;
+    }
+    if(e.key!=="Tab") return;
+    var focusable=getFocusableEls(modalEl);
+    if(!focusable.length){ e.preventDefault(); modalEl.focus(); return; }
+    var first=focusable[0], last=focusable[focusable.length-1];
+    if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+  }
+  modalEl.setAttribute("tabindex","-1");
+  modalEl.addEventListener("keydown",onKey);
+  setTimeout(focusFirst,0);
+  return function(){
+    modalEl.removeEventListener("keydown",onKey);
+    if(previous && document.contains(previous) && previous.focus) previous.focus();
+  };
+}
+
 // ── Save Card Modal (from chat corrections) ─────────────────────────────────
 function showSaveCardModal(de, es, anchor) {
   var overlay=document.createElement("div");
   overlay.className="surface-modal";
-  overlay.onclick=function(e){if(e.target===overlay) document.body.removeChild(overlay);};
+  var releaseFocus=null;
+  function closeModal(){ if(releaseFocus) releaseFocus(); if(overlay.parentNode) overlay.remove(); }
+  overlay._closeModal=closeModal;
+  overlay.onclick=function(e){if(e.target===overlay) closeModal();};
   var box=document.createElement("div");
   box.className="modal-box";
+  box.setAttribute("role","dialog");
+  box.setAttribute("aria-modal","true");
+  box.setAttribute("aria-label","Guardar como flashcard");
   var title=mk("p","💾  Guardar como flashcard","font-size:14px;font-weight:800;color:var(--gold-text);margin-bottom:16px;");
   box.appendChild(title);
   var deLbl=mk("p","Aleman","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
@@ -1176,19 +1217,19 @@ function showSaveCardModal(de, es, anchor) {
     if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
       state.session.saved.push(phrase); updateBadge(); syncUp();
     }
-    document.body.removeChild(overlay);
+    closeModal();
     showToast("Guardada!","success");
   };
   row.appendChild(saveBtn);
   var cancelBtn=document.createElement("button");
   cancelBtn.textContent="Cancelar";
   cancelBtn.className="btn-ghost";
-  cancelBtn.onclick=function(){document.body.removeChild(overlay);};
+  cancelBtn.onclick=closeModal;
   row.appendChild(cancelBtn);
   box.appendChild(row);
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-  deInp.focus();
+  releaseFocus=trapFocus(box,closeModal);
 }
 
 // ── Celebrations (micro-interactions) ──────────────────────────────────────
@@ -1901,10 +1942,10 @@ function syncPayload(){
 }
 function setSyncChip(state){
   const el=document.getElementById("sync-status"); if(!el) return;
-  // Solo íconos — el símbolo comunica el estado sin texto. title= da el detalle al hover.
-  if(state==="saving"){ el.style.display="inline-block"; el.innerHTML='<span style="display:inline-block;animation:spin 0.8s linear infinite;">⟳</span>'; el.title="Guardando…"; el.style.color="#94a3b8"; el.style.background="rgba(255,255,255,0.06)"; }
-  else if(state==="done"){ el.style.display="inline-block"; el.textContent="✓"; el.title="Guardado"; el.style.color="#4ade80"; el.style.background="rgba(74,222,128,0.1)"; setTimeout(function(){ if(el.textContent==="✓") el.style.display="none"; },2000); }
-  else if(state==="error"){ el.style.display="inline-block"; el.textContent="⚠"; el.title="Sin guardar"; el.style.color="#F87171"; el.style.background="rgba(248,113,113,0.1)"; }
+  el.dataset.syncState=state;
+  if(state==="saving"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true" style="display:inline-block;animation:spin 0.8s linear infinite;">⟳</span><span class="sr-only">Guardando</span>'; el.title="Guardando…"; el.style.color="#94a3b8"; el.style.background="rgba(255,255,255,0.06)"; }
+  else if(state==="done"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">✓</span><span class="sr-only">Guardado</span>'; el.title="Guardado"; el.style.color="#4ade80"; el.style.background="rgba(74,222,128,0.1)"; setTimeout(function(){ if(el.dataset.syncState==="done") el.style.display="none"; },2000); }
+  else if(state==="error"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">⚠</span><span class="sr-only">Error de conexión</span>'; el.title="Sin guardar"; el.style.color="#F87171"; el.style.background="rgba(248,113,113,0.1)"; }
 }
 // Debounced: agrupa ráfagas de cambios en un solo POST tras 1200ms de pausa.
 function syncUp() {
@@ -3371,9 +3412,15 @@ function renderGuardadasList(host){
 function openCreateModal(){
   const overlay=document.createElement("div");
   overlay.className="surface-modal";
-  overlay.onclick=function(e){if(e.target===overlay) document.body.removeChild(overlay);};
+  let releaseFocus=null;
+  function closeModal(){ if(releaseFocus) releaseFocus(); if(overlay.parentNode) overlay.remove(); }
+  overlay._closeModal=closeModal;
+  overlay.onclick=function(e){if(e.target===overlay) closeModal();};
   const box=document.createElement("div");
   box.className="modal-box";
+  box.setAttribute("role","dialog");
+  box.setAttribute("aria-modal","true");
+  box.setAttribute("aria-label","Crear flashcard");
   box.appendChild(mk("p","➕  Crear flashcard","font-size:14px;font-weight:800;color:var(--gold-text);margin-bottom:16px;"));
 
   const deLbl=mk("p","Aleman","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
@@ -3427,7 +3474,7 @@ function openCreateModal(){
     const ph=ensureSrsFields({de:de, es:es, tip:tipInp.value.trim(), category:catSel.value});
     if(state.session.saved.some(function(x){return x.de===ph.de;})){ showToast("Ya existe esa frase","error"); return; }
     state.session.saved.push(ph); updateBadge(); syncUp();
-    document.body.removeChild(overlay);
+    closeModal();
     showToast("Flashcard creada");
     renderGuardadas();
   };
@@ -3439,12 +3486,12 @@ function openCreateModal(){
   cancelBtn.style.fontSize="14px";
   cancelBtn.style.fontWeight="600";
   cancelBtn.style.border="1px solid rgba(255,255,255,0.1)";
-  cancelBtn.onclick=function(){ document.body.removeChild(overlay); };
+  cancelBtn.onclick=closeModal;
   row.appendChild(saveBtn); row.appendChild(cancelBtn);
   box.appendChild(row);
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-  deInp.focus();
+  releaseFocus=trapFocus(box,closeModal);
 }
 
 // ── VOCAB TABLE ───────────────────────────────────────────────────────────────
@@ -3619,18 +3666,26 @@ async function runPostChatAnalysis(){
   const overlay=document.createElement("div");
   overlay.className="modal-overlay";
   overlay.style.cssText="position:fixed;inset:0;background:rgba(6,6,14,0.85);backdrop-filter:blur(8px);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;";
+  let releaseFocus=null;
+  function closeModal(){ if(releaseFocus) releaseFocus(); if(overlay.parentNode) overlay.remove(); }
+  overlay._closeModal=closeModal;
+  overlay.onclick=function(e){ if(e.target===overlay) closeModal(); };
   const box=document.createElement("div");
   box.style.cssText="background:var(--modal-post-bg);border:1px solid rgba(245,166,35,0.25);border-radius:18px;padding:20px;max-width:560px;width:100%;margin-top:30px;box-shadow:0 12px 40px rgba(0,0,0,0.5);";
+  box.setAttribute("role","dialog");
+  box.setAttribute("aria-modal","true");
+  box.setAttribute("aria-label","Análisis del chat");
   const head=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;");
   head.appendChild(mk("p","🔍  ANALISIS DEL CHAT","font-size:11px;color:#F5A623;letter-spacing:2.5px;font-weight:700;"));
   const closeBtn=mk("button","✕","background:none;border:none;color:#64748b;font-size:18px;font-weight:700;");
-  closeBtn.onclick=function(){overlay.remove();};
+  closeBtn.onclick=closeModal;
   head.appendChild(closeBtn); box.appendChild(head);
   const loading=mk("div","","display:flex;flex-direction:column;gap:10px;padding:20px;");
   loading.appendChild(skelCard(4));
   loading.appendChild(skelCard(3));
   box.appendChild(loading);
   overlay.appendChild(box); document.body.appendChild(overlay);
+  releaseFocus=trapFocus(box,closeModal);
 
   try {
     const transcript=state.chat.chatHistory.map(function(m){return (m.role==="user"?"Sebastian":"Otro")+": "+m.content;}).join("\n");
@@ -3691,12 +3746,12 @@ async function runPostChatAnalysis(){
       box.appendChild(mk("p","🎉 Sin observaciones. Sigue asi.","color:#4ade80;font-size:14px;text-align:center;padding:20px 0;font-weight:600;"));
     }
     const ok=mk("button","Cerrar","width:100%;background:#F5A623;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;margin-top:8px;");
-    ok.onclick=function(){overlay.remove();}; box.appendChild(ok);
+    ok.onclick=closeModal; box.appendChild(ok);
   } catch(e){
     loading.remove();
     box.appendChild(mk("p","No pude analizar: "+e.message,"color:#ef4444;font-size:13px;text-align:center;padding:20px 0;font-weight:500;"));
     const ok=mk("button","Cerrar","width:100%;background:rgba(255,255,255,0.06);color:#94a3b8;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;margin-top:4px;");
-    ok.onclick=function(){overlay.remove();}; box.appendChild(ok);
+    ok.onclick=closeModal; box.appendChild(ok);
   }
   state.chat._postChatRunning=false;
 }
@@ -3923,6 +3978,7 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
   tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:var(--tooltip-bg);border:1px solid rgba(167,139,250,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
   var wordRow=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
   wordRow.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
+  var actions=mk("div","","display:flex;align-items:center;gap:6px;");
   var saveMini=document.createElement("button");
   saveMini.setAttribute("aria-label","Guardar");saveMini.innerHTML="&#9733;";
   saveMini.style.cssText="background:rgba(167,139,250,0.2);border:none;color:#A78BFA;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;";
@@ -3936,7 +3992,15 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
     } else {showToast("Ya estaba guardada","success");}
   };
   saveMini.onclick=function(e){e.stopPropagation();doSaveMini();};
-  wordRow.appendChild(saveMini);
+  actions.appendChild(saveMini);
+  var closeMini=document.createElement("button");
+  closeMini.setAttribute("aria-label","Cerrar traducción");
+  closeMini.textContent="×";
+  closeMini.title="Cerrar";
+  closeMini.style.cssText="background:rgba(255,255,255,0.06);border:none;color:var(--muted);border-radius:8px;padding:4px 8px;font-size:16px;font-weight:800;cursor:pointer;line-height:1;";
+  closeMini.onclick=function(e){e.stopPropagation();hideLecturaTranslation();};
+  actions.appendChild(closeMini);
+  wordRow.appendChild(actions);
   tt.appendChild(wordRow);
   tt.appendChild(mk("p",knownTranslation,"font-size:12px;color:var(--tooltip-accent);font-weight:600;margin-top:2px;"));
   document.body.appendChild(tt);
@@ -4184,14 +4248,15 @@ function renderDrillStep(el, topic){
     const b=document.createElement("button");
     b.style.cssText="text-align:left;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text);border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;transition:background 0.15s,border-color 0.15s;cursor:pointer;";
     b.textContent=opt;
+    b.dataset.option=opt;
     b.onclick=function(){
       if(answered) return; answered=true;
       const ok=opt===d.answer;
-      if(ok){ state.grammar._gramCorrect++; b.style.background="rgba(74,222,128,0.12)"; b.style.borderColor="#4ade80"; b.style.color="#4ade80"; }
-      else { state.grammar._gramMissed.push(d); b.style.background="rgba(248,113,113,0.12)"; b.style.borderColor="#F87171"; b.style.color="#F87171"; }
-      // Mark correct option green
+      if(ok){ state.grammar._gramCorrect++; b.textContent="✓ Correcta: "+opt; b.style.background="rgba(74,222,128,0.12)"; b.style.borderColor="#4ade80"; b.style.color="#4ade80"; }
+      else { state.grammar._gramMissed.push(d); b.textContent="✗ Tu respuesta: "+opt; b.style.background="rgba(248,113,113,0.12)"; b.style.borderColor="#F87171"; b.style.color="#F87171"; }
+      // Mark correct option green with text, not just color
       Array.prototype.slice.call(opts.children).forEach(function(other){
-        if(other.textContent===d.answer && other!==b){ other.style.background="rgba(74,222,128,0.12)"; other.style.borderColor="#4ade80"; other.style.color="#4ade80"; }
+        if(other.dataset.option===d.answer && other!==b){ other.textContent="✓ Correcta: "+d.answer; other.style.background="rgba(74,222,128,0.12)"; other.style.borderColor="#4ade80"; other.style.color="#4ade80"; }
       });
       const ex=mk("p","💡 "+(d.explain||""),"font-size:12px;color:var(--muted);margin-top:10px;font-style:italic;line-height:1.5;font-weight:500;");
       card.appendChild(ex);
@@ -4902,8 +4967,8 @@ document.addEventListener("keydown",function(e){
   }
   if(e.key==="Escape"){
     // 1º cierra el modal abierto; si no hay, corta el TTS
-    var modal=document.querySelector(".modal-overlay");
-    if(modal){ modal.remove(); }
+    var modal=document.querySelector(".modal-overlay,.surface-modal");
+    if(modal){ if(modal._closeModal) modal._closeModal(); else modal.remove(); }
     else if(window.speechSynthesis) window.speechSynthesis.cancel();
   }
 });
