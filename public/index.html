@@ -140,7 +140,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
   -webkit-tap-highlight-color:transparent;
 }
 .nav-item:active .nav-item-icon{transform:scale(0.85);}
-.nav-item-icon{font-size:20px;display:block;line-height:1.2;transition:transform 0.1s;}
+.nav-item-icon{font-size:20px;display:block;line-height:1.2;transition:transform 0.1s;color:var(--text);}
 .nav-item-lbl{font-size:9px;font-weight:600;display:block;margin-top:2px;color:var(--muted);}
 .nav-item.active .nav-item-lbl{color:var(--gold-text);}
 .nav-item.active .nav-item-icon{filter:drop-shadow(0 0 6px rgba(245,166,35,0.35));}
@@ -1392,7 +1392,7 @@ function getStudyRecommendation(){
   var consistencyPct=Math.min(str/21,1)*0.53+Math.min(weekReviews/100,1)*0.47;
   var scores=[
     {key:"vocab", pct:vocabPct, max:400, label:"Vocabulario", icon:"📖", color:"#F5A623",
-     msg: effectiveVocab<400 ? "Te faltan "+(400-effectiveVocab)+" palabras en caja 2+ para B1. Guardá y repasá 10 por d\u00eda." : null},
+     msg: effectiveVocab<400 ? "Para medir avance hacia B1 cuento palabras que ya superaron los primeros repasos (caja 2 o más). Tenés "+effectiveVocab+" / 400; objetivo sugerido: guardar y repasar 10 por día." : null},
     {key:"grammar", pct:gramPct, max:GRAMMAR_TOPICS.length, label:"Gram\u00e1tica", icon:"📐", color:"#A78BFA",
      msg: gramCount===0 ? "Todav\u00eda no practicaste gram\u00e1tica. Hac\u00e9 un drill hoy." : null},
     {key:"srs", pct:srsPct, max:1, label:"Retenci\u00f3n SRS", icon:"🔄", color:"#4ECDC4",
@@ -1611,105 +1611,6 @@ function renderHörverstehenResults(container){
   c.appendChild(retry);
   container.appendChild(c);
   logActivity("drillsDone",1); syncUp();
-}
-
-// ── FALSOS AMIGOS ──
-var _faState=null; // {list:[{de,es,fake}], idx, score, total, wrongs:[], container}
-var FALSE_FRIENDS=[
-  {de:"bekommen",es:"recibir, obtener",fake:"convertirse (to become)"},
-  {de:"Gift",es:"veneno",fake:"regalo (gift)"},
-  {de:"Rat",es:"consejo",fake:"rata (rat)"},
-  {de:"bald",es:"pronto",fake:"calvo (bald)"},
-  {de:"also",es:"entonces, por lo tanto",fake:"también (also)"},
-  {de:"Chef",es:"jefe",fake:"chef de cocina (chef)"},
-  {de:"See",es:"lago",fake:"mar (sea)"},
-  {de:"Boot",es:"barco",fake:"bota (boot)"},
-  {de:"Brand",es:"incendio",fake:"marca (brand)"},
-  {de:"Arm",es:"pobre",fake:"brazo (arm)"},
-  {de:"hell",es:"brillante, claro",fake:"infierno (hell)"},
-  {de:"Mist",es:"estiércol, basura",fake:"niebla (mist)"},
-  {de:"Kind",es:"niño",fake:"amable (kind)"},
-  {de:"Hut",es:"sombrero",fake:"choza (hut)"},
-  {de:"groß",es:"grande, alto",fake:"gordo (gross)"},
-  {de:"apart",es:"llamativo, notable",fake:"aparte (apart)"},
-  {de:"wider",es:"contra",fake:"ancho (wider)"},
-  {de:"Mutter",es:"madre",fake:"múter (made up, suena a madre)"}
-];
-function startFalseFriends(container){
-  container.innerHTML="";
-  var shuffled=FALSE_FRIENDS.slice().sort(function(){return Math.random()-0.5;});
-  _faState={list:shuffled,idx:0,score:0,total:shuffled.length,wrongs:[],container:container};
-  renderFalseFriend(container);
-}
-function renderFalseFriend(container){
-  var fa=_faState;
-  if(fa.idx>=fa.total){renderFalseFriendsResults(container);return;}
-  var item=fa.list[fa.idx];
-  container.innerHTML="";
-  var c=mk("div","","padding:4px 0;");
-  c.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:var(--red-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
-  c.appendChild(mk("p",String(fa.idx+1)+"/"+fa.total,"font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
-  // German word
-  var wordBox=mk("div","","text-align:center;padding:24px 16px;border-radius:16px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);margin-bottom:16px;");
-  wordBox.appendChild(mk("p","¿Qué significa?","font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:6px;"));
-  wordBox.appendChild(mk("p",item.de,"font-size:28px;font-weight:900;color:var(--text);letter-spacing:-0.02em;"));
-  wordBox.appendChild(mk("p","/ˈfalsɔɐ̯ ˈfʁɔʏnt/","font-size:12px;color:var(--muted);font-weight:500;margin-top:4px;"));
-  c.appendChild(wordBox);
-  // Two options
-  var options=[{text:item.es,correct:true},{text:item.fake,correct:false}].sort(function(){return Math.random()-0.5;});
-  options.forEach(function(opt){
-    var btn=document.createElement("button");
-    btn.textContent=opt.correct?"✅ "+opt.text:"❌ "+opt.text;
-    btn.style.cssText="display:block;width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;transition:all 0.15s;";
-    btn.onclick=function(){
-      // Disable both
-      c.querySelectorAll("button").forEach(function(b){b.disabled=true;b.style.opacity="0.6";b.style.cursor="default";});
-      if(opt.correct){
-        btn.style.borderColor="#4ade80";btn.style.background="rgba(74,222,128,0.1)";btn.style.color="#4ade80";
-        fa.score++;
-      } else {
-        btn.style.borderColor="#F87171";btn.style.background="rgba(248,113,113,0.1)";btn.style.color="#F87171";
-        fa.wrongs.push(item);
-        // Show correct
-        options.forEach(function(o){if(o.correct){var btns=c.querySelectorAll("button");btns.forEach(function(b){if(b.textContent.includes(o.text.replace(/^[✅❌]\s*/,""))){b.style.borderColor="#4ade80";b.style.background="rgba(74,222,128,0.1)";b.style.color="#4ade80";}});}});
-      }
-      // Show the fake explanation
-      var expl=mk("p","⚠️ Suena a «"+item.fake.replace(/\(.*\)/,"").trim()+"» pero NO: "+item.de+" significa «"+item.es+"»","font-size:11px;color:var(--muted);font-weight:500;line-height:1.5;margin-top:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.03);");
-      c.appendChild(expl);
-      // Next
-      var nextBtn=mk("button",fa.idx<fa.total-1?"Siguiente →":"Ver resultados →","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(248,113,113,0.12);color:var(--red-text);font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;");
-      nextBtn.onclick=function(){fa.idx++;renderFalseFriend(container);};
-      c.appendChild(nextBtn);
-    };
-    c.appendChild(btn);
-  });
-  container.appendChild(c);
-}
-function renderFalseFriendsResults(container){
-  container.innerHTML="";
-  var fa=_faState;
-  var pct=Math.round(fa.score/fa.total*100);
-  var color=pct>=80?"#4ade80":pct>=50?"#F5A623":"#F87171";
-  var c=mk("div","","text-align:center;padding:16px 0;");
-  c.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:var(--red-text);letter-spacing:2.5px;font-weight:700;margin-bottom:6px;"));
-  c.appendChild(mk("p",fa.score+"/"+fa.total,"font-size:44px;font-weight:900;color:"+color+";line-height:1;font-variant-numeric:tabular-nums;margin-bottom:4px;"));
-  c.appendChild(mk("p",pct>=80?"🎉 Muy bien!":pct>=50?"👍 Regular, seguí practicando":"💪 A prestar atención","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
-  var pBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:6px;height:6px;overflow:hidden;margin:0 20px 14px;");
-  pBar.appendChild(mk("div","","background:"+color+";height:100%;width:"+pct+"%;transition:width 0.3s;border-radius:6px;"));
-  c.appendChild(pBar);
-  // Show wrong items
-  if(fa.wrongs.length){
-    var wHdr=mk("p","Para repasar:","font-size:11px;color:var(--red-text);font-weight:700;margin-bottom:6px;text-align:left;padding:0 20px;");
-    c.appendChild(wHdr);
-    fa.wrongs.forEach(function(w){
-      c.appendChild(mk("p","<b>"+w.de+"</b> → "+w.es+" (no: "+w.fake+")","font-size:12px;color:var(--text);font-weight:500;line-height:1.5;margin-bottom:2px;text-align:left;padding:0 20px;"));
-    });
-  }
-  var retry=mk("button","🔄 Otra ronda","width:100%;padding:14px;border-radius:12px;border:none;background:rgba(248,113,113,0.12);color:var(--red-text);font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;");
-  retry.onclick=function(){startFalseFriends(container);};
-  c.appendChild(retry);
-  container.appendChild(c);
-  logActivity("drillsDone",1);syncUp();
 }
 
 // ── REDEMITTEL ──
@@ -1986,7 +1887,6 @@ function showApp() {
     document.getElementById("app").style.display="flex";
     document.getElementById("user-chip").style.display="flex";
     document.getElementById("user-lbl").textContent=state.app.authUser;
-    setLevel(state.app.level);
     state.app.currentTab="hoy";
     updateBadge(); renderTabs(); showScreen("hoy");
   },250);
@@ -2183,8 +2083,8 @@ function renderHoy(){
   var gk=Object.keys(state.grammar.grammarStats||{}).length;
   var str=computeStreak();
   var breakdown=mk("div","","display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:6px;font-weight:500;");
-  breakdown.appendChild(mk("span","Voc: "+eff+"→B1",""));
-  breakdown.appendChild(mk("span","SRS: "+avgBx.toFixed(1)+"/5",""));
+  breakdown.appendChild(mk("span","Vocabulario útil: "+eff+"/400",""));
+  breakdown.appendChild(mk("span","Promedio SRS: caja "+avgBx.toFixed(1)+"/5",""));
   breakdown.appendChild(mk("span","Gram: "+gk+"/"+GRAMMAR_TOPICS.length,""));
   breakdown.appendChild(mk("span","Racha: "+str+"d",""));
   lvlCard.appendChild(breakdown);
@@ -2328,21 +2228,6 @@ function renderHoy(){
   hvCard.appendChild(mk("p","Comprensión auditiva","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
   hvCard.appendChild(mk("p","Escuchá un diálogo y respondé preguntas","font-size:11px;color:var(--muted);font-weight:500;"));
   el.appendChild(hvCard);
-
-  // ── False Friends card ──
-  var ffCard=document.createElement("div"); ffCard.className="card hover-lift";
-  ffCard.style.cssText="background:linear-gradient(135deg,rgba(248,113,113,0.08),rgba(248,113,113,0.02));border:1px solid rgba(248,113,113,0.2);border-radius:var(--r-lg,16px);padding:18px;cursor:pointer;margin-bottom:10px;";
-  ffCard.onclick=function(){
-    ffCard.style.display="none";
-    var ffContainer=document.createElement("div"); ffContainer.id="ff-container";
-    ffContainer.style.cssText="margin-bottom:10px;";
-    el.insertBefore(ffContainer,el.lastChild);
-    startFalseFriends(ffContainer);
-  };
-  ffCard.appendChild(mk("p","🚫 FALSOS AMIGOS","font-size:10px;color:var(--red-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
-  ffCard.appendChild(mk("p","Palabras que suenan igual pero NO","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
-  ffCard.appendChild(mk("p","bekommen≠become, Gift≠gift, Rat≠rata...","font-size:11px;color:var(--muted);font-weight:500;"));
-  el.appendChild(ffCard);
 
   // ── Redemittel card ──
   var rmCard=document.createElement("div"); rmCard.className="card hover-lift";
@@ -3820,15 +3705,16 @@ function generateLectura(topicId,host){
       var btn=document.createElement("button");
       btn.type="button";
       btn.textContent=w;
-      btn.style.cssText="background:none;border:none;font:inherit;color:inherit;padding:0;cursor:pointer;border-bottom:1px dashed rgba(167,139,250,0.3);transition:all 0.15s;border-radius:2px;display:inline;";
-      btn.onmouseover=function(){this.style.background="rgba(167,139,250,0.12)";};
-      btn.onmouseout=function(){if(state.lectura._lecturaTarget!==i){this.style.background="";}};
+      btn.style.cssText="background:none;border:none;font:inherit;color:var(--text);padding:0;cursor:pointer;border-bottom:1px dashed rgba(167,139,250,0.3);transition:background 0.15s,border-color 0.15s,color 0.15s;border-radius:2px;display:inline;";
+      btn.onmouseover=function(){this.style.background="rgba(167,139,250,0.12)";this.style.color="var(--text)";};
+      btn.onmouseout=function(){if(state.lectura._lecturaTarget!==i){this.style.background="";this.style.color="var(--text)";}};
       btn.onclick=function(e){
         e.stopPropagation();
-        if(state.lectura._lecturaTarget===i){state.lectura._lecturaTarget=-1;this.style.background="";this.style.borderBottomColor="rgba(167,139,250,0.3)";hideLecturaTranslation();return;}
-        if(state.lectura._lecturaTarget>=0){var prev=textEl.querySelectorAll("button")[state.lectura._lecturaTarget];if(prev){prev.style.background="";prev.style.borderBottomColor="rgba(167,139,250,0.3)";}}
+        if(state.lectura._lecturaTarget===i){state.lectura._lecturaTarget=-1;this.style.background="";this.style.color="var(--text)";this.style.borderBottomColor="rgba(167,139,250,0.3)";hideLecturaTranslation();return;}
+        if(state.lectura._lecturaTarget>=0){var prev=textEl.querySelectorAll("button")[state.lectura._lecturaTarget];if(prev){prev.style.background="";prev.style.color="var(--text)";prev.style.borderBottomColor="rgba(167,139,250,0.3)";}}
         state.lectura._lecturaTarget=i;
         this.style.background="rgba(167,139,250,0.2)";
+        this.style.color="var(--text)";
         this.style.borderBottomColor="var(--purple)";
         var trans=wordMap[cleanW.toLowerCase()]||state.lectura._wordCache[cleanW.toLowerCase()]||null;
         // Find sentence containing this word for context
@@ -4642,22 +4528,53 @@ function casosChoose(q,o,opts,btn){
 }
 
 function casosRenderTrad(q,mount){
-  mount.innerHTML='<div style="border:1px solid var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,0.03);">'
-    +'<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">Tradúcelo en tu cabeza</div>'
-    +'<p style="font-size:18px;line-height:1.5;margin-bottom:14px;color:var(--text);">'+q.es+'</p>'
-    +'<button id="cs-rev" style="font-size:14px;font-weight:700;padding:10px 16px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);">Ver respuesta</button>'
-    +'<div id="cs-ans" style="display:none;margin-top:14px;padding:13px;border-radius:12px;background:var(--akk-bg);border:1px solid var(--akk-line);">'
-      +'<div style="font-size:16px;font-weight:600;color:var(--text);">'+q.de+'</div>'
+  mount.innerHTML="";
+  var targetText=q.de.replace(/<[^>]*>/g,"").replace(/\s+/g," ").trim();
+  var targetWords=targetText.replace(/[.!?]$/g,"").split(" ").filter(Boolean);
+  var distractors=["ich","du","wir","der","die","das","ein","eine","einen","dem","den","mit","für","auf","neben","ist","bin","habe","mache","lerne","arbeite","suche","gut","wichtig"];
+  var used={}; targetWords.forEach(function(w){used[w.toLowerCase()]=true;});
+  var extras=distractors.filter(function(w){return !used[w.toLowerCase()];}).slice(0,4);
+  var bank=casosShuffle(targetWords.concat(extras));
+  var chosen=[];
+  var card=mk("div","","border:1px solid var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,0.03);");
+  card.appendChild(mk("div","Ordena las palabras","font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;"));
+  card.appendChild(mk("p",q.es,"font-size:18px;line-height:1.5;margin-bottom:14px;color:var(--text);"));
+  var answer=mk("div","","min-height:48px;border:1px dashed rgba(167,139,250,0.35);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;background:rgba(167,139,250,0.05);");
+  var bankEl=mk("div","","display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;");
+  var fb=mk("div","","display:none;margin-top:12px;padding:13px;border-radius:12px;font-size:14px;");
+  var row=mk("div","","display:flex;gap:8px;margin-top:12px;");
+  var check=mk("button","Comprobar","flex:1;font-size:14px;font-weight:800;padding:10px 16px;border-radius:11px;border:0;background:var(--gold);color:#000;");
+  var clear=mk("button","Limpiar","font-size:14px;font-weight:700;padding:10px 16px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);");
+  function normalize(s){return s.toLowerCase().replace(/[.,!?;:]/g,"").replace(/\s+/g," ").trim();}
+  function makeChip(word,fromAnswer){
+    var b=document.createElement("button"); b.textContent=word;
+    b.style.cssText="font-size:14px;font-weight:800;padding:9px 12px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.12);";
+    b.onclick=function(){
+      if(state.casos.casosAnswered) return;
+      if(fromAnswer){ chosen.splice(chosen.indexOf(word),1); render(); }
+      else { chosen.push(word); b.disabled=true; b.style.opacity="0.35"; renderAnswer(); }
+    };
+    return b;
+  }
+  function renderAnswer(){ answer.innerHTML=""; chosen.forEach(function(w){answer.appendChild(makeChip(w,true));}); }
+  function render(){ bankEl.innerHTML=""; bank.forEach(function(w){var chip=makeChip(w,false); if(chosen.indexOf(w)>=0){chip.disabled=true;chip.style.opacity="0.35";} bankEl.appendChild(chip);}); renderAnswer(); }
+  check.onclick=function(){
+    if(state.casos.casosAnswered) return;
+    var correct=normalize(chosen.join(" "))===normalize(targetWords.join(" "));
+    state.casos.casosAnswered=true;
+    state.casos.casosTotal++; if(correct){state.casos.casosHits++;state.casos.casosStreak++;} else {state.casos.casosStreak=0;}
+    logActivity("drillsDone",1); syncUp(); casosUpdateScore();
+    fb.style.display="block";
+    fb.style.background=correct?"var(--akk-bg)":"rgba(248,113,113,0.08)";
+    fb.style.border="1px solid "+(correct?"var(--akk-line)":"rgba(248,113,113,0.25)");
+    fb.innerHTML='<div style="font-weight:900;color:'+(correct?'#4ade80':'#F87171')+';margin-bottom:6px;">'+(correct?'✓ Correcto':'✗ Casi')+'</div>'
+      +'<div style="font-size:16px;font-weight:700;color:var(--text);line-height:1.5;">'+q.de+'</div>'
       +'<div style="margin-top:6px;font-size:13px;color:var(--text2);line-height:1.5;">'+q.why+'</div>'
-      +'<div style="margin-top:12px;display:flex;gap:8px;">'
-        +'<button id="cs-got" style="font-size:13px;font-weight:700;padding:9px 14px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);">La tenía ✓</button>'
-        +'<button id="cs-miss" style="font-size:13px;font-weight:700;padding:9px 14px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);">Fallé</button>'
-      +'</div></div></div>';
-  document.getElementById("cs-rev").onclick=function(){
-    document.getElementById("cs-ans").style.display="block"; this.style.display="none";
+      +'<button id="cs-nexttrad" style="margin-top:12px;width:100%;font-size:14px;font-weight:800;padding:10px 16px;border-radius:11px;border:0;background:var(--gold);color:#000;">Siguiente →</button>';
+    document.getElementById("cs-nexttrad").onclick=function(){state.casos.casosIdx++;casosNextQ();};
   };
-  document.getElementById("cs-got").onclick=function(){state.casos.casosTotal++;state.casos.casosHits++;state.casos.casosStreak++;logActivity("drillsDone",1);syncUp();casosUpdateScore();state.casos.casosIdx++;casosNextQ();};
-  document.getElementById("cs-miss").onclick=function(){state.casos.casosTotal++;state.casos.casosStreak=0;logActivity("drillsDone",1);syncUp();casosUpdateScore();state.casos.casosIdx++;casosNextQ();};
+  clear.onclick=function(){ if(state.casos.casosAnswered) return; chosen=[]; render(); };
+  card.appendChild(answer); card.appendChild(bankEl); row.appendChild(check); row.appendChild(clear); card.appendChild(row); card.appendChild(fb); mount.appendChild(card); render();
 }
 
 // ── RESUMEN ───────────────────────────────────────────────────────────────────
@@ -4742,6 +4659,7 @@ function renderResumen() {
   // ── 7-Day Activity Chart ──
   const chartCard=document.createElement("div"); chartCard.className="card";
   chartCard.appendChild(mk("p","📈  ACTIVIDAD — 7 DIAS","font-size:10px;color:var(--gold-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  chartCard.appendChild(mk("p","Cada número es un total diario: minutos + flashcards repasadas + drills hechos.","font-size:12px;color:var(--muted);line-height:1.45;margin-top:-6px;margin-bottom:10px;font-weight:500;"));
   const days=[];
   for(let i=6;i>=0;i--){ const k=addDays(todayKey(),-i); days.push({key:k,label:["Do","Lu","Ma","Mi","Ju","Vi","Sa"][new Date(k+"T00:00:00").getDay()]}); }
   const maxAct=Math.max(1,...days.map(function(d){const e=state.session.dailyLog[d.key]; return e?(e.minutes||0)+(e.phrasesReviewed||0)+(e.drillsDone||0):0;}));
@@ -4751,7 +4669,8 @@ function renderResumen() {
     const total=(e.minutes||0)+(e.phrasesReviewed||0)+(e.drillsDone||0);
     const h=Math.max(2,Math.round((total/maxAct)*80));
     const col=mk("div","","display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;");
-    const val=mk("p",String(total),"font-size:10px;color:var(--muted);font-weight:700;min-height:14px;");
+    const val=mk("p",total?total+" pts":"0","font-size:10px;color:var(--muted);font-weight:700;min-height:14px;");
+    val.title="Minutos: "+(e.minutes||0)+" · Flashcards: "+(e.phrasesReviewed||0)+" · Drills: "+(e.drillsDone||0);
     const barEl=mk("div","","border-radius:4px 4px 0 0;height:"+h+"px;width:100%;transition:height 0.3s;background:"+(total>0?"linear-gradient(180deg,#F5A623,rgba(245,166,35,0.4))":"rgba(255,255,255,0.04)")+";");
     const lbl=mk("p",d.label,"font-size:10px;color:"+(d.key===todayKey()?"#F5A623":"var(--muted)")+";font-weight:"+(d.key===todayKey()?"800":"600")+";");
     col.appendChild(val); col.appendChild(barEl); col.appendChild(lbl);
@@ -4765,8 +4684,9 @@ function renderResumen() {
   // ── SRS Distribution ──
   const srsCard=document.createElement("div"); srsCard.className="card";
   srsCard.appendChild(mk("p","📦  DISTRIBUCION SRS","font-size:10px;color:var(--purple-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  srsCard.appendChild(mk("p","SRS es el sistema tipo Anki: mientras más alta la caja, mejor recordás esa flashcard. B0 = nueva/fallada; B5 = muy dominada.","font-size:12px;color:var(--muted);line-height:1.45;margin-top:-6px;margin-bottom:10px;font-weight:500;"));
   const boxColors=["#F87171","#F5A623","#fbbf24","#4ECDC4","#4ade80","#22c55e"];
-  const boxNames=["Nuevo","Basico","Intermedio","Avanzado","Dominado","Maestro"];
+  const boxNames=["Nueva o fallada","Primer repaso","Ya empieza a pegar","Fuerte","Dominada","Maestra"];
   const totalCards=state.session.saved.length||1;
   for(let b=0;b<=5;b++){
     const count=state.session.saved.filter(function(p){return p.box===b;}).length;
@@ -4780,27 +4700,41 @@ function renderResumen() {
     const barFill=mk("div","","background:"+boxColors[b]+";height:100%;width:"+pct+"%;transition:width 0.4s;border-radius:4px;");
     barBg.appendChild(barFill);
     row.appendChild(barBg);
-    row.appendChild(mk("span",count+" ("+pct+"%)","font-size:11px;color:var(--muted);font-weight:600;min-width:60px;text-align:right;"));
+    row.appendChild(mk("span",count+" tarjetas · "+pct+"%","font-size:11px;color:var(--muted);font-weight:600;min-width:92px;text-align:right;"));
+    row.appendChild(mk("span",boxNames[b],"font-size:10px;color:var(--dim);font-weight:600;min-width:92px;text-align:left;"));
     srsCard.appendChild(row);
   }
   if(!state.session.saved.length) srsCard.appendChild(mk("p","Sin datos","font-size:12px;color:var(--muted);margin-top:4px;"));
   el.appendChild(srsCard);
 
   // ── Top Lapses ──
-  const topLapsed=[...state.session.saved].filter(function(p){return p.lapses>0;}).sort(function(a,b){return b.lapses-a.lapses;}).slice(0,5);
+  const allLapsed=[...state.session.saved].filter(function(p){return p.lapses>0;}).sort(function(a,b){return b.lapses-a.lapses;});
+  var showAllLapsed=false;
   const lapsCard=document.createElement("div"); lapsCard.className="card";
   lapsCard.appendChild(mk("p","⚠️  MAS FALLADAS","font-size:10px;color:var(--red-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
-  if(topLapsed.length){
-    topLapsed.forEach(function(p,i){
-      const row=mk("div","","display:flex;align-items:center;gap:10px;padding:8px 0;"+(i<topLapsed.length-1?"border-bottom:1px solid rgba(255,255,255,0.04);":""));
+  const lapsList=mk("div","","");
+  lapsCard.appendChild(lapsList);
+  function renderLapsedList(){
+    lapsList.innerHTML="";
+    var list=showAllLapsed?allLapsed:allLapsed.slice(0,5);
+    list.forEach(function(p,i){
+      const row=mk("div","","display:flex;align-items:center;gap:10px;padding:8px 0;"+(i<list.length-1?"border-bottom:1px solid rgba(255,255,255,0.04);":""));
       row.appendChild(mk("span",String(i+1),"font-size:13px;color:var(--muted);font-weight:700;min-width:18px;"));
       const txt=mk("div","","flex:1;");
       txt.appendChild(mk("p",p.de,"font-size:14px;color:var(--text);font-weight:700;"));
       txt.appendChild(mk("p",p.es,"font-size:12px;color:var(--muted);margin-top:1px;"));
       row.appendChild(txt);
-      row.appendChild(mk("span",p.lapses+"x","font-size:16px;font-weight:900;color:var(--red-text);"));
-      lapsCard.appendChild(row);
+      row.appendChild(mk("span",(p.lapses||0)+" fallos","font-size:13px;font-weight:900;color:var(--red-text);white-space:nowrap;"));
+      lapsList.appendChild(row);
     });
+  }
+  if(allLapsed.length){
+    renderLapsedList();
+    if(allLapsed.length>5){
+      var toggleLapses=mk("button","Ver todas ("+allLapsed.length+")","width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1px solid rgba(248,113,113,0.22);background:rgba(248,113,113,0.06);color:var(--red-text);font-size:13px;font-weight:800;cursor:pointer;");
+      toggleLapses.onclick=function(){showAllLapsed=!showAllLapsed;this.textContent=showAllLapsed?"Ver solo top 5":"Ver todas ("+allLapsed.length+")";renderLapsedList();};
+      lapsCard.appendChild(toggleLapses);
+    }
   } else {
     lapsCard.appendChild(mk("p","Todavia no has fallado ninguna. ¡Sigue asi!","font-size:13px;color:var(--muted);line-height:1.5;"));
   }
@@ -4897,43 +4831,25 @@ function getWeekKey(){
 function renderInsight(host){
   host.innerHTML="";
   host.style.maxHeight="2000px";
-  var week=getWeekKey(), cacheKey="dl_insight_"+week;
-  var cached=null;
-  try{ cached=JSON.parse(localStorage.getItem(cacheKey)||"null"); }catch(e){}
-  if(cached){
-    host.innerHTML=cached.html;
-    return;
-  }
-  host.appendChild(skelCard(3));
-  // Gather stats
+  var week=getWeekKey();
   var topLapses=[...state.session.saved].filter(function(p){return p.lapses>0;}).sort(function(a,b){return b.lapses-a.lapses;}).slice(0,5);
   var gStats=state.session.saved.filter(function(p){return (p.lapses||0)>=2||(p.box||0)<=1;}).slice(0,8);
   var gram=state.grammar.grammarStats||{};
   var gramKeys=Object.keys(gram);
-  var gramInfo=gramKeys.length?gramKeys.map(function(k){return k+":"+(gram[k].right||0)+"/"+(gram[k].wrong||0);}).join(", "):"none practiced";
+  var weakestGrammar=null, weakestRate=1;
+  gramKeys.forEach(function(k){var s=gram[k];var total=(s.right||0)+(s.wrong||0);if(total){var rate=(s.right||0)/total;if(rate<weakestRate){weakestRate=rate;weakestGrammar=k;}}});
   var wDays=0;
-  for(var i=6;i>=0;i--){ var k=addDays(todayKey(),-i); if(state.session.dailyLog[k]&&(state.session.dailyLog[k].minutes||state.session.dailyLog[k].phrasesReviewed||state.session.dailyLog[k].drillsDone)) wDays++; }
-  var lapsesInfo=topLapses.length?topLapses.slice(0,3).map(function(p){return p.de+" ("+p.es+") x"+p.lapses;}).join(" | "):"none";
-  var weakInfo=gStats.length?gStats.slice(0,4).map(function(p){return p.de+" → "+p.es;}).join(" | "):"none";
-  var system="You are a German teacher giving a weekly progress report. Analyze the data, be honest and encouraging. Give ONE actionable tip for next week. Reply ONLY with valid JSON, no markdown: {learned:\"...\",error:\"...\",tip:\"...\"}. Keep each field under 80 chars.";
-  var data="Week stats: "+wDays+"/7 days active. Total saved: "+state.session.saved.length+". Streak: "+computeStreak()+"d. Weak phrases (top lapses): "+lapsesInfo+". Struggling words: "+weakInfo+". Grammar: "+gramInfo+". Level: "+state.app.level+".";
-  ai(system,[{role:"user",content:data}],600).then(function(txt){
-    try{
-      var clean=txt.replace(/```json|```/g,"").trim();
-      var m=clean.match(/\{[\s\S]*\}/);
-      var obj=JSON.parse(m?m[0]:clean);
-      if(!obj||!obj.learned) throw "bad";
-      var htmlStr="<div style='padding:10px 0;'>"+
-        "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--teal-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>📖 Aprendiste</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+obj.learned+"</p></div>"+
-        "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>⚠️ Error recurrente</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+obj.error+"</p></div>"+
-        "<div style='background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:12px;padding:12px;'><p style='font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>💡 Consejo</p><p style='font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;'>"+obj.tip+"</p></div>"+
-        "<p style='font-size:10px;color:var(--dim);margin-top:12px;'>Semana del "+week+" · Actualizado hoy</p></div>";
-      try{ localStorage.setItem(cacheKey,JSON.stringify({html:htmlStr,ts:Date.now()})); }catch(e){}
-      host.innerHTML=htmlStr;
-    } catch(e){
-      host.innerHTML="<p style='color:var(--muted);text-align:center;padding:12px;font-size:13px;'>Error generando insight. Intenta de nuevo.</p>";
-    }
-  });
+  var weekReviews=0, weekDrills=0, weekMinutes=0;
+  for(var i=6;i>=0;i--){ var k=addDays(todayKey(),-i); var e=state.session.dailyLog[k]||{}; if(e.minutes||e.phrasesReviewed||e.drillsDone) wDays++; weekMinutes+=(e.minutes||0); weekReviews+=(e.phrasesReviewed||0); weekDrills+=(e.drillsDone||0); }
+  var learned="Esta semana estuviste activo "+wDays+" de 7 días: "+weekMinutes+" min, "+weekReviews+" flashcards y "+weekDrills+" drills.";
+  var error=topLapses.length?"La tarjeta que más se repite es “"+topLapses[0].de+"” ("+(topLapses[0].lapses||0)+" fallos).":"Todavía no hay una palabra claramente problemática.";
+  if(weakestGrammar) error+=" Gramática más débil: "+weakestGrammar+".";
+  var tip=topLapses.length?"Hoy repasá primero las más falladas y después hacé 1 ronda corta de gramática.":"Guardá 5 frases nuevas y hacé una ronda de flashcards para crear historial real.";
+  host.innerHTML="<div style='padding:10px 0;'>"+
+    "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--teal-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>📖 Qué hiciste</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+learned+"</p></div>"+
+    "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>⚠️ Qué conviene reforzar</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+error+"</p></div>"+
+    "<div style='background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:12px;padding:12px;'><p style='font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>💡 Próximo paso</p><p style='font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;'>"+tip+"</p></div>"+
+    "<p style='font-size:10px;color:var(--dim);margin-top:12px;'>Semana "+week+" · Datos locales de los últimos 7 días</p></div>";
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
