@@ -603,6 +603,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 @keyframes spin { to { transform:rotate(360deg); } }
 @keyframes skeletonPulse { 0%,100%{opacity:.35} 50%{opacity:.7} }
 @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 /* ── CASOS (4-case trainer, dark-adapted) ───────────────────────────────────── */
 /* color = función. nom=teal, akk=green, dat=gold, gen=purple */
@@ -3573,7 +3574,7 @@ async function runPostChatAnalysis(){
 }
 
 // ── LECTURA ───────────────────────────────────────────────────────────────────
-state.lectura._lecturaWords=[]; state.lectura._lecturaTarget=-1;
+state.lectura._lecturaWords=[]; state.lectura._lecturaTarget=-1; state.lectura._wordCache={};
 function renderLectura(){
   const el=document.getElementById("s-lectura"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
@@ -3638,7 +3639,7 @@ function generateLectura(topicId,host){
         state.lectura._lecturaTarget=i;
         span.style.background="rgba(167,139,250,0.2)";
         span.style.borderBottomColor="var(--purple)";
-        var trans=wordMap[cleanW.toLowerCase()]||null;
+        var trans=wordMap[cleanW.toLowerCase()]||state.lectura._wordCache[cleanW.toLowerCase()]||null;
         // Find sentence containing this word for context
         var contextSentence="";
         var sentences=obj.text.split(/[.!?]+/);
@@ -3679,47 +3680,106 @@ function generateLectura(topicId,host){
     ta.appendChild(retry);
   });
 }
+function showLecturaTranslationManual(rawWord,host,contextSentence){
+  var popup=mk("div","","background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:14px;");
+  popup.id="lectura-popup";
+  popup.appendChild(mk("p","📖 "+rawWord,"font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;"));
+  var askWrap=mk("div","","margin-bottom:10px;");
+  askWrap.appendChild(mk("p","Escribe la traduccion:","font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;"));
+  var inp=document.createElement("input"); inp.placeholder="Traduccion en español...";
+  inp.style.cssText="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;font-weight:500;";
+  inp.onfocus=function(){this.style.borderColor="rgba(167,139,250,0.6)";};
+  inp.onblur=function(){this.style.borderColor="rgba(167,139,250,0.3)";};
+  askWrap.appendChild(inp); popup.appendChild(askWrap);
+  if(contextSentence) popup.appendChild(mk("p","📝 "+contextSentence,"font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;font-weight:500;"));
+  var btnRow=mk("div","","display:flex;gap:8px;");
+  var saveBtn=document.createElement("button");
+  saveBtn.style.cssText="flex:1;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:#A78BFA;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;";
+  saveBtn.textContent="💾 Guardar";
+  var doSaveManual=function(){
+    var es=inp.value.trim();
+    if(!es){showToast("Escribi la traduccion","error");return;}
+    var tip=contextSentence||"lectura";
+    var phrase=ensureSrsFields({de:rawWord,es:es,tip:tip,source:"lectura"});
+    if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
+      state.session.saved.push(phrase);updateBadge();syncUp();
+      saveBtn.textContent="✓ Guardada";saveBtn.style.color="#4ade80";saveBtn.style.borderColor="rgba(74,222,128,0.3)";saveBtn.disabled=true;
+      showToast("Palabra guardada en flashcards");
+    } else {saveBtn.textContent="Ya guardada";saveBtn.disabled=true;}
+  };
+  saveBtn.onclick=doSaveManual;
+  inp.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();doSaveManual();}};
+  btnRow.appendChild(saveBtn);
+  var dismissBtn=document.createElement("button");
+  dismissBtn.textContent="✕ Cerrar";
+  dismissBtn.style.cssText="background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);border-radius:999px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;";
+  dismissBtn.onclick=function(){hideLecturaTranslation();if(state.lectura._lecturaTarget>=0){state.lectura._lecturaTarget=-1;}};
+  btnRow.appendChild(dismissBtn);
+  popup.appendChild(btnRow);
+  var textArea=document.getElementById("lectura-text");
+  if(textArea) textArea.appendChild(popup);
+  setTimeout(function(){inp.focus();},100);
+}
 function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextSentence,spanEl){
   hideLecturaTranslation();
   if(!knownTranslation){
-    var popup=mk("div","","background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:14px;");
-    popup.id="lectura-popup";
-    popup.appendChild(mk("p","📖 "+rawWord,"font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;"));
-    var askWrap=mk("div","","margin-bottom:10px;");
-    askWrap.appendChild(mk("p","Escribe la traduccion:","font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;"));
-    var inp=document.createElement("input"); inp.placeholder="Traduccion en español...";
-    inp.style.cssText="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;font-weight:500;";
-    inp.onfocus=function(){this.style.borderColor="rgba(167,139,250,0.6)";};
-    inp.onblur=function(){this.style.borderColor="rgba(167,139,250,0.3)";};
-    askWrap.appendChild(inp); popup.appendChild(askWrap);
-    if(contextSentence) popup.appendChild(mk("p","📝 "+contextSentence,"font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;font-weight:500;"));
-    var btnRow=mk("div","","display:flex;gap:8px;");
-    var saveBtn=document.createElement("button");
-    saveBtn.style.cssText="flex:1;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:#A78BFA;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;";
-    saveBtn.textContent="💾 Guardar";
-    var doSaveManual=function(){
-      var es=inp.value.trim();
-      if(!es){showToast("Escribi la traduccion","error");return;}
-      var tip=contextSentence||"lectura";
-      var phrase=ensureSrsFields({de:rawWord,es:es,tip:tip,source:"lectura"});
-      if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
-        state.session.saved.push(phrase);updateBadge();syncUp();
-        saveBtn.textContent="✓ Guardada";saveBtn.style.color="#4ade80";saveBtn.style.borderColor="rgba(74,222,128,0.3)";saveBtn.disabled=true;
-        showToast("Palabra guardada en flashcards");
-      } else {saveBtn.textContent="Ya guardada";saveBtn.disabled=true;}
-    };
-    saveBtn.onclick=doSaveManual;
-    inp.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();doSaveManual();}};
-    btnRow.appendChild(saveBtn);
-    var dismissBtn=document.createElement("button");
-    dismissBtn.textContent="✕ Cerrar";
-    dismissBtn.style.cssText="background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);border-radius:999px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;";
-    dismissBtn.onclick=function(){hideLecturaTranslation();if(state.lectura._lecturaTarget>=0){state.lectura._lecturaTarget=-1;}};
-    btnRow.appendChild(dismissBtn);
-    popup.appendChild(btnRow);
-    var textArea=document.getElementById("lectura-text");
-    if(textArea) textArea.appendChild(popup);
-    setTimeout(function(){inp.focus();},100);
+    // Floating tooltip with AI translation (same style as known words)
+    var tt=document.createElement("div"); tt.id="lectura-tt";
+    var rect=spanEl.getBoundingClientRect();
+    var top=rect.top-52, left=rect.left;
+    if(top<8){top=rect.bottom+10;}
+    if(left+180>window.innerWidth) left=window.innerWidth-190;
+    if(left<8) left=8;
+    tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:#2a1f4a;border:1px solid rgba(167,139,250,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
+    var wordRow=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
+    wordRow.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
+    var spinner=mk("span","⏳","font-size:14px;color:var(--muted);animation:pulse 0.8s infinite;");
+    wordRow.appendChild(spinner);
+    tt.appendChild(wordRow);
+    var statusLine=mk("p","Traduciendo...","font-size:11px;color:var(--muted);font-weight:500;margin-top:2px;");
+    tt.appendChild(statusLine);
+    document.body.appendChild(tt);
+    setTimeout(function(){window.addEventListener("scroll",function doh(){hideLecturaTranslation();window.removeEventListener("scroll",doh);});},50);
+    tt.onclick=function(){hideLecturaTranslation();};
+    // Call AI to translate this word in context
+    var ctx=contextSentence||rawWord;
+    var cacheKey=cleanWord.toLowerCase();
+    ai("You are a German-Spanish dictionary. Translate the German word to Spanish in the context of the given sentence. Reply ONLY with valid JSON, no markdown.",
+      [{role:"user",content:'Translate the German word "'+rawWord+'" in the context of this sentence: "'+ctx+'". Format: {"es":"Spanish translation","base":"dictionary/base form of the word (e.g. infinitive for verbs, nominative for nouns)"}'}],150)
+      .then(function(reply){
+        var m=reply.replace(/```json|```/g,"").match(/\{[\s\S]*\}/);
+        if(!m) throw new Error("no JSON");
+        var obj=JSON.parse(m[0]);
+        if(!obj.es) throw new Error("empty translation");
+        var es=obj.es, base=obj.base||rawWord;
+        // Cache for future taps
+        state.lectura._wordCache[cacheKey]=es;
+        // Update tooltip content
+        tt.innerHTML="";
+        var row2=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
+        row2.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
+        var starBtn=document.createElement("button");
+        starBtn.innerHTML="&#9733;";
+        starBtn.style.cssText="background:rgba(167,139,250,0.2);border:none;color:#A78BFA;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;";
+        starBtn.title="Guardar en flashcards";
+        var doSave=function(){
+          var phrase=ensureSrsFields({de:base,es:es,tip:ctx||"lectura",source:"lectura"});
+          if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
+            state.session.saved.push(phrase);updateBadge();syncUp();
+            starBtn.innerHTML="&#10003;";starBtn.style.color="#4ade80";starBtn.disabled=true;
+            showToast("Guardada: "+es,"success");
+          } else {showToast("Ya estaba guardada","success");}
+        };
+        starBtn.onclick=function(e){e.stopPropagation();doSave();};
+        row2.appendChild(starBtn);
+        tt.appendChild(row2);
+        tt.appendChild(mk("p",es,"font-size:12px;color:#A78BFA;font-weight:600;margin-top:2px;"));
+      })
+      .catch(function(){
+        // Fallback: manual input popup
+        tt.remove();
+        showLecturaTranslationManual(rawWord,host,contextSentence);
+      });
     return;
   }
   // Floating tooltip for known translations
