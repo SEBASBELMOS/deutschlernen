@@ -146,6 +146,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 }
 .sheet-btn:hover{background:rgba(255,255,255,0.08);}
 .sheet-btn:active{transform:scale(0.98);background:rgba(255,255,255,0.1);}
+.sheet-btn.active{color:var(--gold);box-shadow:inset 3px 0 0 var(--gold);font-weight:800;}
 .light-mode .sheet-btn{background:rgba(0,0,0,0.04);}
 .light-mode .sheet-btn:hover{background:rgba(0,0,0,0.08);}
 .light-mode #sheet-panel{border:1px solid rgba(0,0,0,0.08);}
@@ -1948,7 +1949,7 @@ function openNavSheet(groupId){
     // Find the screen label from TABS
     var label=sid;
     for(var j=0;j<TABS.length;j++) if(TABS[j].id===sid){label=TABS[j].label;break;}
-    var btn=document.createElement("button"); btn.className="sheet-btn";
+    var btn=document.createElement("button"); btn.className="sheet-btn"+(sid===state.app.currentTab?" active":"");
     btn.textContent=label;
     btn.onclick=function(){
       hideNavSheet();
