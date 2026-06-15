@@ -140,10 +140,10 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
   -webkit-tap-highlight-color:transparent;
 }
 .nav-item:active .nav-item-icon{transform:scale(0.85);}
-.nav-item-icon{font-size:20px;display:block;line-height:1.2;transition:transform 0.1s;color:var(--text);}
+.nav-item-icon{font-size:20px;display:flex;align-items:center;justify-content:center;line-height:1.2;transition:transform 0.1s;color:var(--text);min-height:24px;}
 .nav-item-lbl{font-size:9px;font-weight:600;display:block;margin-top:2px;color:var(--muted);}
 .nav-item.active .nav-item-lbl{color:var(--gold-text);}
-.nav-item.active .nav-item-icon{filter:drop-shadow(0 0 6px rgba(245,166,35,0.35));}
+.nav-item.active .nav-item-icon{color:var(--gold-text);filter:drop-shadow(0 0 6px rgba(245,166,35,0.35));}
 /* ── BOTTOM SHEET ────────────────────────────────────────────────────────── */
 #sheet-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,0.5);
@@ -173,6 +173,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .sheet-btn:hover{background:rgba(255,255,255,0.08);}
 .sheet-btn:active{transform:scale(0.98);background:rgba(255,255,255,0.1);}
 .sheet-btn.active{color:var(--gold-text);box-shadow:inset 3px 0 0 var(--gold);font-weight:800;}
+.sheet-btn .dl-ico{margin-right:9px;vertical-align:-4px;}
 .light-mode .sheet-btn{background:rgba(0,0,0,0.04);}
 .light-mode .sheet-btn:hover{background:rgba(0,0,0,0.08);}
 .light-mode #sheet-panel{border:1px solid rgba(0,0,0,0.08);}
@@ -362,6 +363,21 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .icon-btn { background:none; border:none; font-size:18px; padding:2px 4px; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; transition:transform 0.15s, opacity 0.15s; }
 .icon-btn:hover { opacity:0.75; transform:scale(1.15); }
 .icon-btn:active { transform:scale(.9); }
+.dl-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle;color:currentColor;flex-shrink:0;}
+.dl-ico svg{display:block;width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.dl-ico.solid svg .ico-fill{fill:currentColor;stroke:currentColor;}
+.label-with-icon{display:inline-flex;align-items:center;gap:8px;}
+.lang-badge{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:24px;border-radius:999px;border:1px solid currentColor;font-size:10px;font-weight:900;letter-spacing:1.5px;line-height:1;}
+.vocab-pack-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;}
+.vocab-pack-card{position:relative;overflow:hidden;text-align:left;padding:16px;border-radius:20px;min-height:190px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:transform var(--d-fast) var(--ease-out),box-shadow var(--d-base),border-color var(--d-base);}
+.vocab-pack-card:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(0,0,0,0.28);}
+.vocab-pack-card:active{transform:scale(0.98);}
+.vocab-pack-icon{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#071016;box-shadow:inset 0 -4px 0 rgba(0,0,0,0.14),0 8px 18px rgba(0,0,0,0.22);}
+.vocab-pack-progress{height:7px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;margin-top:auto;}
+.vocab-pack-progress span{display:block;height:100%;border-radius:inherit;background:var(--pack-accent);transition:width var(--d-base) var(--ease-out);}
+.vocab-pack-cta{border:none;border-radius:14px;padding:10px 12px;font-size:12px;font-weight:900;cursor:pointer;color:#071016;background:var(--pack-accent);box-shadow:0 6px 18px rgba(0,0,0,0.18);transition:transform var(--d-fast) var(--ease-out),filter var(--d-fast);}
+.vocab-pack-cta:active{transform:scale(0.97);}
+@media (max-width:430px){.vocab-pack-grid{gap:10px}.vocab-pack-card{padding:14px;min-height:184px}.vocab-pack-icon{width:52px;height:52px}}
 
 /* ── TOPIC GRID ──────────────────────────────────────────────────────────── */
 .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -1151,6 +1167,56 @@ function mk(tag,text,style) {
   return el;
 }
 
+function ico(name,size,color) {
+  var paths={
+    home:'<path d="M3 10.8 12 3l9 7.8"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
+    chat:'<path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v6A3.5 3.5 0 0 1 16.5 15H10l-5 5v-5.8A3.5 3.5 0 0 1 4 11.5z"/><path d="M8 7.5h8M8 11h5"/>',
+    grammar:'<path d="M5 4h10a4 4 0 0 1 4 4v12H8a3 3 0 0 1-3-3z"/><path d="M8 4v13a3 3 0 0 0 3 3"/><path d="M9 8h6M9 12h4"/>',
+    cards:'<path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+    star:'<path class="ico-fill" d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/>',
+    save:'<path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4"/><path d="M8 20v-6h8v6"/>',
+    gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-3v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1A1.7 1.7 0 0 0 5 14.6a1.7 1.7 0 0 0-1.5-1H3v-3h.5A1.7 1.7 0 0 0 5 9.4a1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V4h3v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.1 2.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.5v3h-.5a1.7 1.7 0 0 0-1.5 1.6z"/>',
+    table:'<path d="M4 5h16v14H4z"/><path d="M4 10h16M4 15h16M10 5v14"/>',
+    package:'<path d="M12 3 3.5 7.5 12 12l8.5-4.5z"/><path d="M3.5 7.5V16L12 21l8.5-5V7.5"/><path d="M12 12v9"/>',
+    plane:'<path d="M3 11.5 21 4l-7.5 17-2.5-7.5z"/><path d="m21 4-10 9.5"/>',
+    utensils:'<path d="M7 3v8M4.5 3v8M9.5 3v8M4.5 11h5L8 21H6z"/><path d="M16 3c2 2.2 2 6.2 0 8.5V21"/>',
+    laptop:'<path d="M6 5h12v9H6z"/><path d="M3 18h18"/><path d="m7 14-2 4h14l-2-4"/>',
+    file:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M10 12h5M10 16h5"/>',
+    book:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 1 4 16.5z"/><path d="M4 16.5A2.5 2.5 0 0 1 6.5 14H20"/>',
+    target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+    pen:'<path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z"/><path d="m14 7 3 3"/>',
+    headphones:'<path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2z"/><path d="M20 13v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"/>',
+    scale:'<path d="M12 3v18M5 6h14M6 6l-3 6h6zM18 6l-3 6h6z"/>',
+    link:'<path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/>',
+    chart:'<path d="M4 19V5"/><path d="M4 19h17"/><path d="M8 16v-5M13 16V8M18 16v-9"/>'
+  };
+  var span=document.createElement("span");
+  span.className="dl-ico"+(name==="star"?" solid":"");
+  span.style.fontSize=(size||24)+"px";
+  if(color) span.style.color=color;
+  span.setAttribute("aria-hidden","true");
+  span.innerHTML='<svg viewBox="0 0 24 24">'+(paths[name]||paths.star)+'</svg>';
+  return span;
+}
+
+function iconLabel(iconName,label,size,color){
+  var wrap=document.createElement("span"); wrap.className="label-with-icon";
+  wrap.appendChild(ico(iconName,size||16,color));
+  wrap.appendChild(document.createTextNode(label));
+  return wrap;
+}
+
+function langBadge(code,color){
+  var b=document.createElement("span"); b.className="lang-badge"; b.textContent=code; b.style.color=color; return b;
+}
+
+function setSaveIcon(btn,saved,label){
+  btn.innerHTML="";
+  btn.appendChild(ico("star",16,saved?"var(--gold)":"currentColor"));
+  if(label) btn.appendChild(document.createTextNode(" "+label));
+}
+
 function getFocusableEls(root){
   return Array.prototype.slice.call(root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(function(el){
     return !el.disabled && el.offsetParent!==null;
@@ -1198,7 +1264,8 @@ function showSaveCardModal(de, es, anchor) {
   box.setAttribute("role","dialog");
   box.setAttribute("aria-modal","true");
   box.setAttribute("aria-label","Guardar como flashcard");
-  var title=mk("p","💾  Guardar como flashcard","font-size:14px;font-weight:800;color:var(--gold-text);margin-bottom:16px;");
+  var title=mk("p","","font-size:14px;font-weight:800;color:var(--gold-text);margin-bottom:16px;");
+  title.appendChild(iconLabel("star","Guardar como flashcard",16));
   box.appendChild(title);
   var deLbl=mk("p","Aleman","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
   var deInp=document.createElement("input");
@@ -1339,7 +1406,9 @@ function showVocabPack(host, title, icon, vocabList, categoryName){
   host.innerHTML="";
   var c=mk("div","","padding:2px 0;");
   var topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;");
-  topRow.appendChild(mk("p",icon+" "+title,"font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;"));
+  var packTitle=mk("p","","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:800;text-transform:uppercase;");
+  packTitle.appendChild(iconLabel(icon,title,15));
+  topRow.appendChild(packTitle);
   var saveAll=mk("button","Guardar todas ("+vocabList.length+")","padding:6px 12px;border-radius:8px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.06);color:#F5A623;font-size:11px;font-weight:700;cursor:pointer;");
   var savedCount=0;
   saveAll.onclick=function(){
@@ -1363,12 +1432,13 @@ function showVocabPack(host, title, icon, vocabList, categoryName){
     esLeft.appendChild(mk("p",item.es,"font-size:12px;color:var(--muted);font-weight:500;"));
     if(item.tip) esLeft.appendChild(mk("p","\ud83d\udca1 "+item.tip,"font-size:10px;color:var(--dim);font-weight:500;margin-top:1px;"));
     esRow.appendChild(esLeft);
-    var starBtn=mk("button","\u2606","font-size:18px;background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);line-height:1;");
+    var starBtn=mk("button","","font-size:18px;background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);line-height:1;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;");
+    setSaveIcon(starBtn,state.session.saved.some(function(x){return x.de===item.de;}));
     starBtn.title="Guardar palabra";
     starBtn.onclick=function(){
       if(state.session.saved.some(function(x){return x.de===item.de;})){
         showToast("Ya existe","info");
-        starBtn.textContent="\u2605";starBtn.style.color="var(--gold)";
+        setSaveIcon(starBtn,true);starBtn.style.color="var(--gold)";
         return;
       }
       var phr=ensureSrsFields({de:item.de,es:item.es,tip:item.tip||"",source:"vocab-pack",category:categoryName});
@@ -1376,7 +1446,7 @@ function showVocabPack(host, title, icon, vocabList, categoryName){
       logActivity("phrasesReviewed",1);
       updateBadge();
       syncUp();
-      starBtn.textContent="\u2605";starBtn.style.color="var(--gold)";
+      setSaveIcon(starBtn,true);starBtn.style.color="var(--gold)";
       showToast("Guardada: "+item.de,"success");
     };
     esRow.appendChild(starBtn);
@@ -1796,12 +1866,13 @@ function renderRedemittelPhrases(host){
     play.onclick=function(){speak(ph.de);};
     row.appendChild(play);
     // Save button
-    var save=mk("button","💾 Guardar","padding:6px 12px;border-radius:8px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.06);color:#F5A623;font-size:11px;font-weight:700;cursor:pointer;");
+    var save=mk("button","","padding:6px 12px;border-radius:8px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.06);color:#F5A623;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;");
+    setSaveIcon(save,false,"Guardar");
     save.onclick=function(){
       var phr=ensureSrsFields({de:ph.de,es:ph.es,tip:r.topic.label.replace(/[^\w\s]/g,"").trim(),source:"redemittel"});
       if(!state.session.saved.some(function(x){return x.de===phr.de;})){
         state.session.saved.push(phr);logActivity("phrasesReviewed",1);syncUp();
-        save.textContent="✅ Guardada";save.style.opacity="0.5";save.disabled=true;
+        save.textContent="✓ Guardada";save.style.opacity="0.5";save.disabled=true;
         showToast("Guardada en flashcards","success");
       } else {showToast("Ya existe","info");}
     };
@@ -2057,28 +2128,28 @@ function updateBadge() {
 
 // ── Navigation (bottom nav + sheet) ─────────────────────────────────────
 const TABS=[
-  {id:"hoy",      label:"🏠 Hoy"},
-  {id:"frases",   label:"📖 Frases"},
-  {id:"conversar",label:"🗣️ Conversar"},
-  {id:"corrigeme",label:"✏️ Corrigeme"},
-  {id:"noentendi",label:"🤔 No entendi"},
-  {id:"lectura",  label:"📚 Lectura"},
-  {id:"dictado",  label:"🎧 Dictado"},
-  {id:"gramatica",label:"📐 Gramatica"},
-  {id:"casos",    label:"⚖️ Casos"},
-  {id:"genero",   label:"🎯 Genero"},
-  {id:"conectores",label:"🔗 Conectores"},
-  {id:"flashcards",label:"🃏 Flashcards"},
-  {id:"guardadas",label:"⭐ Guardadas"},
-  {id:"resumen",  label:"📊 Resumen"},
-  {id:"config",   label:"⚙️ Ajustes"}
+  {id:"hoy",      label:"Hoy", icon:"home"},
+  {id:"frases",   label:"Frases", icon:"book"},
+  {id:"conversar",label:"Conversar", icon:"chat"},
+  {id:"corrigeme",label:"Corrigeme", icon:"pen"},
+  {id:"noentendi",label:"No entendi", icon:"target"},
+  {id:"lectura",  label:"Lectura", icon:"book"},
+  {id:"dictado",  label:"Dictado", icon:"headphones"},
+  {id:"gramatica",label:"Gramatica", icon:"grammar"},
+  {id:"casos",    label:"Casos", icon:"scale"},
+  {id:"genero",   label:"Genero", icon:"target"},
+  {id:"conectores",label:"Conectores", icon:"link"},
+  {id:"flashcards",label:"Flashcards", icon:"cards"},
+  {id:"guardadas",label:"Guardadas", icon:"star"},
+  {id:"resumen",  label:"Resumen", icon:"chart"},
+  {id:"config",   label:"Ajustes", icon:"gear"}
 ];
 const NAV_GROUPS=[
-  {id:"hoy",       label:"Hoy",        icon:"🏠", screens:["hoy"]},
-  {id:"practicar", label:"Practicar",  icon:"🗣️", screens:["conversar","corrigeme","noentendi","dictado","lectura"]},
-  {id:"gramatica", label:"Gramática",  icon:"📐", screens:["gramatica","casos","genero","conectores"]},
-  {id:"vocabulario",label:"Vocabulario",icon:"🃏", screens:["frases","flashcards","guardadas"]},
-  {id:"mas",       label:"Más",        icon:"⋯", screens:["resumen","config"]}
+  {id:"hoy",       label:"Hoy",        icon:"home", screens:["hoy"]},
+  {id:"practicar", label:"Practicar",  icon:"chat", screens:["conversar","corrigeme","noentendi","dictado","lectura"]},
+  {id:"gramatica", label:"Gramática",  icon:"grammar", screens:["gramatica","casos","genero","conectores"]},
+  {id:"vocabulario",label:"Vocabulario",icon:"cards", screens:["frases","flashcards","guardadas"]},
+  {id:"mas",       label:"Más",        icon:"more", screens:["resumen","config"]}
 ];
 function getGroupForScreen(id){
   for(var i=0;i<NAV_GROUPS.length;i++) if(NAV_GROUPS[i].screens.indexOf(id)>=0) return NAV_GROUPS[i];
@@ -2090,7 +2161,9 @@ function openNavSheet(groupId){
   if(!group) return;
   document.getElementById("sheet-panel").innerHTML="";
   var hdr=document.createElement("div"); hdr.className="sheet-hdr";
-  hdr.appendChild(mk("p",group.icon+" "+group.label,"font-size:16px;font-weight:800;color:var(--text);"));
+  var title=mk("p","","font-size:16px;font-weight:800;color:var(--text);");
+  title.appendChild(iconLabel(group.icon,group.label,20));
+  hdr.appendChild(title);
   var closeBtn=document.createElement("button"); closeBtn.className="sheet-close";
   closeBtn.textContent="✕"; closeBtn.setAttribute("aria-label","Cerrar menú");
   closeBtn.onclick=hideNavSheet;
@@ -2098,10 +2171,10 @@ function openNavSheet(groupId){
   document.getElementById("sheet-panel").appendChild(hdr);
   group.screens.forEach(function(sid){
     // Find the screen label from TABS
-    var label=sid;
-    for(var j=0;j<TABS.length;j++) if(TABS[j].id===sid){label=TABS[j].label;break;}
+    var tab=null, label=sid;
+    for(var j=0;j<TABS.length;j++) if(TABS[j].id===sid){tab=TABS[j];label=TABS[j].label;break;}
     var btn=document.createElement("button"); btn.className="sheet-btn"+(sid===state.app.currentTab?" active":"");
-    btn.textContent=label;
+    btn.appendChild(iconLabel(tab&&tab.icon?tab.icon:group.icon,label,16));
     btn.onclick=function(){
       hideNavSheet();
       if(state.app._reviewPlan&&!state.app._reviewPlan.done) state.app._reviewPlan=null;
@@ -2121,7 +2194,7 @@ function renderTabs(){
   var curGroup=getGroupForScreen(state.app.currentTab);
   NAV_GROUPS.forEach(function(g){
     var btn=document.createElement("button"); btn.className="nav-item"+(g.id===curGroup.id?" active":"");
-    var iconSpan=document.createElement("span"); iconSpan.className="nav-item-icon"; iconSpan.textContent=g.icon;
+    var iconSpan=document.createElement("span"); iconSpan.className="nav-item-icon"; iconSpan.appendChild(ico(g.icon,22));
     var lblSpan=document.createElement("span"); lblSpan.className="nav-item-lbl"; lblSpan.textContent=g.label;
     btn.appendChild(iconSpan); btn.appendChild(lblSpan);
     btn.onclick=function(){
@@ -2492,11 +2565,11 @@ function paintPotd(host, ph){
   const play=document.createElement("button"); play.className="icon-btn"; play.setAttribute("aria-label","Escuchar");play.innerHTML="&#9654;"; play.style.color="#F5A623"; play.style.fontSize="18px";
   play.onclick=function(){speak(ph.de);};
   const isSaved=state.session.saved.some(function(x){return x.de===ph.de;});
-  const star=document.createElement("button"); star.className="icon-btn"; star.setAttribute("aria-label","Guardar");star.innerHTML="&#9733;"; star.style.fontSize="20px"; star.style.color=isSaved?"#F5A623":"#334155";
+  const star=document.createElement("button"); star.className="icon-btn"; star.setAttribute("aria-label","Guardar"); star.style.fontSize="20px"; star.style.color=isSaved?"#F5A623":"#334155"; setSaveIcon(star,isSaved);
   star.onclick=function(){
     if(!state.session.saved.some(function(x){return x.de===ph.de;})){
       state.session.saved.push(ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip||"",source:"frases"}));
-      star.style.color="#F5A623"; updateBadge(); syncUp();
+      star.style.color="#F5A623"; setSaveIcon(star,true); updateBadge(); syncUp();
     }
   };
   const refresh=document.createElement("button"); refresh.className="icon-btn"; refresh.setAttribute("aria-label","Generar otra");refresh.innerHTML="&#x21bb;"; refresh.style.fontSize="16px"; refresh.style.color="#64748b";
@@ -2547,12 +2620,13 @@ async function loadPhrases(sit) {
       const playBtn=document.createElement("button"); playBtn.className="icon-btn"; playBtn.setAttribute("aria-label","Escuchar");playBtn.innerHTML="&#9654;"; playBtn.style.color="#64748b"; playBtn.style.fontSize="16px";
       playBtn.onclick=function(){speak(ph.de);};
       const isSaved=state.session.saved.some(function(x){return x.de===ph.de;});
-      const starBtn=document.createElement("button"); starBtn.className="icon-btn"; starBtn.setAttribute("aria-label","Guardar");starBtn.innerHTML="&#9733;"; starBtn.style.fontSize="18px";
+      const starBtn=document.createElement("button"); starBtn.className="icon-btn"; starBtn.setAttribute("aria-label","Guardar"); starBtn.style.fontSize="18px";
       starBtn.style.color=isSaved?"#F5A623":"#334155";
+      setSaveIcon(starBtn,isSaved);
       starBtn.onclick=function(){
         if(!state.session.saved.some(function(x){return x.de===ph.de;})){
           const item=ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip,source:"frases"});
-          state.session.saved.push(item); starBtn.style.color="#F5A623"; updateBadge(); syncUp();
+          state.session.saved.push(item); starBtn.style.color="#F5A623"; setSaveIcon(starBtn,true); updateBadge(); syncUp();
         }
       };
       btnRow.appendChild(playBtn); btnRow.appendChild(starBtn);
@@ -2664,8 +2738,9 @@ function addBubble(text, role) {
   // soportamos también "En alemán se dice" y "→" por si cambia el formato.
   if(role==="bot"&&(/better:/i.test(text)||text.includes("En alemán se dice")||text.includes("→"))){
     var saveBtn=document.createElement("button");
-    saveBtn.textContent="💾 Guardar";
     saveBtn.className="bubble-save-btn";
+    saveBtn.style.display="inline-flex"; saveBtn.style.alignItems="center"; saveBtn.style.gap="4px";
+    setSaveIcon(saveBtn,false,"Guardar");
     saveBtn.onclick=function(){
       var de=text;
       var m=text.match(/Better:?\s*([^.\n(]+)/i);
@@ -2844,8 +2919,8 @@ async function doExplain(ta, btn, el) {
     const saveRow=mk("div","","display:flex;justify-content:flex-end;margin-top:12px;");
     const saveBtn=document.createElement("button");
     saveBtn.className="chip";
-    saveBtn.style.cssText="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;font-size:12px;font-weight:700;";
-    saveBtn.innerHTML="&#9733; Guardar en flashcards";
+    saveBtn.style.cssText="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;";
+    setSaveIcon(saveBtn,false,"Guardar en flashcards");
     saveBtn.onclick=function(){
       const phrase=ensureSrsFields({de:r.original,es:r.significado,tip:r.contexto||"",source:"noentendi"});
       if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
@@ -3153,7 +3228,13 @@ function renderConResults(el){
 function renderFlashcards() {
   const el=document.getElementById("s-flashcards"); el.innerHTML="";
   if(!state.session.saved.length){
-    el.innerHTML="<div style='text-align:center;padding:70px 0;color:var(--muted);'><div style='font-size:48px;margin-bottom:16px;'>🃏</div><p style='font-weight:700;font-size:15px;margin-bottom:8px;color:#94a3b8;'>Sin tarjetas aun</p><p style='font-size:13px;font-weight:500;'>Ve a Frases o No entendi y guarda algunas.</p></div>";
+    var empty=mk("div","","text-align:center;padding:70px 0;color:var(--muted);");
+    var emptyIcon=mk("div","","font-size:48px;margin-bottom:16px;color:var(--gold-text);display:flex;justify-content:center;");
+    emptyIcon.appendChild(ico("cards",48));
+    empty.appendChild(emptyIcon);
+    empty.appendChild(mk("p","Sin tarjetas aun","font-weight:700;font-size:15px;margin-bottom:8px;color:#94a3b8;"));
+    empty.appendChild(mk("p","Ve a Frases o No entendi y guarda algunas.","font-size:13px;font-weight:500;"));
+    el.appendChild(empty);
     return;
   }
 
@@ -3209,7 +3290,9 @@ function renderFlashcards() {
   card.appendChild(inner);
 
   const front=mk("div","",""); front.className="flashcard-face flashcard-front";
-  front.appendChild(mk("p","🇩🇪  ALEMAN","font-size:10px;color:rgba(245,166,35,0.6);letter-spacing:3px;margin-bottom:20px;font-weight:700;"));
+  var deMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(245,166,35,0.75);");
+  deMark.appendChild(langBadge("DE","rgba(245,166,35,0.75)"));
+  front.appendChild(deMark);
   front.appendChild(mk("p",ph.de,"font-size:22px;font-weight:900;color:var(--text);line-height:1.4;margin-bottom:16px;letter-spacing:-0.02em;"));
   const playF=document.createElement("button");
   playF.style.cssText="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);color:#F5A623;border-radius:20px;padding:7px 18px;font-size:13px;font-weight:700;transition:background 0.2s;";
@@ -3218,7 +3301,9 @@ function renderFlashcards() {
   front.appendChild(playF); inner.appendChild(front);
 
   const back=mk("div","",""); back.className="flashcard-face flashcard-back";
-  back.appendChild(mk("p","🇪🇸  ESPANOL","font-size:10px;color:rgba(78,205,196,0.6);letter-spacing:3px;margin-bottom:20px;font-weight:700;"));
+  var esMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(78,205,196,0.75);");
+  esMark.appendChild(langBadge("ES","rgba(78,205,196,0.75)"));
+  back.appendChild(esMark);
   back.appendChild(mk("p",ph.es,"font-size:20px;color:var(--text);line-height:1.45;margin-bottom:10px;font-weight:600;"));
   if(ph.tip) back.appendChild(mk("p","💡 "+ph.tip,"font-size:13px;color:var(--muted);font-style:italic;font-weight:500;"));
   inner.appendChild(back);
@@ -3311,8 +3396,9 @@ function renderGuardadas() {
   const subBar=mk("div","","display:flex;gap:8px;margin-bottom:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:4px;");
   ["frases","chats","tabla","paquetes"].forEach(function(t){
     const btn=document.createElement("button");
-    btn.style.cssText="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,color 0.2s,box-shadow 0.2s;";
-    btn.textContent=t==="frases"?"⭐ Frases":t==="chats"?"💬 Chats":t==="tabla"?"📊 Tabla":"📦 Temas";
+    btn.style.cssText="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,color 0.2s,box-shadow 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;";
+    var tabMeta=t==="frases"?{i:"star",l:"Frases"}:t==="chats"?{i:"chat",l:"Chats"}:t==="tabla"?{i:"table",l:"Tabla"}:{i:"package",l:"Temas"};
+    btn.appendChild(ico(tabMeta.i,15)); btn.appendChild(document.createTextNode(tabMeta.l));
     if(state.guardadas.guardadasTab===t){
       btn.style.background="#F5A623"; btn.style.color="#000"; btn.style.boxShadow="0 2px 10px rgba(245,166,35,0.3)";
     } else {
@@ -3325,7 +3411,13 @@ function renderGuardadas() {
 
   if(state.guardadas.guardadasTab==="frases"){
     if(!state.session.saved.length){
-      el.innerHTML+="<div style='text-align:center;padding:50px 0;color:var(--muted);'><div style='font-size:44px;margin-bottom:14px;'>⭐</div><p style='font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;'>Sin frases guardadas</p><p style='font-size:13px;font-weight:500;'>En Frases o No entendi, toca la estrella para guardar.</p></div>";
+      var empty=mk("div","","text-align:center;padding:50px 0;color:var(--muted);");
+      var emptyIcon=mk("div","","font-size:44px;margin-bottom:14px;color:var(--gold-text);display:flex;justify-content:center;");
+      emptyIcon.appendChild(ico("star",44));
+      empty.appendChild(emptyIcon);
+      empty.appendChild(mk("p","Sin frases guardadas","font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;"));
+      empty.appendChild(mk("p","En Frases o No entendi, toca la estrella para guardar.","font-size:13px;font-weight:500;"));
+      el.appendChild(empty);
       return;
     }
     // Search + actions row
@@ -3364,30 +3456,37 @@ function renderGuardadas() {
     const listHost=document.createElement("div"); el.appendChild(listHost);
     renderVocabTable(listHost);
   } else if(state.guardadas.guardadasTab==="paquetes"){
-    const intro=mk("p","Elige un paquete de vocabulario para explorar y guardar palabras","font-size:13px;color:var(--muted);font-weight:500;margin-bottom:14px;");
+    const intro=mk("p","Elige un paquete, guarda palabras y mira tu avance al instante.","font-size:13px;color:var(--muted);font-weight:500;margin-bottom:14px;");
     el.appendChild(intro);
     var packs=[
-      {icon:"\ud83e\uddfe",name:"Tr\u00e1mites",desc:"Tr\u00e1mites, burocracia, documentos y m\u00e1s",list:TRAMITES_VOCAB,cat:"Tr\u00e1mites"},
-      {icon:"\ud83d\udcbb",name:"Tech",desc:"Computaci\u00f3n, desarrollo, IT y tecnolog\u00eda",list:TECH_VOCAB,cat:"Tech"},
-      {icon:"\u2708\ufe0f",name:"Viaje",desc:"Viajes, transporte, alojamiento y m\u00e1s",list:VIAJE_VOCAB,cat:"Viaje"},
-      {icon:"\ud83c\udf7d\ufe0f",name:"Comida",desc:"Comida, bebida, restaurante y cocina",list:COMIDA_VOCAB,cat:"Comida"}
+      {icon:"file",name:"Tr\u00e1mites",desc:"Documentos, citas y burocracia",list:TRAMITES_VOCAB,cat:"Tr\u00e1mites",color:"#F5A623"},
+      {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#A78BFA"},
+      {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:VIAJE_VOCAB,cat:"Viaje",color:"#4ECDC4"},
+      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:COMIDA_VOCAB,cat:"Comida",color:"#4ade80"}
     ];
+    var grid=mk("div",""); grid.className="vocab-pack-grid";
     packs.forEach(function(p){
       var card=document.createElement("div"); card.className="card";
-      card.style.marginBottom="8px";
+      card.className="card vocab-pack-card";
+      card.style.setProperty("--pack-accent",p.color);
+      card.style.background="linear-gradient(145deg,rgba("+hexToRgb(p.color)+",0.16),rgba(255,255,255,0.035))";
+      card.style.borderColor="rgba("+hexToRgb(p.color)+",0.28)";
       card.style.animation="fadeUp 0.2s both";
-      var hdrRow=mk("div","","display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;");
-      var title=mk("span",p.icon+"  "+p.name,"font-size:15px;font-weight:800;color:var(--text);");
-      hdrRow.appendChild(title);
-      var countBadge=mk("span",p.list.length+" palabras","font-size:10px;font-weight:700;color:var(--gold-text);background:rgba(245,166,35,0.1);padding:3px 9px;border-radius:20px;");
-      hdrRow.appendChild(countBadge);
-      card.appendChild(hdrRow);
-      card.appendChild(mk("p",p.desc,"font-size:11px;color:var(--muted);font-weight:500;margin-bottom:10px;"));
-      var btn=mk("button","Ver paquete","padding:8px 16px;border-radius:10px;border:none;background:rgba(245,166,35,0.08);color:#F5A623;font-size:12px;font-weight:700;cursor:pointer;");
-      btn.onclick=function(){showVocabPack(el,p.icon+"  "+p.name,p.icon,p.list,p.cat);};
+      var iconCircle=mk("div",""); iconCircle.className="vocab-pack-icon"; iconCircle.style.background=p.color; iconCircle.appendChild(ico(p.icon,30,"#071016"));
+      card.appendChild(iconCircle);
+      card.appendChild(mk("p",p.name,"font-size:18px;font-weight:900;color:var(--text);letter-spacing:-0.02em;"));
+      card.appendChild(mk("p",p.desc,"font-size:12px;color:var(--text2);font-weight:600;line-height:1.35;"));
+      var saved=p.list.filter(function(item){return state.session.saved.some(function(x){return x.de===item.de;});}).length;
+      card.appendChild(mk("p",saved+"/"+p.list.length+" guardadas","font-size:11px;color:var(--muted);font-weight:800;"));
+      var progress=mk("div",""); progress.className="vocab-pack-progress"; var fill=mk("span",""); fill.style.width=Math.round((saved/p.list.length)*100)+"%"; progress.appendChild(fill); card.appendChild(progress);
+      var btn=mk("button",saved===p.list.length?"Repasar paquete":"Abrir paquete","");
+      btn.className="vocab-pack-cta";
+      btn.onclick=function(e){e.stopPropagation();showVocabPack(el,p.name,p.icon,p.list,p.cat);};
       card.appendChild(btn);
-      el.appendChild(card);
+      card.onclick=function(){showVocabPack(el,p.name,p.icon,p.list,p.cat);};
+      grid.appendChild(card);
     });
+    el.appendChild(grid);
   } else {
     if(!state.session.chatLogs.length){
       el.innerHTML+="<div style='text-align:center;padding:50px 0;color:var(--muted);'><div style='font-size:44px;margin-bottom:14px;'>💬</div><p style='font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;'>Sin chats guardados</p><p style='font-size:13px;font-weight:500;'>En Conversar, pulsa Guardar o Cambiar.</p></div>";
@@ -3654,7 +3753,9 @@ function exportSavedCsv(){
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function renderSettings(){
   const el=document.getElementById("s-config"); el.innerHTML="";
-  el.appendChild(mk("h2","⚙️ Ajustes","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:20px;"));
+  var settingsTitle=mk("h2","","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:20px;");
+  settingsTitle.appendChild(iconLabel("gear","Ajustes",22));
+  el.appendChild(settingsTitle);
 
   // TTS Speed
   const ttsCard=document.createElement("div"); ttsCard.className="card";
@@ -3815,12 +3916,14 @@ async function runPostChatAnalysis(){
         const t=mk("div","","flex:1;");
         t.appendChild(mk("p",ph.de,"font-size:13px;font-weight:700;color:var(--text);"));
         t.appendChild(mk("p",ph.es,"font-size:12px;color:#94a3b8;margin-top:2px;font-weight:500;"));
-        const star=document.createElement("button"); star.className="icon-btn"; star.setAttribute("aria-label","Guardar");star.innerHTML="&#9733;"; star.style.fontSize="18px";
-        star.style.color=state.session.saved.some(function(x){return x.de===ph.de;})?"#F5A623":"#334155";
+        const star=document.createElement("button"); star.className="icon-btn"; star.setAttribute("aria-label","Guardar"); star.style.fontSize="18px";
+        var phraseSaved=state.session.saved.some(function(x){return x.de===ph.de;});
+        star.style.color=phraseSaved?"#F5A623":"#334155";
+        setSaveIcon(star,phraseSaved);
         star.onclick=function(){
           if(!state.session.saved.some(function(x){return x.de===ph.de;})){
             state.session.saved.push(ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip||"",source:"conversar"}));
-            star.style.color="#F5A623"; updateBadge(); syncUp();
+            star.style.color="#F5A623"; setSaveIcon(star,true); updateBadge(); syncUp();
           }
         };
         card.appendChild(t); card.appendChild(star); b.appendChild(card);
@@ -3964,8 +4067,8 @@ function showLecturaTranslationManual(rawWord,host,contextSentence){
   if(contextSentence) popup.appendChild(mk("p","📝 "+contextSentence,"font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;font-weight:500;"));
   var btnRow=mk("div","","display:flex;gap:8px;");
   var saveBtn=document.createElement("button");
-  saveBtn.style.cssText="flex:1;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:#A78BFA;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;";
-  saveBtn.textContent="💾 Guardar";
+  saveBtn.style.cssText="flex:1;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:#A78BFA;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;";
+  setSaveIcon(saveBtn,false,"Guardar");
   var doSaveManual=function(){
     var es=inp.value.trim();
     if(!es){showToast("Escribi la traduccion","error");return;}
@@ -4029,14 +4132,15 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
         var row2=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
         row2.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
         var starBtn=document.createElement("button");
-        starBtn.setAttribute("aria-label","Guardar");starBtn.innerHTML="&#9733;";
-        starBtn.style.cssText="background:rgba(167,139,250,0.2);border:none;color:#A78BFA;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;";
+        starBtn.setAttribute("aria-label","Guardar");
+        starBtn.style.cssText="background:rgba(167,139,250,0.2);border:none;color:#A78BFA;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;display:inline-flex;align-items:center;justify-content:center;";
+        setSaveIcon(starBtn,false);
         starBtn.title="Guardar en flashcards";
         var doSave=function(){
           var phrase=ensureSrsFields({de:base,es:es,tip:ctx||"lectura",source:"lectura"});
           if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
             state.session.saved.push(phrase);updateBadge();syncUp();
-            starBtn.innerHTML="&#10003;";starBtn.style.color="#4ade80";starBtn.disabled=true;
+            starBtn.textContent="✓";starBtn.style.color="#4ade80";starBtn.disabled=true;
             showToast("Guardada: "+es,"success");
           } else {showToast("Ya estaba guardada","success");}
         };
@@ -4064,14 +4168,15 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
   wordRow.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
   var actions=mk("div","","display:flex;align-items:center;gap:6px;");
   var saveMini=document.createElement("button");
-  saveMini.setAttribute("aria-label","Guardar");saveMini.innerHTML="&#9733;";
-  saveMini.style.cssText="background:rgba(167,139,250,0.2);border:none;color:#A78BFA;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;";
+  saveMini.setAttribute("aria-label","Guardar");
+  saveMini.style.cssText="background:rgba(167,139,250,0.2);border:none;color:#A78BFA;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;display:inline-flex;align-items:center;justify-content:center;";
+  setSaveIcon(saveMini,false);
   saveMini.title="Guardar en flashcards";
   var doSaveMini=function(){
     var phrase=ensureSrsFields({de:rawWord,es:knownTranslation,tip:contextSentence||"lectura",source:"lectura"});
     if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
       state.session.saved.push(phrase);updateBadge();syncUp();
-      saveMini.innerHTML="&#10003;";saveMini.style.color="#4ade80";saveMini.disabled=true;
+      saveMini.textContent="✓";saveMini.style.color="#4ade80";saveMini.disabled=true;
       showToast("Guardada: "+knownTranslation,"success");
     } else {showToast("Ya estaba guardada","success");}
   };
