@@ -868,6 +868,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
     <div id="s-noentendi" class="screen"></div>
     <div id="s-lectura" class="screen"></div>
     <div id="s-dictado" class="screen"></div>
+    <div id="s-shadowing" class="screen"></div>
     <div id="s-gramatica" class="screen"></div>
     <div id="s-casos" class="screen"></div>
     <div id="s-genero" class="screen"></div>
@@ -1764,7 +1765,7 @@ function renderHörverstehenPlay(container){
   });
   c.appendChild(dialogDiv);
   // Play button
-  var playBtn=mk("button","▶ Reproducir diálogo","width:100%;padding:16px;border-radius:14px;border:none;background:rgba(78,205,196,0.12);color:#4ECDC4;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity 0.2s;");
+  var playBtn=mk("button","▶ Reproducir diálogo","width:100%;padding:16px;border-radius:14px;border:none;background:rgba(78,205,196,0.12);color:var(--teal-text);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity 0.2s;");
   playBtn.onclick=function(){
     playBtn.disabled=true;playBtn.style.opacity="0.5";playBtn.textContent="🔊 Reproduciendo...";
     var fullDialog=_hvState.dialog.map(function(ex){return ex.speaker+": "+ex.text;}).join(" ");
@@ -2176,6 +2177,7 @@ const TABS=[
   {id:"noentendi",label:"No entendi", icon:"target"},
   {id:"lectura",  label:"Lectura", icon:"book"},
   {id:"dictado",  label:"Dictado", icon:"headphones"},
+  {id:"shadowing",label:"Shadowing", icon:"headphones"},
   {id:"gramatica",label:"Gramatica", icon:"grammar"},
   {id:"casos",    label:"Casos", icon:"scale"},
   {id:"genero",   label:"Genero", icon:"target"},
@@ -2187,7 +2189,7 @@ const TABS=[
 ];
 const NAV_GROUPS=[
   {id:"hoy",       label:"Hoy",        icon:"home", screens:["hoy"]},
-  {id:"practicar", label:"Practicar",  icon:"chat", screens:["conversar","corrigeme","noentendi","dictado","lectura"]},
+  {id:"practicar", label:"Practicar",  icon:"chat", screens:["conversar","corrigeme","noentendi","dictado","shadowing","lectura"]},
   {id:"gramatica", label:"Gramática",  icon:"grammar", screens:["gramatica","casos","genero","conectores"]},
   {id:"vocabulario",label:"Vocabulario",icon:"cards", screens:["frases","flashcards","guardadas"]},
   {id:"mas",       label:"Más",        icon:"more", screens:["resumen","config"]}
@@ -2289,6 +2291,7 @@ function showScreen(id) {
     else if(id==="noentendi") renderNoEntendi();
     else if(id==="lectura") renderLectura();
     else if(id==="dictado") renderDictado();
+    else if(id==="shadowing") renderShadowing();
     else if(id==="gramatica") renderGramatica();
     else if(id==="casos") renderCasos();
     else if(id==="genero") renderGenero();
@@ -2360,6 +2363,10 @@ function renderHoy(){
 
   // ── Level progress ──
   var lvlPct=computeLevelProgress();
+  // Snapshot level progress to dailyLog (once per day, for history chart)
+  var _t=todayKey();
+  if(!state.session.dailyLog[_t]) state.session.dailyLog[_t]={minutes:0,phrasesReviewed:0,drillsDone:0};
+  state.session.dailyLog[_t].levelPct=lvlPct;
   var lvlLabel=state.app.level==="A2"?"A2→B1":state.app.level==="B1"?"B1→B2":"B2+";
   var lvlCard=document.createElement("div"); lvlCard.className="card";
   var lvlTop=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
@@ -2897,7 +2904,7 @@ async function doFix(ta, fixBtn, el) {
 
     // Pronunciation practice
     const pronRow=mk("div","","display:flex;align-items:center;gap:8px;margin-top:12px;");
-    const pronLbl=mk("span","🎤 Practicar pronunciacion","font-size:12px;color:var(--green-text);font-weight:700;flex:1;");
+    const pronLbl=mk("span","🎤 Practicar pronunciación","font-size:12px;color:var(--green-text);font-weight:700;flex:1;");
     const pronMic=makePronMicBtn("#4ade80", r.correcto, box1);
     pronRow.appendChild(pronLbl); pronRow.appendChild(pronMic);
     box1.appendChild(pronRow);
@@ -3023,7 +3030,7 @@ async function doExplain(ta, btn, el) {
       const pr=document.createElement("button"); pr.className="icon-btn"; pr.setAttribute("aria-label","Escuchar");pr.innerHTML="&#9654;"; pr.style.color="#A78BFA"; pr.style.fontSize="20px";
       pr.onclick=function(){speakGerman(r.respuesta);}; rowR.appendChild(pr); box4.appendChild(rowR);
       const pronRow=mk("div","","display:flex;align-items:center;gap:8px;margin-top:10px;");
-      pronRow.appendChild(mk("span","🎤 Practicar pronunciacion","font-size:12px;color:#A78BFA;font-weight:700;flex:1;"));
+      pronRow.appendChild(mk("span","🎤 Practicar pronunciación","font-size:12px;color:#A78BFA;font-weight:700;flex:1;"));
       pronRow.appendChild(makePronMicBtn("#A78BFA", r.respuesta, box4));
       box4.appendChild(pronRow);
       result.appendChild(box4);
@@ -5070,6 +5077,49 @@ function renderResumen() {
   lvlBox.appendChild(breakdown);
   el.appendChild(lvlBox);
 
+  // ── Level History Chart (SVG) ──
+  var histCard=document.createElement("div"); histCard.className="card";
+  histCard.appendChild(mk("p","📈  NIVEL — HISTORIAL","font-size:10px;color:var(--gold-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  histCard.appendChild(mk("p","Curva de porcentaje de nivel CEFR en el tiempo.","font-size:12px;color:var(--muted);line-height:1.45;margin-top:-6px;margin-bottom:10px;font-weight:500;"));
+  var _pts=[];
+  for(var _i=29;_i>=0;_i--){var _k=addDays(todayKey(),-_i);var _e=state.session.dailyLog[_k];if(_e&&typeof _e.levelPct==="number")_pts.push({date:_k,pct:_e.levelPct});}
+  if(_pts.length>=2){
+    var _cW=1000,_cH=200,_pT=20,_pR=20,_pB=30,_pL=40,_chW=_cW-_pL-_pR,_chH=_cH-_pT-_pB;
+    var _mn=Math.max(0,Math.min.apply(null,_pts.map(function(p){return p.pct;}))-5);
+    var _mx=Math.min(100,Math.max.apply(null,_pts.map(function(p){return p.pct;}))+5);
+    var _rng=_mx-_mn||1;
+    function _xS(i){return _pL+(i/(_pts.length-1))*_chW;}
+    function _yS(v){return _pT+_chH-((v-_mn)/_rng)*_chH;}
+    var _lnPts=_pts.map(function(p,i){return _xS(i)+","+_yS(p.pct);}).join(" ");
+    var _arPts=_pL+","+_yS(_mn)+" "+_lnPts+" "+_xS(_pts.length-1)+","+_yS(_mn);
+    var _sId="lgH"+Date.now();
+    var _yLbls=[];
+    for(var _yl=0;_yl<=100;_yl+=25){if(_yl>=_mn&&_yl<=_mx)_yLbls.push(_yl);}
+    var _xLbls=_pts.filter(function(_,i){return i%Math.max(1,Math.floor(_pts.length/5))===0||i===_pts.length-1;});
+    var _svg='<svg viewBox="0 0 '+_cW+' '+_cH+'" style="width:100%;height:auto;" xmlns="http://www.w3.org/2000/svg">'
+      +'<line x1="'+_pL+'" y1="'+_pT+'" x2="'+_pL+'" y2="'+(_pT+_chH)+'" style="stroke:var(--border)" stroke-width="1"/>'
+      +'<line x1="'+_pL+'" y1="'+(_pT+_chH)+'" x2="'+(_pL+_chW)+'" y2="'+(_pT+_chH)+'" style="stroke:var(--border)" stroke-width="1"/>'
+      +_yLbls.map(function(v){return'<text x="'+(_pL-8)+'" y="'+_yS(v)+'" text-anchor="end" font-size="10" style="fill:var(--muted)" dominant-baseline="middle">'+v+'%</text>';}).join("")
+      +'<polygon points="'+_arPts+'" fill="url(#'+_sId+')" opacity="0.12"/>'
+      +'<polyline points="'+_lnPts+'" fill="none" stroke="url(#lgGrad'+_sId+')" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+      +_pts.map(function(p,i){return'<circle cx="'+_xS(i)+'" cy="'+_yS(p.pct)+'" r="3" fill="rgba(245,166,35,0.5)" stroke="rgba(245,166,35,0.85)" stroke-width="1"/>';}).join("")
+      +_xLbls.map(function(p){return'<text x="'+_xS(_pts.indexOf(p))+'" y="'+(_pT+_chH+18)+'" text-anchor="middle" font-size="9" style="fill:var(--muted)">'+p.date.slice(5)+'</text>';}).join("")
+      +'<defs>'
+      +'<linearGradient id="lgGrad'+_sId+'" x1="0" y1="0" x2="1" y2="0">'
+      +'<stop offset="0%" stop-color="#F5A623"/><stop offset="100%" stop-color="#4ECDC4"/>'
+      +'</linearGradient>'
+      +'<linearGradient id="'+_sId+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0%" stop-color="#F5A623"/><stop offset="100%" stop-color="#4ECDC4"/>'
+      +'</linearGradient>'
+      +'</defs></svg>';
+    histCard.innerHTML+=_svg;
+    var _last=_pts[_pts.length-1];
+    histCard.appendChild(mk("p","Último: "+_last.pct+"% ("+_last.date+") · "+_pts.length+" días registrados","font-size:11px;color:var(--muted);margin-top:8px;font-weight:500;text-align:center;"));
+  } else {
+    histCard.appendChild(mk("p","Todavía no hay datos históricos. Seguí practicando y en unos días aparecerá la curva.","font-size:13px;color:var(--muted);font-weight:500;line-height:1.5;"));
+  }
+  el.appendChild(histCard);
+
   // Weekly goal
   const wk=weeklyMinutes();
   const pct=state.session.weeklyGoal>0?Math.min(100, Math.round((wk/state.session.weeklyGoal)*100)):0;
@@ -5301,6 +5351,94 @@ function renderInsight(host){
     "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>⚠️ Qué conviene reforzar</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+error+"</p></div>"+
     "<div style='background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:12px;padding:12px;'><p style='font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>💡 Próximo paso</p><p style='font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;'>"+tip+"</p></div>"+
     "<p style='font-size:10px;color:var(--dim);margin-top:12px;'>Semana "+week+" · Datos locales de los últimos 7 días</p></div>";
+}
+
+// ── SHADOWING ──────────────────────────────────────────────────────────────────
+const SHADOWING_POOL=[
+  {de:"Ich heiße Sebastian und komme aus Kolumbien.",es:"Me llamo Sebastian y vengo de Colombia."},
+  {de:"Ich arbeite als Datenanalyst bei einem deutschen Unternehmen.",es:"Trabajo como analista de datos en una empresa alemana."},
+  {de:"Heute habe ich viel zu tun, aber ich mache eine Pause.",es:"Hoy tengo mucho que hacer, pero tomo un descanso."},
+  {de:"Kannst du mir bitte helfen? Ich verstehe das nicht.",es:"¿Puedes ayudarme por favor? No entiendo esto."},
+  {de:"Ich möchte nächstes Jahr nach Deutschland reisen.",es:"El próximo año quiero viajar a Alemania."},
+  {de:"Gestern habe ich einen interessanten Film gesehen.",es:"Ayer vi una película interesante."},
+  {de:"Ich lerne seit sechs Monaten Deutsch.",es:"Llevo seis meses aprendiendo alemán."},
+  {de:"Wir können uns am Wochenende treffen und Kaffee trinken.",es:"Podemos encontrarnos el fin de semana y tomar café."},
+  {de:"Entschuldigung, wo ist der nächste Supermarkt?",es:"Disculpa, ¿dónde está el supermercado más cercano?"},
+  {de:"Ich habe mich über die neue Stelle sehr gefreut.",es:"Me alegré mucho por el nuevo puesto."}
+];
+
+function renderShadowing(){
+  const el=document.getElementById("s-shadowing"); el.innerHTML="";
+  const hdr=mk("div","","margin-bottom:16px;");
+  hdr.appendChild(mk("p","SOMBRA — PRONUNCIACIÓN","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("h2","Shadowing","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
+  hdr.appendChild(mk("p","Escuchá la frase y repetila en voz alta. El micrófono transcribe y compara tu pronunciación palabra por palabra.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  el.appendChild(hdr);
+
+  // Init pool
+  if(!state.shadowing||!state.shadowing.pool||!state.shadowing.pool.length){
+    state.shadowing={pool:[],idx:0};
+    state.shadowing.pool=SHADOWING_POOL.slice().sort(function(){return Math.random()-0.5;});
+    state.shadowing.idx=0;
+  }
+  if(state.shadowing.idx>=state.shadowing.pool.length){state.shadowing.idx=0;state.shadowing.pool=SHADOWING_POOL.slice().sort(function(){return Math.random()-0.5;});}
+
+  var sentence=state.shadowing.pool[state.shadowing.idx];
+
+  // Counter
+  el.appendChild(mk("p",(state.shadowing.idx+1)+" / "+state.shadowing.pool.length+"  ·  "+sentence.es,"color:var(--muted);font-size:12px;font-weight:600;margin-bottom:10px;"));
+
+  // Sentence card
+  var card=mk("div","","background:rgba(78,205,196,0.04);border:1px solid rgba(78,205,196,0.15);border-radius:16px;padding:22px;margin-bottom:14px;text-align:center;");
+  card.appendChild(mk("p",sentence.de,"font-size:19px;font-weight:800;color:var(--text);line-height:1.55;margin-bottom:6px;letter-spacing:-0.01em;"));
+  card.appendChild(mk("p",sentence.es,"font-size:13px;color:var(--muted);font-weight:500;"));
+  el.appendChild(card);
+
+  // Listen button
+  var playRow=mk("div","","display:flex;gap:8px;margin-bottom:14px;");
+  var playBtn=mk("button","▶  Escuchar","flex:1;padding:14px;border-radius:14px;border:none;background:rgba(78,205,196,0.12);color:var(--teal-text);font-size:15px;font-weight:800;cursor:pointer;transition:opacity 0.2s;");
+  playBtn.onclick=function(){speak(sentence.de);};
+  playRow.appendChild(playBtn);
+  el.appendChild(playRow);
+
+  // Score host (inserted by mic callback)
+  var scoreHost=mk("div","","margin-bottom:10px;");
+  el.appendChild(scoreHost);
+
+  // Mic row
+  var micRow=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:16px;");
+  micRow.appendChild(mk("span","🎤  Repetir — grabá tu voz","font-size:14px;color:var(--teal-text);font-weight:700;flex:1;"));
+  var micBtn=makeMicBtn("#4ECDC4",function(transcript){
+    renderPronScore(scoreHost, sentence.de, transcript, "#4ECDC4"); logActivity("drillsDone",1); syncUp();
+    nextBtn.style.display="block";
+  });
+  micBtn.setAttribute("aria-label","Grabar tu voz para puntuar la pronunciación"); micRow.appendChild(micBtn);
+  el.appendChild(micRow);
+
+  // Next / AI buttons (initially hidden next)
+  var bottomRow=mk("div","","display:flex;gap:8px;");
+  var nextBtn=mk("button","Siguiente frase →","flex:1;padding:12px;border-radius:12px;border:none;background:rgba(245,166,35,0.1);color:var(--gold-text);font-size:13px;font-weight:800;cursor:pointer;display:none;");
+  nextBtn.onclick=function(){state.shadowing.idx++;renderShadowing();};
+  bottomRow.appendChild(nextBtn);
+  var aiBtn=mk("button","🤖 Generar con IA","padding:12px 14px;border-radius:12px;border:1px solid rgba(167,139,250,0.25);background:rgba(167,139,250,0.08);color:var(--purple-text);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;");
+  aiBtn.onclick=async function(){
+    aiBtn.disabled=true;aiBtn.textContent="Generando...";
+    try{
+      var sys='You are a German teacher. Reply ONLY with valid JSON, no markdown. Generate ONE useful A2-B1 German sentence for shadowing practice (5-10 words). Format: {"de":"German sentence","es":"Spanish translation"}';
+      var txt=await ai(sys,[{role:"user",content:"Generate a new shadowing sentence, different from the current ones."}],300);
+      var cl=txt.replace(/```json|```/g,"").trim().match(/\{[\s\S]*\}/);
+      if(cl){var obj=JSON.parse(cl[0]);if(obj.de&&obj.es){state.shadowing.pool.splice(state.shadowing.idx+1,0,obj);showToast("Frase generada","success");renderShadowing();return;}}
+      showToast("Error al generar","error");
+    }catch(e){showToast("Error: "+e.message,"error");}
+    aiBtn.disabled=false;aiBtn.textContent="🤖 Generar con IA";
+  };
+  bottomRow.appendChild(aiBtn);
+  el.appendChild(bottomRow);
+
+  // Reset button
+  var resetBtn=mk("button","↻ Reiniciar frases","width:100%;background:transparent;border:1px dashed rgba(255,255,255,0.1);color:var(--muted);border-radius:12px;padding:10px;font-size:12px;font-weight:600;margin-top:12px;cursor:pointer;");
+  resetBtn.onclick=function(){state.shadowing.pool=SHADOWING_POOL.slice().sort(function(){return Math.random()-0.5;});state.shadowing.idx=0;renderShadowing();};
+  el.appendChild(resetBtn);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
