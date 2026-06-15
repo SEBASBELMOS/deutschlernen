@@ -1270,7 +1270,97 @@ state.guardadas.vocabSortCol="de";
 state.guardadas.vocabSortAsc=true;
 state.app.serverInfo={model:"?"};
 if(localStorage.getItem("dl_theme")==="light") document.documentElement.classList.add("light-mode");
-const CATEGORIES = ["Trabajo","Viajes","Comida","Naturaleza","Sentimientos","Hogar","General"];
+const CATEGORIES = ["Trabajo","Viajes","Comida","Naturaleza","Sentimientos","Hogar","Tr\u00e1mites","Tech","General"];
+
+const TRAMITES_VOCAB = [
+  {de:"der Termin", es:"la cita", tip:"beim B\u00fcrgeramt"},
+  {de:"die Anmeldung", es:"el registro", tip:"Wohnung anmelden"},
+  {de:"der Antrag", es:"la solicitud", tip:"Formular ausf\u00fcllen"},
+  {de:"die Bescheinigung", es:"el certificado", tip:"offizielles Dokument"},
+  {de:"die Versicherung", es:"el seguro", tip:"Krankenversicherung"},
+  {de:"die Krankenkasse", es:"la aseguradora de salud", tip:"gesetzlich oder privat"},
+  {de:"der Mietvertrag", es:"el contrato de alquiler", tip:"Wohnung mieten"},
+  {de:"die Kaution", es:"la fianza/dep\u00f3sito", tip:"3 Kaltmieten"},
+  {de:"die Wohnung", es:"el departamento", tip:"Wohnungssuche"},
+  {de:"der Vermieter", es:"el arrendador", tip:"Hausbesitzer"},
+  {de:"die Nebenkosten", es:"los gastos adicionales", tip:"Heizung, Wasser, Strom"},
+  {de:"die Arbeitserlaubnis", es:"el permiso de trabajo", tip:"f\u00fcr Ausl\u00e4nder"},
+  {de:"der Arbeitsvertrag", es:"el contrato laboral", tip:"befristet/unbefristet"},
+  {de:"das Gehalt", es:"el salario", tip:"monatlich brutto/netto"},
+  {de:"die Aufenthaltserlaubnis", es:"el permiso de residencia", tip:"Visum"},
+  {de:"die Steuererkl\u00e4rung", es:"la declaraci\u00f3n de impuestos", tip:"einmal pro Jahr"}
+];
+
+const TECH_VOCAB = [
+  {de:"der Computer", es:"el computador"},
+  {de:"der Laptop", es:"el port\u00e1til"},
+  {de:"die Software", es:"el software"},
+  {de:"der Code", es:"el c\u00f3digo"},
+  {de:"der Fehler", es:"el error/bug"},
+  {de:"das Programm", es:"el programa"},
+  {de:"die Entwicklung", es:"el desarrollo"},
+  {de:"der Entwickler", es:"el desarrollador"},
+  {de:"die Datenbank", es:"la base de datos"},
+  {de:"die App", es:"la aplicaci\u00f3n"},
+  {de:"das Netzwerk", es:"la red"},
+  {de:"die Cloud", es:"la nube"},
+  {de:"der Server", es:"el servidor"},
+  {de:"die Schnittstelle", es:"la interfaz/API"},
+  {de:"die Abh\u00e4ngigkeit", es:"la dependencia"}
+];
+
+function showVocabPack(host, title, icon, vocabList, categoryName){
+  host.innerHTML="";
+  var c=mk("div","","padding:2px 0;");
+  var topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;");
+  topRow.appendChild(mk("p",icon+" "+title,"font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;"));
+  var saveAll=mk("button","Guardar todas ("+vocabList.length+")","padding:6px 12px;border-radius:8px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.06);color:#F5A623;font-size:11px;font-weight:700;cursor:pointer;");
+  var savedCount=0;
+  saveAll.onclick=function(){
+    vocabList.forEach(function(item){
+      if(state.session.saved.some(function(x){return x.de===item.de;})) return;
+      var phr=ensureSrsFields({de:item.de,es:item.es,tip:item.tip||"",source:"vocab-pack",category:categoryName});
+      state.session.saved.push(phr);
+      savedCount++;
+    });
+    if(savedCount>0){logActivity("phrasesReviewed",savedCount);syncUp();showToast(savedCount+" palabras guardadas","success");}
+    else showToast("Ya todas estaban guardadas","info");
+    saveAll.textContent="\u2713 Guardadas";saveAll.style.opacity="0.5";saveAll.disabled=true;
+  };
+  topRow.appendChild(saveAll);
+  c.appendChild(topRow);
+  vocabList.forEach(function(item){
+    var card=mk("div","","padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:6px;");
+    card.appendChild(mk("p",item.de,"font-size:15px;font-weight:800;color:var(--text);margin-bottom:1px;"));
+    var esRow=mk("div","","display:flex;justify-content:space-between;align-items:center;");
+    var esLeft=mk("div","","");
+    esLeft.appendChild(mk("p",item.es,"font-size:12px;color:var(--muted);font-weight:500;"));
+    if(item.tip) esLeft.appendChild(mk("p","\ud83d\udca1 "+item.tip,"font-size:10px;color:var(--dim);font-weight:500;margin-top:1px;"));
+    esRow.appendChild(esLeft);
+    var starBtn=mk("button","\u2606","font-size:18px;background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);line-height:1;");
+    starBtn.title="Guardar palabra";
+    starBtn.onclick=function(){
+      if(state.session.saved.some(function(x){return x.de===item.de;})){
+        showToast("Ya existe","info");
+        starBtn.textContent="\u2605";starBtn.style.color="var(--gold)";
+        return;
+      }
+      var phr=ensureSrsFields({de:item.de,es:item.es,tip:item.tip||"",source:"vocab-pack",category:categoryName});
+      state.session.saved.push(phr);
+      logActivity("phrasesReviewed",1);
+      syncUp();
+      starBtn.textContent="\u2605";starBtn.style.color="var(--gold)";
+      showToast("Guardada: "+item.de,"success");
+    };
+    esRow.appendChild(starBtn);
+    card.appendChild(esRow);
+    c.appendChild(card);
+  });
+  var back=mk("button","\u2190 Volver","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:10px 0;margin-top:6px;");
+  back.onclick=function(){renderHoy();};
+  c.appendChild(back);
+  host.appendChild(c);
+}
 
 // ── SRS / activity helpers ────────────────────────────────────────────────────
 function todayKey(){
@@ -1413,7 +1503,7 @@ function getStudyRecommendation(){
       if(s.right+s.wrong===0){worstKey=k;worstAcc=0;}
       else{var acc=s.right/(s.right+s.wrong);if(acc<worstAcc){worstKey=k;worstAcc=acc;}}
     });
-    var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II"})[worstKey]||worstKey;
+    var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II",plurales:"Plurales"})[worstKey]||worstKey;
     scores[1].msg="Tu punto d\u00e9bil es Gram\u00e1tica: **"+tname+"**. Practicalo hoy \u2192 +4%.";
   }
   // Elegir el más débil QUE tenga un consejo accionable (no solo el más débil a secas)
@@ -1442,7 +1532,7 @@ function getContextualTip(){
     return {key:k,acc:total?s.right/total:0};
   }).sort(function(a,b){return a.acc-b.acc;});
   if(weakTopics.length){
-    var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II"})[weakTopics[0].key]||weakTopics[0].key;
+    var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II",plurales:"Plurales"})[weakTopics[0].key]||weakTopics[0].key;
     return {icon:"\ud83d\udcd0",msg:tname+" te est\u00e1 costando (<b>"+Math.round(weakTopics[0].acc*100)+"%</b> de aciertos).<br><span style='font-size:11px;color:var(--muted);'>Toc\u00e1 para practicar un drill de gram\u00e1tica.</span>",color:"#A78BFA",tab:"gramatica"};
   }
   // 3. Fehlerjournal pattern — recent errors
@@ -1841,9 +1931,47 @@ function lvlRange(){
 }
 
 function setLevel(lvl) {
+  if(lvl===state.app.level) return; // same level, no celebration
   state.app.level=lvl;
   showToast("Nivel cambiado a "+lvl,"info");
   syncUp();
+  if(state.app._motionOK) fireConfetti();
+}
+
+function fireConfetti(){
+  var overlay=document.createElement("div");
+  overlay.style.cssText="position:fixed;inset:0;pointer-events:none;z-index:9999;";
+  var colors=["#F5A623","#4ECDC4","#A78BFA","#4ade80","#F87171"];
+  var particles=[];
+  for(var i=0;i<50;i++){
+    var p=document.createElement("div");
+    p.style.cssText="position:absolute;width:8px;height:8px;border-radius:2px;background:"+colors[i%colors.length]+";left:50%;top:50%;";
+    overlay.appendChild(p);
+    particles.push({
+      el:p,
+      x:0,y:0,
+      vx:(Math.random()-0.5)*20,
+      vy:-Math.random()*18-8,
+      r:Math.random()*720,
+      vr:(Math.random()-0.5)*15
+    });
+  }
+  document.body.appendChild(overlay);
+  var start=performance.now();
+  function frame(now){
+    var t=Math.min((now-start)/1500,1);
+    particles.forEach(function(p){
+      p.vy+=0.6;
+      p.x+=p.vx*0.03;
+      p.y+=p.vy*0.03;
+      p.r+=p.vr;
+      p.el.style.transform="translate(calc(-50% + "+p.x+"px),calc(-50% + "+p.y+"px)) rotate("+p.r+"deg)";
+      p.el.style.opacity=1-t;
+    });
+    if(t<1) requestAnimationFrame(frame);
+    else overlay.remove();
+  }
+  requestAnimationFrame(frame);
 }
 
 state.app.syncTimer=null;
@@ -2255,6 +2383,22 @@ function renderHoy(){
   rmCard.appendChild(mk("p","Frases para situaciones reales","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
   rmCard.appendChild(mk("p","Restaurante, médico, entrevista, mudanza...","font-size:11px;color:var(--muted);font-weight:500;"));
   el.appendChild(rmCard);
+
+  // ── Vocab packs card ──
+  var vocabPackCard=document.createElement("div"); vocabPackCard.className="card";
+  vocabPackCard.style.marginTop="10px";
+  vocabPackCard.appendChild(mk("h3","\ud83d\udce6  Paquetes de vocabulario","font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;"));
+  var packsRow=mk("div","","display:flex;gap:8px;flex-wrap:wrap;");
+  var tramBtn=document.createElement("button"); tramBtn.className="sit-btn";
+  tramBtn.appendChild(mk("span","\ud83e\uddfe","font-size:20px;line-height:1;")); tramBtn.appendChild(mk("span","Tr\u00e1mites","font-size:11px;font-weight:600;color:var(--text);margin-top:2px;"));
+  tramBtn.onclick=function(){showVocabPack(vocabPackCard,"\ud83e\uddfe Tr\u00e1mites","\ud83e\uddfe",TRAMITES_VOCAB,"Tr\u00e1mites");};
+  packsRow.appendChild(tramBtn);
+  var techBtn=document.createElement("button"); techBtn.className="sit-btn";
+  techBtn.appendChild(mk("span","\ud83d\udcbb","font-size:20px;line-height:1;")); techBtn.appendChild(mk("span","Tech","font-size:11px;font-weight:600;color:var(--text);margin-top:2px;"));
+  techBtn.onclick=function(){showVocabPack(vocabPackCard,"\ud83d\udcbb Tech","\ud83d\udcbb",TECH_VOCAB,"Tech");};
+  packsRow.appendChild(techBtn);
+  vocabPackCard.appendChild(packsRow);
+  el.appendChild(vocabPackCard);
 
   state.app._lastStreakSeen=streak;
 }
@@ -4033,7 +4177,8 @@ const GRAMMAR_TOPICS=[
   {label:"Praeteritum",           icon:"📜", key:"praeteritum"},
   {label:"Conectores y subord.",  icon:"🔗", key:"conectores"},
   {label:"Conjugacion de verbos", icon:"📝", key:"conjugacion"},
-  {label:"Konjunktiv II",         icon:"💭", key:"konjunktiv2"}
+  {label:"Konjunktiv II",         icon:"💭", key:"konjunktiv2"},
+  {label:"Plurales irregulares", icon:"🔢", key:"plurales"}
 ];
 state.grammar._gramDrills=[], state.grammar._gramIdx=0, state.grammar._gramCorrect=0, state.grammar._gramMissed=[];
 
