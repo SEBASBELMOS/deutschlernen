@@ -139,11 +139,11 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
   transition:opacity 0.15s;
   -webkit-tap-highlight-color:transparent;
 }
-.nav-item:active .nav-item-icon{transform:scale(0.85);}
-.nav-item-icon{font-size:20px;display:flex;align-items:center;justify-content:center;line-height:1.2;transition:transform 0.1s;color:var(--text);min-height:24px;}
+.nav-item:active .nav-item-icon{transform:scale(0.9);}
+.nav-item-icon{font-size:20px;display:flex;align-items:center;justify-content:center;line-height:1.2;transition:transform 0.1s;color:var(--nav-accent,var(--text));min-height:30px;}
 .nav-item-lbl{font-size:9px;font-weight:600;display:block;margin-top:2px;color:var(--muted);}
-.nav-item.active .nav-item-lbl{color:var(--gold-text);}
-.nav-item.active .nav-item-icon{color:var(--gold-text);filter:drop-shadow(0 0 6px rgba(245,166,35,0.35));}
+.nav-item.active .nav-item-lbl{color:var(--nav-accent,var(--gold-text));}
+.nav-item.active .nav-item-icon{color:var(--nav-accent,var(--gold-text));filter:drop-shadow(0 0 6px rgba(var(--nav-accent-rgb,245,166,35),0.35));}
 /* ── BOTTOM SHEET ────────────────────────────────────────────────────────── */
 #sheet-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,0.5);
@@ -173,7 +173,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .sheet-btn:hover{background:rgba(255,255,255,0.08);}
 .sheet-btn:active{transform:scale(0.98);background:rgba(255,255,255,0.1);}
 .sheet-btn.active{color:var(--gold-text);box-shadow:inset 3px 0 0 var(--gold);font-weight:800;}
-.sheet-btn .dl-ico{margin-right:9px;vertical-align:-4px;}
+.sheet-btn .ico-chip{margin-right:9px;vertical-align:-9px;}
 .light-mode .sheet-btn{background:rgba(0,0,0,0.04);}
 .light-mode .sheet-btn:hover{background:rgba(0,0,0,0.08);}
 .light-mode #sheet-panel{border:1px solid rgba(0,0,0,0.08);}
@@ -364,20 +364,22 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .icon-btn:hover { opacity:0.75; transform:scale(1.15); }
 .icon-btn:active { transform:scale(.9); }
 .dl-ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle;color:currentColor;flex-shrink:0;}
-.dl-ico svg{display:block;width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
-.dl-ico.solid svg .ico-fill{fill:currentColor;stroke:currentColor;}
+.dl-ico svg{display:block;width:1em;height:1em;fill:currentColor;stroke:none;}
+.dl-ico svg .ico-detail{opacity:.34;}
+.ico-chip{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:14px;background:rgba(var(--ico-rgb,245,166,35),0.15);color:var(--ico-color,currentColor);line-height:0;box-shadow:inset 0 -1px 0 rgba(255,255,255,0.08);}
+.ico-chip .dl-ico{color:inherit;}
 .label-with-icon{display:inline-flex;align-items:center;gap:8px;}
 .lang-badge{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:24px;border-radius:999px;border:1px solid currentColor;font-size:10px;font-weight:900;letter-spacing:1.5px;line-height:1;}
 .vocab-pack-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;}
 .vocab-pack-card{position:relative;overflow:hidden;text-align:left;padding:16px;border-radius:20px;min-height:190px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:transform var(--d-fast) var(--ease-out),box-shadow var(--d-base),border-color var(--d-base);}
 .vocab-pack-card:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(0,0,0,0.28);}
 .vocab-pack-card:active{transform:scale(0.98);}
-.vocab-pack-icon{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#071016;box-shadow:inset 0 -4px 0 rgba(0,0,0,0.14),0 8px 18px rgba(0,0,0,0.22);}
+.vocab-pack-icon{width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:rgba(var(--pack-rgb),0.15);color:var(--pack-color);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.08),0 8px 18px rgba(0,0,0,0.16);}
 .vocab-pack-progress{height:7px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;margin-top:auto;}
 .vocab-pack-progress span{display:block;height:100%;border-radius:inherit;background:var(--pack-accent);transition:width var(--d-base) var(--ease-out);}
 .vocab-pack-cta{border:none;border-radius:14px;padding:10px 12px;font-size:12px;font-weight:900;cursor:pointer;color:#071016;background:var(--pack-accent);box-shadow:0 6px 18px rgba(0,0,0,0.18);transition:transform var(--d-fast) var(--ease-out),filter var(--d-fast);}
 .vocab-pack-cta:active{transform:scale(0.97);}
-@media (max-width:430px){.vocab-pack-grid{gap:10px}.vocab-pack-card{padding:14px;min-height:184px}.vocab-pack-icon{width:52px;height:52px}}
+@media (max-width:430px){.vocab-pack-grid{gap:10px}.vocab-pack-card{padding:14px;min-height:184px}.vocab-pack-icon{width:56px;height:56px}}
 
 /* ── TOPIC GRID ──────────────────────────────────────────────────────────── */
 .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -1169,35 +1171,44 @@ function mk(tag,text,style) {
 
 function ico(name,size,color) {
   var paths={
-    home:'<path d="M3 10.8 12 3l9 7.8"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
-    chat:'<path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v6A3.5 3.5 0 0 1 16.5 15H10l-5 5v-5.8A3.5 3.5 0 0 1 4 11.5z"/><path d="M8 7.5h8M8 11h5"/>',
-    grammar:'<path d="M5 4h10a4 4 0 0 1 4 4v12H8a3 3 0 0 1-3-3z"/><path d="M8 4v13a3 3 0 0 0 3 3"/><path d="M9 8h6M9 12h4"/>',
-    cards:'<path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    home:'<path d="M4 11.1 12 4l8 7.1v8a1.9 1.9 0 0 1-1.9 1.9h-3.3v-5.6a1.2 1.2 0 0 0-1.2-1.2h-3.2a1.2 1.2 0 0 0-1.2 1.2V21H5.9A1.9 1.9 0 0 1 4 19.1z"/><path class="ico-detail" d="M2.8 10.8a1.4 1.4 0 0 1 .2-2l7.6-6.3a2.2 2.2 0 0 1 2.8 0L21 8.8a1.4 1.4 0 1 1-1.8 2.1L12 4.9l-7.2 6a1.4 1.4 0 0 1-2-.1z"/>',
+    chat:'<path d="M7.4 3h9.2A4.4 4.4 0 0 1 21 7.4v4.4a4.4 4.4 0 0 1-4.4 4.4H11l-4.4 4.1A1 1 0 0 1 5 19.6v-3.8a4.4 4.4 0 0 1-2-3.7V7.4A4.4 4.4 0 0 1 7.4 3z"/><rect class="ico-detail" x="7" y="7" width="10" height="2.2" rx="1.1"/><rect class="ico-detail" x="7" y="11" width="6.8" height="2.2" rx="1.1"/>',
+    grammar:'<path d="M6.5 3h8.2A4.3 4.3 0 0 1 19 7.3V21H8.4A4.4 4.4 0 0 1 4 16.6V5.5A2.5 2.5 0 0 1 6.5 3z"/><path class="ico-detail" d="M8.2 3H11v18H8.4A4.4 4.4 0 0 1 4 16.6V5.5A2.5 2.5 0 0 1 6.5 3z"/><rect class="ico-detail" x="12.5" y="7" width="4.2" height="2" rx="1"/><rect class="ico-detail" x="12.5" y="11" width="3.2" height="2" rx="1"/>',
+    cards:'<rect x="5" y="4" width="14" height="16" rx="2.8"/><rect class="ico-detail" x="8" y="8" width="8" height="2" rx="1"/><rect class="ico-detail" x="8" y="12" width="8" height="2" rx="1"/><rect class="ico-detail" x="8" y="16" width="5" height="2" rx="1"/>',
     more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
-    star:'<path class="ico-fill" d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/>',
-    save:'<path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4"/><path d="M8 20v-6h8v6"/>',
-    gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.1 2.1-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-3v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2.1-2.1.1-.1A1.7 1.7 0 0 0 5 14.6a1.7 1.7 0 0 0-1.5-1H3v-3h.5A1.7 1.7 0 0 0 5 9.4a1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.1-2.1.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V4h3v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.1 2.1-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.5v3h-.5a1.7 1.7 0 0 0-1.5 1.6z"/>',
-    table:'<path d="M4 5h16v14H4z"/><path d="M4 10h16M4 15h16M10 5v14"/>',
-    package:'<path d="M12 3 3.5 7.5 12 12l8.5-4.5z"/><path d="M3.5 7.5V16L12 21l8.5-5V7.5"/><path d="M12 12v9"/>',
-    plane:'<path d="M3 11.5 21 4l-7.5 17-2.5-7.5z"/><path d="m21 4-10 9.5"/>',
-    utensils:'<path d="M7 3v8M4.5 3v8M9.5 3v8M4.5 11h5L8 21H6z"/><path d="M16 3c2 2.2 2 6.2 0 8.5V21"/>',
-    laptop:'<path d="M6 5h12v9H6z"/><path d="M3 18h18"/><path d="m7 14-2 4h14l-2-4"/>',
-    file:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M10 12h5M10 16h5"/>',
-    book:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 1 4 16.5z"/><path d="M4 16.5A2.5 2.5 0 0 1 6.5 14H20"/>',
-    target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
-    pen:'<path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z"/><path d="m14 7 3 3"/>',
-    headphones:'<path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2z"/><path d="M20 13v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"/>',
-    scale:'<path d="M12 3v18M5 6h14M6 6l-3 6h6zM18 6l-3 6h6z"/>',
-    link:'<path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/>',
-    chart:'<path d="M4 19V5"/><path d="M4 19h17"/><path d="M8 16v-5M13 16V8M18 16v-9"/>'
+    star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/>',
+    save:'<path d="M5 3h11.4L19 5.6V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><rect class="ico-detail" x="8" y="3" width="8" height="7" rx="1"/><path class="ico-detail" d="M8 21v-6.2A1.8 1.8 0 0 1 9.8 13h4.4a1.8 1.8 0 0 1 1.8 1.8V21z"/>',
+    gear:'<path d="M10.2 3h3.6l.7 2.2c.6.2 1.1.4 1.6.7l2.1-1.1 2.5 2.5-1.1 2.1c.3.5.5 1 .7 1.6l2.2.7v3.6l-2.2.7c-.2.6-.4 1.1-.7 1.6l1.1 2.1-2.5 2.5-2.1-1.1c-.5.3-1 .5-1.6.7l-.7 2.2h-3.6l-.7-2.2a8 8 0 0 1-1.6-.7l-2.1 1.1-2.5-2.5 1.1-2.1a8 8 0 0 1-.7-1.6L1.5 15v-3.6l2.2-.7c.2-.6.4-1.1.7-1.6L3.3 7l2.5-2.5 2.1 1.1c.5-.3 1-.5 1.6-.7z"/><circle class="ico-detail" cx="12" cy="12" r="3.4"/>',
+    table:'<rect x="4" y="5" width="16" height="14" rx="2"/><rect class="ico-detail" x="4" y="9" width="16" height="2"/><rect class="ico-detail" x="4" y="14" width="16" height="2"/><rect class="ico-detail" x="9" y="5" width="2" height="14"/>',
+    package:'<path d="M12 2.8 21 7.5v9L12 21.2 3 16.5v-9z"/><path class="ico-detail" d="M3 7.5 12 12l9-4.5-9-4.7z"/><path class="ico-detail" d="M11 12h2v9.2h-2z"/>',
+    plane:'<path d="M21.2 3.4a1 1 0 0 1 1.3 1.3l-7.4 16.4a1 1 0 0 1-1.9-.1l-2.4-7.2-7.2-2.4a1 1 0 0 1-.1-1.9z"/><path class="ico-detail" d="M10.8 13.8 21.5 3.5l-8.2 11.8z"/>',
+    utensils:'<path d="M4 3h2v7h1V3h2v7h1V3h2v8.2a3.2 3.2 0 0 1-2.1 3l-.8 6.8H6.9l-.8-6.8a3.2 3.2 0 0 1-2.1-3z"/><path d="M17 3c2.2 1.7 3.2 4.1 3.2 7 0 2.2-.8 4-2.2 5.1V21h-3V4.2A2.1 2.1 0 0 1 17 3z"/>',
+    laptop:'<path d="M6.5 5h11A1.5 1.5 0 0 1 19 6.5V15H5V6.5A1.5 1.5 0 0 1 6.5 5z"/><path class="ico-detail" d="M8 7.5h8v5H8z"/><path d="M4.4 16h15.2l1.4 3H3z"/>',
+    file:'<path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"/><path class="ico-detail" d="M14 3v5h5z"/><rect class="ico-detail" x="9" y="12" width="6" height="1.8" rx=".9"/><rect class="ico-detail" x="9" y="16" width="6" height="1.8" rx=".9"/>',
+    book:'<path d="M5.8 3H20v16H6.3A3.3 3.3 0 0 1 3 15.7V5.8A2.8 2.8 0 0 1 5.8 3z"/><path class="ico-detail" d="M7 3h3v16H6.3A3.3 3.3 0 0 1 3 15.7V5.8A2.8 2.8 0 0 1 5.8 3z"/><path class="ico-detail" d="M6.5 14H20v2.3H6.5a1.2 1.2 0 0 0 0 2.4H20V21H6.3A3.3 3.3 0 0 1 3 17.7v-.4A3.3 3.3 0 0 1 6.5 14z"/>',
+    target:'<circle cx="12" cy="12" r="9"/><circle class="ico-detail" cx="12" cy="12" r="5.8"/><circle cx="12" cy="12" r="2.4"/>',
+    pen:'<path d="M4 20.5 5.2 16 16.4 4.8a2.6 2.6 0 0 1 3.8 3.8L9 19.8z"/><path class="ico-detail" d="m14.6 6.6 2.8 2.8-8.7 8.7-3.2.8.8-3.2z"/>',
+    headphones:'<path d="M12 3a8.5 8.5 0 0 0-8.5 8.5V17A3.5 3.5 0 0 0 7 20.5h1.5v-8H7a3.4 3.4 0 0 0-1.5.35V11.5a6.5 6.5 0 0 1 13 0v1.35A3.4 3.4 0 0 0 17 12.5h-1.5v8H17a3.5 3.5 0 0 0 3.5-3.5v-5.5A8.5 8.5 0 0 0 12 3z"/>',
+    scale:'<path d="M10.8 3h2.4v3H20v2.4h-2l3 6h-6l3-6h-4.8V21h-2.4V8.4H6l3 6H3l3-6H4V6h6.8z"/><path class="ico-detail" d="M3 15h6a3 3 0 0 1-6 0zm12 0h6a3 3 0 0 1-6 0z"/>',
+    link:'<path d="M13.7 4.3a5 5 0 0 1 7 7l-2.2 2.2a5 5 0 0 1-6.7.3l2.1-2.1a2 2 0 0 0 2.5-.3l2.2-2.2a2 2 0 0 0-2.8-2.8l-2.2 2.2a2 2 0 0 0-.3 2.5l-2.1 2.1a5 5 0 0 1 .3-6.7z"/><path d="M10.3 19.7a5 5 0 0 1-7-7l2.2-2.2a5 5 0 0 1 6.7-.3l-2.1 2.1a2 2 0 0 0-2.5.3l-2.2 2.2a2 2 0 0 0 2.8 2.8l2.2-2.2a2 2 0 0 0 .3-2.5l2.1-2.1a5 5 0 0 1-.3 6.7z"/>',
+    chart:'<path d="M4 4h2.4v14H21v2.4H4z"/><rect x="8" y="11" width="3" height="5.5" rx="1"/><rect x="13" y="8" width="3" height="8.5" rx="1"/><rect x="18" y="6" width="3" height="10.5" rx="1"/>'
   };
   var span=document.createElement("span");
-  span.className="dl-ico"+(name==="star"?" solid":"");
+  span.className="dl-ico";
   span.style.fontSize=(size||24)+"px";
   if(color) span.style.color=color;
   span.setAttribute("aria-hidden","true");
   span.innerHTML='<svg viewBox="0 0 24 24">'+(paths[name]||paths.star)+'</svg>';
   return span;
+}
+
+function iconChip(iconName,size,color,rgb){
+  var chip=document.createElement("span");
+  chip.className="ico-chip";
+  chip.style.setProperty("--ico-color",color||"currentColor");
+  if(rgb) chip.style.setProperty("--ico-rgb",rgb);
+  chip.appendChild(ico(iconName,size||20,"currentColor"));
+  return chip;
 }
 
 function iconLabel(iconName,label,size,color){
@@ -2151,6 +2162,15 @@ const NAV_GROUPS=[
   {id:"vocabulario",label:"Vocabulario",icon:"cards", screens:["frases","flashcards","guardadas"]},
   {id:"mas",       label:"Más",        icon:"more", screens:["resumen","config"]}
 ];
+const NAV_ICON_STYLE={
+  hoy:{color:"var(--green-text)",rgb:"74,222,128"},
+  practicar:{color:"var(--teal-text)",rgb:"78,205,196"},
+  gramatica:{color:"var(--purple-text)",rgb:"167,139,250"},
+  vocabulario:{color:"var(--gold-text)",rgb:"245,166,35"},
+  mas:{color:"var(--text2)",rgb:"148,163,184"}
+};
+function navStyleForGroup(id){return NAV_ICON_STYLE[id]||NAV_ICON_STYLE.mas;}
+function navStyleForScreen(id){return navStyleForGroup(getGroupForScreen(id).id);}
 function getGroupForScreen(id){
   for(var i=0;i<NAV_GROUPS.length;i++) if(NAV_GROUPS[i].screens.indexOf(id)>=0) return NAV_GROUPS[i];
   return NAV_GROUPS[0];
@@ -2161,8 +2181,10 @@ function openNavSheet(groupId){
   if(!group) return;
   document.getElementById("sheet-panel").innerHTML="";
   var hdr=document.createElement("div"); hdr.className="sheet-hdr";
-  var title=mk("p","","font-size:16px;font-weight:800;color:var(--text);");
-  title.appendChild(iconLabel(group.icon,group.label,20));
+  var title=mk("p","","font-size:16px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:10px;");
+  var groupIconStyle=navStyleForGroup(group.id);
+  title.appendChild(iconChip(group.icon,20,groupIconStyle.color,groupIconStyle.rgb));
+  title.appendChild(document.createTextNode(group.label));
   hdr.appendChild(title);
   var closeBtn=document.createElement("button"); closeBtn.className="sheet-close";
   closeBtn.textContent="✕"; closeBtn.setAttribute("aria-label","Cerrar menú");
@@ -2174,7 +2196,13 @@ function openNavSheet(groupId){
     var tab=null, label=sid;
     for(var j=0;j<TABS.length;j++) if(TABS[j].id===sid){tab=TABS[j];label=TABS[j].label;break;}
     var btn=document.createElement("button"); btn.className="sheet-btn"+(sid===state.app.currentTab?" active":"");
-    btn.appendChild(iconLabel(tab&&tab.icon?tab.icon:group.icon,label,16));
+    var screenIconStyle=navStyleForScreen(sid);
+    btn.style.setProperty("--ico-color",screenIconStyle.color);
+    btn.style.setProperty("--ico-rgb",screenIconStyle.rgb);
+    var row=document.createElement("span"); row.className="label-with-icon";
+    row.appendChild(iconChip(tab&&tab.icon?tab.icon:group.icon,17,screenIconStyle.color,screenIconStyle.rgb));
+    row.appendChild(document.createTextNode(label));
+    btn.appendChild(row);
     btn.onclick=function(){
       hideNavSheet();
       if(state.app._reviewPlan&&!state.app._reviewPlan.done) state.app._reviewPlan=null;
@@ -2194,7 +2222,10 @@ function renderTabs(){
   var curGroup=getGroupForScreen(state.app.currentTab);
   NAV_GROUPS.forEach(function(g){
     var btn=document.createElement("button"); btn.className="nav-item"+(g.id===curGroup.id?" active":"");
-    var iconSpan=document.createElement("span"); iconSpan.className="nav-item-icon"; iconSpan.appendChild(ico(g.icon,22));
+    var iconStyle=navStyleForGroup(g.id);
+    btn.style.setProperty("--nav-accent",iconStyle.color);
+    btn.style.setProperty("--nav-accent-rgb",iconStyle.rgb);
+    var iconSpan=document.createElement("span"); iconSpan.className="nav-item-icon"; iconSpan.appendChild(iconChip(g.icon,21,iconStyle.color,iconStyle.rgb));
     var lblSpan=document.createElement("span"); lblSpan.className="nav-item-lbl"; lblSpan.textContent=g.label;
     btn.appendChild(iconSpan); btn.appendChild(lblSpan);
     btn.onclick=function(){
@@ -3459,20 +3490,22 @@ function renderGuardadas() {
     const intro=mk("p","Elige un paquete, guarda palabras y mira tu avance al instante.","font-size:13px;color:var(--muted);font-weight:500;margin-bottom:14px;");
     el.appendChild(intro);
     var packs=[
-      {icon:"file",name:"Tr\u00e1mites",desc:"Documentos, citas y burocracia",list:TRAMITES_VOCAB,cat:"Tr\u00e1mites",color:"#F5A623"},
-      {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#A78BFA"},
-      {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:VIAJE_VOCAB,cat:"Viaje",color:"#4ECDC4"},
-      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:COMIDA_VOCAB,cat:"Comida",color:"#4ade80"}
+      {icon:"file",name:"Tr\u00e1mites",desc:"Documentos, citas y burocracia",list:TRAMITES_VOCAB,cat:"Tr\u00e1mites",color:"#F5A623",textColor:"var(--gold-text)",rgb:"245,166,35"},
+      {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#4ECDC4",textColor:"var(--teal-text)",rgb:"78,205,196"},
+      {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:VIAJE_VOCAB,cat:"Viaje",color:"#4ade80",textColor:"var(--green-text)",rgb:"74,222,128"},
+      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:COMIDA_VOCAB,cat:"Comida",color:"#F87171",textColor:"var(--red-text)",rgb:"248,113,113"}
     ];
     var grid=mk("div",""); grid.className="vocab-pack-grid";
     packs.forEach(function(p){
       var card=document.createElement("div"); card.className="card";
       card.className="card vocab-pack-card";
       card.style.setProperty("--pack-accent",p.color);
-      card.style.background="linear-gradient(145deg,rgba("+hexToRgb(p.color)+",0.16),rgba(255,255,255,0.035))";
-      card.style.borderColor="rgba("+hexToRgb(p.color)+",0.28)";
+      card.style.setProperty("--pack-color",p.textColor);
+      card.style.setProperty("--pack-rgb",p.rgb);
+      card.style.background="linear-gradient(145deg,rgba("+p.rgb+",0.14),rgba(255,255,255,0.035))";
+      card.style.borderColor="rgba("+p.rgb+",0.28)";
       card.style.animation="fadeUp 0.2s both";
-      var iconCircle=mk("div",""); iconCircle.className="vocab-pack-icon"; iconCircle.style.background=p.color; iconCircle.appendChild(ico(p.icon,30,"#071016"));
+      var iconCircle=mk("div",""); iconCircle.className="vocab-pack-icon"; iconCircle.appendChild(ico(p.icon,31,"currentColor"));
       card.appendChild(iconCircle);
       card.appendChild(mk("p",p.name,"font-size:18px;font-weight:900;color:var(--text);letter-spacing:-0.02em;"));
       card.appendChild(mk("p",p.desc,"font-size:12px;color:var(--text2);font-weight:600;line-height:1.35;"));

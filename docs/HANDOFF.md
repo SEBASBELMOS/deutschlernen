@@ -9,11 +9,13 @@
 - User ran `npm run verify:auth-sync:supabase` locally with exported Supabase env vars and reported it passed before HF push.
 - Sprint rápido features done: Plurales (10th grammar topic), Confetti level-up, Vocab Trámites (16 words), Vocab Tech (15 words).
 - Duolingo-style icon refresh started: reusable inline SVG icon helpers, bottom navigation/sheet icons, star/save icons, flashcard DE/ES badges, settings gear, and Vocabulario → Temas tiles refreshed.
+- Icon system upgraded from Lucide-like outlines to chunky filled/duotone SVG shapes. Bottom nav, sheet buttons, and Vocabulario → Temas use rounded color chips with category colors.
 
 ## Files changed
 
 - `server.js` — production Supabase guard and auth checks for `/api/chat`, `/api/upload`, `/api/transcript`, `/api/transcript/:id`.
 - `public/index.html` — AI and voice proxy calls send `x-token` from `state.app.authToken`. Sprint rápido: Plurales, Confetti, Vocab Trámites, Vocab Tech. Vocabulario → Temas moved out of Hoy and upgraded with Duolingo-style pack tiles. High-visibility icon layer now uses inline SVG helpers.
+- `public/index.html` — icon API (`ico`, `iconLabel`, `langBadge`, `setSaveIcon`) preserved while SVG paths were redrawn as filled/duotone shapes; `.dl-ico svg` now uses `fill: currentColor; stroke: none;`. Added `iconChip()` for rounded color-chip treatment.
 - `supabase-schema.sql` — required Supabase schema for `users` and `sessions`.
 - `scripts/verify-auth-sync.js` — deterministic local verification script using a temporary `DB_FILE`.
 - `package.json` — added `verify:auth-sync` script.
@@ -55,6 +57,7 @@ Results:
 - Production startup without Supabase exits with: `Supabase is required in production/HF Space... Refusing to fall back to db.json.`
 - HF clone `node -c server.js` exits successfully.
 - Icon refresh verification: JS parse check with `new Function(script)` passed, smoke server returned HTTP 200, and `git diff --check` reported no whitespace errors.
+- Filled icon verification: JS parse check passed, `node -c server.js` passed, `git diff --check` passed, and diff search confirmed no `dailyLog` changes.
 
 ## Pending final steps
 
@@ -67,3 +70,4 @@ Results:
 - `db.json` fallback is local-development only. HF/production requires Supabase secrets and fails fast without them.
 - HF Docker uses Node 22 because Supabase JS requires native WebSocket support at startup.
 - Remaining icon debt is intentionally deferred: lower-visibility motivational copy/icons in tips, stats, Resumen, and minor labels still use emojis.
+- Visual light/dark browser inspection was not performed in-agent because no browser/headless visual tool was available; implementation uses existing theme-safe text tokens (`--gold-text`, `--teal-text`, `--purple-text`, `--green-text`, `--red-text`, `--text2`).
