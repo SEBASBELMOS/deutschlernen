@@ -937,9 +937,8 @@ if (window.speechSynthesis) {
 }
 state.app._noDeVoiceWarned = false;
 state.app._reviewPlan = null; // {steps:[{type,topic?}], currentStep, done} — daily review session plan
-function speak(text) {
+function makeGermanUtterance(text) {
   if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
   if (!state.app._deVoice) loadDeVoice();  // reintenta por si las voces cargaron tarde
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "de-DE"; u.rate = parseFloat(localStorage.getItem("ttsRate")||"0.82");
@@ -948,7 +947,41 @@ function speak(text) {
     state.app._noDeVoiceWarned = true;
     showToast("Sin voz alemana en tu dispositivo — instalá una en Ajustes del sistema (Voz/Spoken Content) para mejor pronunciación", "info", 6000);
   }
+  return u;
+}
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = makeGermanUtterance(text);
   window.speechSynthesis.speak(u);
+}
+function splitSpeechChunks(text) {
+  var clean=(text||"").replace(/\s+/g," ").trim();
+  if(!clean) return [];
+  var parts=clean.match(/[^.!?;:]+[.!?;:]?/g)||[clean];
+  var chunks=[], current="";
+  parts.forEach(function(part){
+    part=part.trim(); if(!part) return;
+    if((current+" "+part).trim().length>170 && current){ chunks.push(current.trim()); current=part; }
+    else current=(current+" "+part).trim();
+  });
+  if(current) chunks.push(current.trim());
+  return chunks;
+}
+function speakFull(text, onDone) {
+  if (!window.speechSynthesis) { if(onDone) onDone(); return; }
+  var chunks=splitSpeechChunks(text);
+  var seq=(state.app._ttsSeq||0)+1; state.app._ttsSeq=seq;
+  window.speechSynthesis.cancel();
+  function next(i){
+    if(seq!==state.app._ttsSeq) return;
+    if(i>=chunks.length){ if(onDone) onDone(); return; }
+    var u=makeGermanUtterance(chunks[i]);
+    u.onend=function(){ next(i+1); };
+    u.onerror=function(){ next(i+1); };
+    window.speechSynthesis.speak(u);
+  }
+  next(0);
 }
 function speakGerman(text) {
   const clean=text.replace(/\([^)]*\)/g,"").replace(/Better:?.*/i,"").replace(/\s+/g," ").trim();
@@ -1734,16 +1767,13 @@ function renderHörverstehenPlay(container){
   var playBtn=mk("button","▶ Reproducir diálogo","width:100%;padding:16px;border-radius:14px;border:none;background:rgba(78,205,196,0.12);color:#4ECDC4;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity 0.2s;");
   playBtn.onclick=function(){
     playBtn.disabled=true;playBtn.style.opacity="0.5";playBtn.textContent="🔊 Reproduciendo...";
-    _hvState.dialog.forEach(function(ex,i){
-      setTimeout(function(){speak(ex.text);},i*2800);
-    });
-    var totalTime=_hvState.dialog.length*2800+800;
-    setTimeout(function(){
+    var fullDialog=_hvState.dialog.map(function(ex){return ex.speaker+": "+ex.text;}).join(" ");
+    speakFull(fullDialog,function(){
       dialogDiv.style.display="block";
       playBtn.textContent="✅ Escuchado — Responder →";
       playBtn.disabled=false;playBtn.style.opacity="1";
       playBtn.onclick=function(){renderHörverstehenQuestions(container);};
-    },totalTime);
+    });
   };
   c.appendChild(playBtn);
   var skipBtn=mk("button","Saltar y responder →","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;width:100%;padding:8px;text-decoration:underline;");
@@ -3024,7 +3054,34 @@ function buildReviewQueue(){
 }
 
 // ── GENERO ────────────────────────────────────────────────────────────────────
+const GENERO_NOUN_POOL = [
+  {noun:"Tisch",article:"der",plural:"Tische",meaning:"mesa"},{noun:"Stuhl",article:"der",plural:"Stühle",meaning:"silla"},{noun:"Schlüssel",article:"der",plural:"Schlüssel",meaning:"llave"},{noun:"Bahnhof",article:"der",plural:"Bahnhöfe",meaning:"estación"},{noun:"Termin",article:"der",plural:"Termine",meaning:"cita"},{noun:"Fehler",article:"der",plural:"Fehler",meaning:"error"},{noun:"Kaffee",article:"der",plural:"Kaffees",meaning:"café"},{noun:"Laptop",article:"der",plural:"Laptops",meaning:"portátil"},
+  {noun:"Lampe",article:"die",plural:"Lampen",meaning:"lámpara"},{noun:"Rechnung",article:"die",plural:"Rechnungen",meaning:"factura"},{noun:"Frage",article:"die",plural:"Fragen",meaning:"pregunta"},{noun:"Antwort",article:"die",plural:"Antworten",meaning:"respuesta"},{noun:"Straße",article:"die",plural:"Straßen",meaning:"calle"},{noun:"Wohnung",article:"die",plural:"Wohnungen",meaning:"apartamento"},{noun:"Zeit",article:"die",plural:"Zeiten",meaning:"tiempo"},{noun:"Nachricht",article:"die",plural:"Nachrichten",meaning:"mensaje"},
+  {noun:"Buch",article:"das",plural:"Bücher",meaning:"libro"},{noun:"Fenster",article:"das",plural:"Fenster",meaning:"ventana"},{noun:"Handy",article:"das",plural:"Handys",meaning:"celular"},{noun:"Problem",article:"das",plural:"Probleme",meaning:"problema"},{noun:"Ticket",article:"das",plural:"Tickets",meaning:"tiquete"},{noun:"Zimmer",article:"das",plural:"Zimmer",meaning:"habitación"},{noun:"Wort",article:"das",plural:"Wörter",meaning:"palabra"},{noun:"Gespräch",article:"das",plural:"Gespräche",meaning:"conversación"}
+];
 var _genNouns=null, _genIdx=0, _genRight=0, _genWrong=0, _genMissed=[], _genDone=false;
+var _genRecentNouns=[];
+function genShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0;var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function genCleanNouns(arr){
+  var seen={};
+  return (arr||[]).filter(function(n){return n&&n.noun&&n.article&&/^(der|die|das)$/.test(String(n.article).toLowerCase());})
+    .map(function(n){return {noun:String(n.noun).trim(),article:String(n.article).toLowerCase(),plural:n.plural?String(n.plural).trim():"",meaning:n.meaning?String(n.meaning).trim():""};})
+    .filter(function(n){var key=n.noun.toLowerCase(); if(seen[key]) return false; seen[key]=true; return true;});
+}
+function genPickNouns(aiNouns){
+  var recent={}; _genRecentNouns.slice(-20).forEach(function(n){recent[n.toLowerCase()]=true;});
+  var pool=genCleanNouns(aiNouns).concat(genShuffle(GENERO_NOUN_POOL));
+  var picked=[], used={};
+  pool.forEach(function(n){
+    var key=n.noun.toLowerCase();
+    if(picked.length<10 && !used[key] && !recent[key]){picked.push(n);used[key]=true;}
+  });
+  if(picked.length<10){
+    pool.forEach(function(n){var key=n.noun.toLowerCase(); if(picked.length<10&&!used[key]){picked.push(n);used[key]=true;}});
+  }
+  _genRecentNouns=_genRecentNouns.concat(picked.map(function(n){return n.noun;})).slice(-30);
+  return picked;
+}
 function renderGenero(){
   const el=document.getElementById("s-genero"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
@@ -3039,12 +3096,15 @@ function renderGenero(){
     // Show skeleton
     el.appendChild(skelCard(6));
     ai('You are a German teacher. Generate 10 common German nouns at A2 level. Reply ONLY with valid JSON array, no markdown: [{"noun":"Tisch","article":"der","plural":"Tische","meaning":"mesa"}]. Avoid obscure words. Include 2-3 from each article group (der/die/das).',[],600).then(function(txt){
-      var arr=parseJSONArray(txt);
+      var arr=genPickNouns(parseJSONArray(txt));
       if(!arr||!arr.length){ el.innerHTML="<p style='color:var(--red);text-align:center;padding:40px;'>Error generando sustantivos. Intent\u00e1 de nuevo.</p>"; return; }
       _genNouns=arr; _genIdx=0; _genRight=0; _genWrong=0; _genMissed=[]; _genDone=false;
       el.innerHTML="";
       hdr.appendChild(mk("p","","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;")); // placeholder
       renderGenCard(el, hdr);
+    }).catch(function(){
+      _genNouns=genPickNouns([]); _genIdx=0; _genRight=0; _genWrong=0; _genMissed=[]; _genDone=false;
+      el.innerHTML=""; renderGenCard(el, hdr);
     });
     return;
   }
@@ -3153,6 +3213,19 @@ function renderGenResults(el){
 
 // ── CONECTORES ─────────────────────────────────────────────────────────────────
 var _conData=null, _conIdx=0, _conRight=0, _conWrong=0, _conDone=false, _conResults=[];
+const CONNECTOR_CHOICES=["weil","obwohl","deshalb","dass","wenn"];
+function normalizeConnectorExercise(d){
+  d=d||{};
+  d.correct=String(d.correct||"").trim().toLowerCase();
+  var opts=(Array.isArray(d.options)?d.options:[]).map(function(o){return String(o).trim().toLowerCase();}).filter(Boolean);
+  var seen={}, clean=[];
+  opts.forEach(function(o){ if(!seen[o]){seen[o]=true;clean.push(o);} });
+  if(d.correct&&!seen[d.correct]){ clean.push(d.correct); seen[d.correct]=true; }
+  CONNECTOR_CHOICES.forEach(function(o){ if(clean.length<4&&!seen[o]){clean.push(o);seen[o]=true;} });
+  d.options=clean.slice(0,5);
+  if(d.correct&&d.options.indexOf(d.correct)===-1) d.options[d.options.length-1]=d.correct;
+  return d;
+}
 function renderConectores(){
   const el=document.getElementById("s-conectores"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
@@ -3168,7 +3241,7 @@ function renderConectores(){
     ai('You are a German teacher at A2-B1 level. Generate 5 fill-in-the-blank connector exercises. Reply ONLY with valid JSON array, no markdown: [{"sentence":"Ich lerne Deutsch, ___ ich nach Deutschland ziehen m\u00f6chte.","options":["weil","obwohl","deshalb","dass"],"correct":"weil","fullSentence":"Ich lerne Deutsch, weil ich nach Deutschland ziehen m\u00f6chte.","tip":"weil env\u00eda el verbo conjugado al FINAL de la oraci\u00f3n"}]. Use these connectors: weil, obwohl, deshalb, dass, wenn (each at least once). Include a brief Spanish tip about verb position for each.',[],800).then(function(txt){
       var arr=parseJSONArray(txt);
       if(!arr||!arr.length){ el.innerHTML="<p style='color:var(--red);text-align:center;padding:40px;'>Error generando ejercicios. Intent\u00e1 de nuevo.</p>"; return; }
-      _conData=arr; _conIdx=0; _conRight=0; _conWrong=0; _conDone=false; _conResults=[];
+      _conData=arr.map(normalizeConnectorExercise); _conIdx=0; _conRight=0; _conWrong=0; _conDone=false; _conResults=[];
       el.innerHTML="";
       renderConCard(el, hdr);
     });
@@ -3178,7 +3251,8 @@ function renderConectores(){
 }
 function renderConCard(el, hdr){
   if(_conIdx>=_conData.length){ _conDone=true; el.innerHTML=""; renderConectores(); return; }
-  var d=_conData[_conIdx];
+  var d=normalizeConnectorExercise(_conData[_conIdx]);
+  _conData[_conIdx]=d;
   el.innerHTML="";
   hdr.innerHTML="";
   hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -3311,6 +3385,20 @@ function renderFlashcards() {
   const ph=state.session.saved[phIdx];
   ensureSrsFields(ph);
   let flipped=false;
+  function stopPracticingCurrent(){
+    if(!ph) return;
+    if(!confirm('¿Borrar esta tarjeta de tus guardadas? Ya no aparecerá para practicar.')) return;
+    var removed=state.session.saved.splice(phIdx,1)[0];
+    if(state.flashcards.flashReviewMode){
+      state.flashcards.reviewQueue=state.flashcards.reviewQueue.filter(function(i){return i!==phIdx;}).map(function(i){return i>phIdx?i-1:i;});
+      state.flashcards.flashIdx=0;
+    } else {
+      state.flashcards.flashIdx=Math.min(state.flashcards.flashIdx, Math.max(0,state.session.saved.length-1));
+      state.flashcards._shuffledIdx=false;
+    }
+    updateBadge(); syncUp(); showToast('Tarjeta borrada: '+(removed&&removed.de?removed.de:''),'success');
+    renderFlashcards();
+  }
 
   const counter=mk("p",(state.flashcards.flashIdx+1)+" de "+workingSet.length+(state.flashcards.flashReviewMode?" pendientes":"")+"  ·  Caja "+ph.box+"/5","color:var(--muted);font-size:12px;text-align:center;margin-bottom:14px;font-weight:600;letter-spacing:0.02em;");
   el.appendChild(counter);
@@ -3406,7 +3494,11 @@ function renderFlashcards() {
     else { state.flashcards.flashIdx=(state.flashcards.flashIdx+1)%state.session.saved.length; }
     renderFlashcards();
   };
-  nav.appendChild(skip); el.appendChild(nav);
+  const remove=mk("button","Borrar / Ya no practicar","flex:1;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.22);color:#F87171;border-radius:12px;padding:10px;font-size:13px;font-weight:800;");
+  remove.title="Borrar esta tarjeta de guardadas";
+  remove.setAttribute("aria-label","Borrar esta tarjeta y dejar de practicarla");
+  remove.onclick=stopPracticingCurrent;
+  nav.appendChild(skip); nav.appendChild(remove); el.appendChild(nav);
 
   const shuffle=mk("button","🔀  Mezclar","width:100%;background:transparent;border:1px dashed rgba(255,255,255,0.1);color:var(--muted);border-radius:14px;padding:10px;font-size:13px;font-weight:600;margin-top:10px;");
   shuffle.onclick=function(){
@@ -4591,6 +4683,28 @@ state.casos.casosSubtab = "identificar";
 state.casos.casosArt = "der", state.casos.casosNounIdx = 0;
 state.casos.casosQuizModo = "all", state.casos.casosPool = [], state.casos.casosIdx = 0, state.casos.casosAnswered = false;
 state.casos.casosHits = 0, state.casos.casosTotal = 0, state.casos.casosStreak = 0;
+state.casos.casosWrongStreak = 0; state.casos.casosCaseMisses = {nom:0,akk:0,dat:0,gen:0};
+
+const CASOS_TIPS = {
+  nom:"Tip: Nominativ es el sujeto: ¿quién hace o es algo? Es el artículo de diccionario.",
+  akk:"Tip: Akkusativ es el objeto directo: ¿qué recibe la acción? En masculino der cambia a den.",
+  dat:"Tip: Dativ aparece con mit/zu/bei y con el receptor: ¿a quién o para quién?",
+  gen:"Tip: Genitiv marca posesión o 'de': des en masc/neutro y normalmente añade -s al sustantivo."
+};
+function casosCaseForQuestion(q){
+  if(q.caso) return q.caso;
+  var src=(q.de||q.frase||q.why||"");
+  var m=src.match(/c-(nom|akk|dat|gen)|\b(Nominativ|Akkusativ|Dativ|Genitiv)\b/i);
+  if(!m) return "";
+  if(m[1]) return m[1];
+  return {nominativ:"nom",akkusativ:"akk",dativ:"dat",genitiv:"gen"}[m[2].toLowerCase()]||"";
+}
+function casosFailureTip(q){
+  var cs=casosCaseForQuestion(q);
+  if(!cs || !CASOS_TIPS[cs]) return "";
+  if(state.casos.casosWrongStreak>=2 || (state.casos.casosCaseMisses[cs]||0)>=2) return CASOS_TIPS[cs];
+  return "";
+}
 
 function renderCasos() {
   const el=document.getElementById("s-casos"); el.innerHTML="";
@@ -4839,7 +4953,7 @@ function casosRenderQ(mount){
 function casosChoose(q,o,opts,btn){
   if(state.casos.casosAnswered) return; state.casos.casosAnswered=true;
   const correct=o===q.ok;
-  state.casos.casosTotal++; if(correct){state.casos.casosHits++;state.casos.casosStreak++;} else {state.casos.casosStreak=0;}
+  state.casos.casosTotal++; if(correct){state.casos.casosHits++;state.casos.casosStreak++;state.casos.casosWrongStreak=0;} else {state.casos.casosStreak=0;state.casos.casosWrongStreak=(state.casos.casosWrongStreak||0)+1; var missCase=casosCaseForQuestion(q); if(missCase) state.casos.casosCaseMisses[missCase]=(state.casos.casosCaseMisses[missCase]||0)+1;}
   logActivity("drillsDone",1); syncUp();
   casosUpdateScore();
   Array.prototype.forEach.call(opts.children,function(b){
@@ -4853,8 +4967,10 @@ function casosChoose(q,o,opts,btn){
   const tag=q.caso?'<span class="cs-tag '+q.caso+'">'+caseNames[q.caso]+'</span> ':'';
   fb.style.display="block";
   fb.style.cssText="margin-top:14px;display:block;border-radius:12px;padding:13px;font-size:14px;background:"+(correct?"var(--akk-bg)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"var(--akk-line)":"rgba(248,113,113,0.25)")+";";
+  var tip=correct?"":casosFailureTip(q);
   fb.innerHTML='<div style="font-weight:800;color:'+(correct?"#4ade80":"#F87171")+';margin-bottom:5px;">'+(correct?'✓ Correcto':'✗ Casi · la respuesta es '+q.ok)+'</div>'
-    +'<div style="color:var(--text2);line-height:1.5;">'+tag+q.why+'</div>';
+    +'<div style="color:var(--text2);line-height:1.5;">'+tag+q.why+'</div>'
+    +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.10);border:1px solid rgba(245,166,35,0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'');
   document.getElementById("cs-next").style.display="flex";
 }
 
@@ -4893,14 +5009,16 @@ function casosRenderTrad(q,mount){
     if(state.casos.casosAnswered) return;
     var correct=normalize(chosen.join(" "))===normalize(targetWords.join(" "));
     state.casos.casosAnswered=true;
-    state.casos.casosTotal++; if(correct){state.casos.casosHits++;state.casos.casosStreak++;} else {state.casos.casosStreak=0;}
+    state.casos.casosTotal++; if(correct){state.casos.casosHits++;state.casos.casosStreak++;state.casos.casosWrongStreak=0;} else {state.casos.casosStreak=0;state.casos.casosWrongStreak=(state.casos.casosWrongStreak||0)+1; var missCase=casosCaseForQuestion(q); if(missCase) state.casos.casosCaseMisses[missCase]=(state.casos.casosCaseMisses[missCase]||0)+1;}
     logActivity("drillsDone",1); syncUp(); casosUpdateScore();
     fb.style.display="block";
     fb.style.background=correct?"var(--akk-bg)":"rgba(248,113,113,0.08)";
     fb.style.border="1px solid "+(correct?"var(--akk-line)":"rgba(248,113,113,0.25)");
+    var tip=correct?"":casosFailureTip(q);
     fb.innerHTML='<div style="font-weight:900;color:'+(correct?'#4ade80':'#F87171')+';margin-bottom:6px;">'+(correct?'✓ Correcto':'✗ Casi')+'</div>'
       +'<div style="font-size:16px;font-weight:700;color:var(--text);line-height:1.5;">'+q.de+'</div>'
       +'<div style="margin-top:6px;font-size:13px;color:var(--text2);line-height:1.5;">'+q.why+'</div>'
+      +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.10);border:1px solid rgba(245,166,35,0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'')
       +'<button id="cs-nexttrad" style="margin-top:12px;width:100%;font-size:14px;font-weight:800;padding:10px 16px;border-radius:11px;border:0;background:var(--gold);color:#000;">Siguiente →</button>';
     document.getElementById("cs-nexttrad").onclick=function(){state.casos.casosIdx++;casosNextQ();};
   };
