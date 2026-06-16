@@ -817,7 +817,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
       <input id="login-user" class="login-input" placeholder="Username" type="text" autocomplete="username" aria-label="Usuario"/>
       <input id="login-pass" class="login-input" placeholder="Password" type="password" autocomplete="current-password" aria-label="Contraseña"/>
       <button class="login-btn" id="login-btn" onclick="doAuth()">Iniciar sesión</button>
-      <button class="login-toggle" onclick="toggleAuthMode()">No tienes cuenta? Registrate</button>
+      <button class="login-toggle" onclick="toggleAuthMode()">No tienes cuenta? Regístrate</button>
       <p id="auth-mode-lbl" style="text-align:center;font-size:11px;color:var(--dim);margin-top:10px;font-weight:500;">Modo: Login</p>
     </div>
   </div>
@@ -1628,17 +1628,17 @@ function getStudyRecommendation(){
   var consistencyPct=Math.min(str/21,1)*0.53+Math.min(weekReviews/100,1)*0.47;
   var scores=[
     {key:"vocab", pct:vocabPct, max:400, label:"Vocabulario", icon:"📖", color:"#F5A623",
-     msg: effectiveVocab<400 ? "Para medir avance hacia B1 cuento palabras que ya superaron los primeros repasos (caja 2 o más). Tenés "+effectiveVocab+" / 400; objetivo sugerido: guardar y repasar 10 por día." : null},
+     msg: effectiveVocab<400 ? "Para medir avance hacia B1 cuento palabras que ya superaron los primeros repasos (caja 2 o más). Tienes "+effectiveVocab+" / 400; objetivo sugerido: guardar y repasar 10 por día." : null},
     {key:"grammar", pct:gramPct, max:GRAMMAR_TOPICS.length, label:"Gram\u00e1tica", icon:"📐", color:"#A78BFA",
-     msg: gramCount===0 ? "Todav\u00eda no practicaste gram\u00e1tica. Hac\u00e9 un drill hoy." : null},
+     msg: gramCount===0 ? "Todav\u00eda no practicaste gram\u00e1tica. Haz un drill hoy." : null},
     {key:"srs", pct:srsPct, max:1, label:"Retenci\u00f3n SRS", icon:"🔄", color:"#4ECDC4",
-     msg: srsPct<0.6 ? "Tu retenci\u00f3n SRS necesita trabajo. Repas\u00e1 flashcards a diario." : null},
+     msg: srsPct<0.6 ? "Tu retenci\u00f3n SRS necesita trabajo. Repasa flashcards a diario." : null},
     {key:"consistency", pct:consistencyPct, max:1, label:"Consistencia", icon:"🔥", color:"#F87171",
-     msg: str<5 ? "Tu racha es corta. Intent\u00e1 5 min por d\u00eda para mantenerla." : weekReviews<50 ? "Tus revisiones semanales son bajas. Aument\u00e1 el ritmo." : null}
+     msg: str<5 ? "Tu racha es corta. Intenta 5 min por d\u00eda para mantenerla." : weekReviews<50 ? "Tus revisiones semanales son bajas. Aumenta el ritmo." : null}
   ];
   // Fill grammar specific message
   if(gramCount===0){
-    scores[1].msg="Todav\u00eda no practicaste gram\u00e1tica. Hac\u00e9 un drill de Art\u00edculos hoy.";
+    scores[1].msg="Todav\u00eda no practicaste gram\u00e1tica. Haz un drill de Art\u00edculos hoy.";
   } else {
     var worstKey=null, worstAcc=1;
     Object.keys(gStats).forEach(function(k){
@@ -1647,7 +1647,7 @@ function getStudyRecommendation(){
       else{var acc=s.right/(s.right+s.wrong);if(acc<worstAcc){worstKey=k;worstAcc=acc;}}
     });
     var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II",plurales:"Plurales"})[worstKey]||worstKey;
-    scores[1].msg="Tu punto d\u00e9bil es Gram\u00e1tica: **"+tname+"**. Practicalo hoy \u2192 +4%.";
+    scores[1].msg="Tu punto d\u00e9bil es Gram\u00e1tica: **"+tname+"**. Practícalo hoy \u2192 +4%.";
   }
   // Elegir el más débil QUE tenga un consejo accionable (no solo el más débil a secas)
   scores.sort(function(a,b){return a.pct-b.pct;});
@@ -1662,7 +1662,7 @@ function getContextualTip(){
   var highLapse=saved.filter(function(p){return (p.lapses||0)>=3;}).sort(function(a,b){return (b.lapses||0)-(a.lapses||0);});
   if(highLapse.length){
     var w=highLapse[0];
-    return {icon:"\ud83d\udd01",msg:"Te cuesta recordar <b>"+w.de+"</b> ("+w.es+")<br><span style='font-size:11px;color:var(--muted);'>Lleva "+w.lapses+" fallos. Prest\u00e1 atenci\u00f3n extra al repasarla.</span>",color:"#F87171"};
+    return {icon:"\ud83d\udd01",msg:"Te cuesta recordar <b>"+w.de+"</b> ("+w.es+")<br><span style='font-size:11px;color:var(--muted);'>Lleva "+w.lapses+" fallos. Presta atenci\u00f3n extra al repasarla.</span>",color:"#F87171"};
   }
   // 2. Weak grammar topic (accuracy < 50%)
   var gStats=state.grammar.grammarStats||{};
@@ -1676,7 +1676,7 @@ function getContextualTip(){
   }).sort(function(a,b){return a.acc-b.acc;});
   if(weakTopics.length){
     var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II",plurales:"Plurales"})[weakTopics[0].key]||weakTopics[0].key;
-    return {icon:"\ud83d\udcd0",msg:tname+" te est\u00e1 costando (<b>"+Math.round(weakTopics[0].acc*100)+"%</b> de aciertos).<br><span style='font-size:11px;color:var(--muted);'>Toc\u00e1 para practicar un drill de gram\u00e1tica.</span>",color:"#A78BFA",tab:"gramatica"};
+    return {icon:"\ud83d\udcd0",msg:tname+" te est\u00e1 costando (<b>"+Math.round(weakTopics[0].acc*100)+"%</b> de aciertos).<br><span style='font-size:11px;color:var(--muted);'>Toca para practicar un drill de gram\u00e1tica.</span>",color:"#A78BFA",tab:"gramatica"};
   }
   // 3. Fehlerjournal pattern — recent errors
   var ej=state.session.errorJournal||[];
@@ -1684,7 +1684,7 @@ function getContextualTip(){
     return e.date===todayKey()||e.date===addDays(todayKey(),-1);
   });
   if(recent.length>=3){
-    return {icon:"\ud83d\udcd3",msg:"Ten\u00e9s "+recent.length+" errores registrados hoy/ayer.<br><span style='font-size:11px;color:var(--muted);'>Revisalos en Resumen para ver patrones.</span>",color:"#F5A623",tab:"resumen"};
+    return {icon:"\ud83d\udcd3",msg:"Tienes "+recent.length+" errores registrados hoy/ayer.<br><span style='font-size:11px;color:var(--muted);'>Revísalos en Resumen para ver patrones.</span>",color:"#F5A623",tab:"resumen"};
   }
   // 4. Streak at risk — no activity today
   var todayL=state.session.dailyLog[todayKey()];
@@ -1755,7 +1755,7 @@ function renderHörverstehenPlay(container){
   _hvState.step="listen";
   var c=mk("div","","padding:4px 0;");
   c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
-  c.appendChild(mk("p","Escuchá el diálogo y después respondé.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:14px;"));
+  c.appendChild(mk("p","Escucha el diálogo y después responde.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:14px;"));
   // Dialog transcript (hidden initially)
   var dialogDiv=document.createElement("div");
   dialogDiv.style.cssText="background:rgba(78,205,196,0.04);border:1px solid rgba(78,205,196,0.12);border-radius:12px;padding:14px;margin-bottom:14px;display:none;";
@@ -1789,7 +1789,7 @@ function renderHörverstehenQuestions(container){
   var qCount=_hvState.questions.length;
   var c=mk("div","","padding:2px 0;");
   c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
-  c.appendChild(mk("p","Respondé las preguntas","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
+  c.appendChild(mk("p","Responde las preguntas","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
   _hvState.questions.forEach(function(q,qi){
     var qDiv=document.createElement("div");
     qDiv.style.cssText="margin-bottom:14px;padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);";
@@ -1821,7 +1821,7 @@ function renderHörverstehenResults(container){
   var color=pct>=100?"#4ade80":pct>=50?"#F5A623":"#F87171";
   var c=mk("div","","text-align:center;padding:16px 0;");
   c.appendChild(mk("p",_hvState.score+"/"+total,"font-size:44px;font-weight:900;color:"+color+";line-height:1;font-variant-numeric:tabular-nums;margin-bottom:4px;"));
-  c.appendChild(mk("p",pct>=100?"🎉 ¡Perfecto!":pct>=50?"👍 Bien, seguí practicando":"💪 Seguí intentando","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
+  c.appendChild(mk("p",pct>=100?"🎉 ¡Perfecto!":pct>=50?"👍 Bien, sigue practicando":"💪 Sigue intentando","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
   var pBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:6px;height:6px;overflow:hidden;margin:0 20px 14px;");
   var pFill=mk("div","","background:"+color+";height:100%;width:"+pct+"%;transition:width 0.3s;border-radius:6px;");
   pBar.appendChild(pFill);c.appendChild(pBar);
@@ -2006,7 +2006,7 @@ function showReviewComplete(){
 function toggleAuthMode() {
   state.app.isRegister=!state.app.isRegister;
   document.getElementById("auth-mode-lbl").textContent=state.app.isRegister?"Modo: Registro":"Modo: Login";
-  document.querySelector(".login-toggle").textContent=state.app.isRegister?"Ya tienes cuenta? Login":"No tienes cuenta? Registrate";
+  document.querySelector(".login-toggle").textContent=state.app.isRegister?"Ya tienes cuenta? Login":"No tienes cuenta? Regístrate";
   document.getElementById("login-btn").textContent=state.app.isRegister?"Crear cuenta":"Iniciar sesión";
 }
 
@@ -2174,19 +2174,19 @@ function showOnboarding(){
     {
       emoji:"🇩🇪",
       title:"Bienvenido a DeutschLernen",
-      body:"Practicá alemán todos los días, aunque sean solo 5 minutos. La consistencia es lo que te va a llevar de A2 a B1.",
+      body:"Practica alemán todos los días, aunque sean solo 5 minutos. La consistencia es lo que te va a llevar de A2 a B1.",
       btn:"Siguiente →"
     },
     {
       emoji:"🎯",
       title:"Tu primera sesión",
-      body:"Empezá por Hoy → Flashcards para repasar las tarjetas pendientes. Después explorá Frases para descubrir vocabulario nuevo.",
+      body:"Empieza por Hoy → Flashcards para repasar las tarjetas pendientes. Después explora Frases para descubrir vocabulario nuevo.",
       btn:"Siguiente →"
     },
     {
       emoji:"📈",
-      title:"Seguí tu progreso",
-      body:"Construí tu racha diaria, revisá tus stats en Resumen, y cuando menos te des cuenta ya estarás en B1. ¡Confianza!",
+      title:"Sigue tu progreso",
+      body:"Construye tu racha diaria, revisa tus stats en Resumen, y cuando menos te des cuenta ya estarás en B1. ¡Confianza!",
       btn:"¡Empezar!"
     }
   ];
@@ -2447,7 +2447,7 @@ function renderHoy(){
     streakBox.appendChild(mk("p",(streak===1?"dia":"dias")+" seguidos","font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;"));
   } else {
     streakBox.appendChild(mk("p","Sin racha","font-size:18px;font-weight:800;color:var(--muted);margin-top:6px;"));
-    streakBox.appendChild(mk("p","Empezá hoy — practicá 1 minuto","font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;"));
+    streakBox.appendChild(mk("p","Empieza hoy — practica 1 minuto","font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;"));
   }
   el.appendChild(streakBox);
 
@@ -2460,7 +2460,7 @@ function renderHoy(){
     ctaCard.onkeydown=function(e){if(e.key==="Enter"||e.key===" ") this.click();};
     ctaCard.appendChild(mk("p",String(due),"font-size:38px;font-weight:900;color:var(--gold-text);line-height:1;font-variant-numeric:tabular-nums;"));
     ctaCard.appendChild(mk("p","tarjetas pendientes","font-size:14px;color:var(--gold-text);font-weight:700;margin-top:4px;"));
-    ctaCard.appendChild(mk("p","Tocá para repasar ahora","font-size:12px;color:var(--muted);margin-top:6px;"));
+    ctaCard.appendChild(mk("p","Toca para repasar ahora","font-size:12px;color:var(--muted);margin-top:6px;"));
     if(streak>0) ctaCard.appendChild(mk("p","⚠️ Tu racha de "+streak+" está en riesgo","font-size:11px;color:var(--red-text);font-weight:700;margin-top:8px;"));
     el.appendChild(ctaCard);
   } else if(allDone){
@@ -2646,7 +2646,7 @@ function renderHoy(){
   };
   hvCard.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
   hvCard.appendChild(mk("p","Comprensión auditiva","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
-  hvCard.appendChild(mk("p","Escuchá un diálogo y respondé preguntas","font-size:11px;color:var(--muted);font-weight:500;"));
+  hvCard.appendChild(mk("p","Escucha un diálogo y responde preguntas","font-size:11px;color:var(--muted);font-weight:500;"));
   el.appendChild(hvCard);
 
   // ── Redemittel card ──
@@ -3206,7 +3206,7 @@ function renderGenero(){
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83c\udfaf der \u00b7 die \u00b7 das","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Adivin\u00e1 el art\u00edculo correcto. Azul=der \u00b7 Rojo=die \u00b7 Verde=das.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  hdr.appendChild(mk("p","Adivina el art\u00edculo correcto. Azul=der \u00b7 Rojo=die \u00b7 Verde=das.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
 
   if(_genDone){ renderGenResults(el); return; }
@@ -3216,7 +3216,7 @@ function renderGenero(){
     el.appendChild(skelCard(6));
     ai('You are a German teacher. Generate 10 common German nouns at A2 level. Reply ONLY with valid JSON array, no markdown: [{"noun":"Tisch","article":"der","plural":"Tische","meaning":"mesa"}]. Avoid obscure words. Include 2-3 from each article group (der/die/das).',[],600).then(function(txt){
       var arr=genPickNouns(parseJSONArray(txt));
-      if(!arr||!arr.length){ el.innerHTML="<p style='color:var(--red);text-align:center;padding:40px;'>Error generando sustantivos. Intent\u00e1 de nuevo.</p>"; return; }
+      if(!arr||!arr.length){ el.innerHTML="<p style='color:var(--red);text-align:center;padding:40px;'>Error generando sustantivos. Intenta de nuevo.</p>"; return; }
       _genNouns=arr; _genIdx=0; _genRight=0; _genWrong=0; _genMissed=[]; _genDone=false;
       el.innerHTML="";
       hdr.appendChild(mk("p","","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;")); // placeholder
@@ -3350,7 +3350,7 @@ function renderConectores(){
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83d\udd17 weil \u00b7 obwohl \u00b7 deshalb \u00b7 dass \u00b7 wenn","font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Eleg\u00ed el conector correcto. Atenci\u00f3n al orden del verbo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  hdr.appendChild(mk("p","Elige el conector correcto. Atenci\u00f3n al orden del verbo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
 
   if(_conDone){ renderConResults(el); return; }
@@ -3359,7 +3359,7 @@ function renderConectores(){
     el.appendChild(skelCard(5));
     ai('You are a German teacher at A2-B1 level. Generate 5 fill-in-the-blank connector exercises. Reply ONLY with valid JSON array, no markdown: [{"sentence":"Ich lerne Deutsch, ___ ich nach Deutschland ziehen m\u00f6chte.","options":["weil","obwohl","deshalb","dass"],"correct":"weil","fullSentence":"Ich lerne Deutsch, weil ich nach Deutschland ziehen m\u00f6chte.","tip":"weil env\u00eda el verbo conjugado al FINAL de la oraci\u00f3n"}]. Use these connectors: weil, obwohl, deshalb, dass, wenn (each at least once). Include a brief Spanish tip about verb position for each.',[],800).then(function(txt){
       var arr=parseJSONArray(txt);
-      if(!arr||!arr.length){ el.innerHTML="<p style='color:var(--red);text-align:center;padding:40px;'>Error generando ejercicios. Intent\u00e1 de nuevo.</p>"; return; }
+      if(!arr||!arr.length){ el.innerHTML="<p style='color:var(--red);text-align:center;padding:40px;'>Error generando ejercicios. Intenta de nuevo.</p>"; return; }
       _conData=arr.map(normalizeConnectorExercise); _conIdx=0; _conRight=0; _conWrong=0; _conDone=false; _conResults=[];
       el.innerHTML="";
       renderConCard(el, hdr);
@@ -3382,7 +3382,7 @@ function renderConCard(el, hdr){
   // Sentence display
   var card=document.createElement("div"); card.className="card";
   card.style.cssText="padding:24px 20px;margin-bottom:14px;border-radius:var(--r-xl,20px);";
-  card.appendChild(mk("p","Complet\u00e1 la oraci\u00f3n:","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:600;margin-bottom:10px;"));
+  card.appendChild(mk("p","Completa la oraci\u00f3n:","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:600;margin-bottom:10px;"));
   var sentEl=mk("p",d.sentence,"font-size:17px;font-weight:700;color:var(--text);line-height:1.6;letter-spacing:-0.01em;");
   // Highlight the blank
   sentEl.innerHTML=d.sentence.replace(/___/g,'<span style="background:rgba(167,139,250,0.15);color:#A78BFA;padding:2px 8px;border-radius:6px;font-weight:900;">___</span>');
@@ -4063,7 +4063,7 @@ function renderSettings(){
   };
   ttsRow.appendChild(ttsSlider); ttsRow.appendChild(ttsLabel);
   ttsCard.appendChild(ttsRow);
-  const ttsHint=mk("p","Probá ▶ escuchar en cualquier tab para probar","font-size:11px;color:var(--muted);margin-top:8px;");
+  const ttsHint=mk("p","Prueba ▶ escuchar en cualquier tab para probar","font-size:11px;color:var(--muted);margin-top:8px;");
   ttsCard.appendChild(ttsHint);
   el.appendChild(ttsCard);
 
@@ -4526,7 +4526,7 @@ function renderDictado() {
 
   const actions=mk("div","","display:flex;gap:8px;");
   const checkBtn=mk("button","Comprobar","flex:1;background:#F5A623;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;box-shadow:0 4px 14px rgba(245,166,35,0.3);");
-  checkBtn.disabled=true; checkBtn.style.opacity="0.5"; checkBtn.title="Primero escuchá la frase";
+  checkBtn.disabled=true; checkBtn.style.opacity="0.5"; checkBtn.title="Primero escucha la frase";
   const newBtn=mk("button","Otra frase","background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:700;");
   actions.appendChild(checkBtn); actions.appendChild(newBtn); card.appendChild(actions);
   el.appendChild(card);
@@ -5286,7 +5286,7 @@ function renderResumen() {
     var _last=_pts[_pts.length-1];
     histCard.appendChild(mk("p","Último: "+_last.pct+"% ("+_last.date+") · "+_pts.length+" días registrados","font-size:11px;color:var(--muted);margin-top:8px;font-weight:500;text-align:center;"));
   } else {
-    histCard.appendChild(mk("p","Todavía no hay datos históricos. Seguí practicando y en unos días aparecerá la curva.","font-size:13px;color:var(--muted);font-weight:500;line-height:1.5;"));
+    histCard.appendChild(mk("p","Todavía no hay datos históricos. Sigue practicando y en unos días aparecerá la curva.","font-size:13px;color:var(--muted);font-weight:500;line-height:1.5;"));
   }
   el.appendChild(histCard);
 
@@ -5507,7 +5507,7 @@ function getInsightData(){
   var learned="Esta semana estuviste activo "+wDays+" de 7 días: "+weekMinutes+" min, "+weekReviews+" flashcards y "+weekDrills+" drills.";
   var error=topLapses.length?"La tarjeta que más se repite es “"+topLapses[0].de+"” ("+(topLapses[0].lapses||0)+" fallos).":"Todavía no hay una palabra claramente problemática.";
   if(weakestGrammar) error+=" Gramática más débil: "+weakestGrammar+".";
-  var tip=topLapses.length?"Hoy repasá primero las más falladas y después hacé 1 ronda corta de gramática.":"Guardá 5 frases nuevas y hacé una ronda de flashcards para crear historial real.";
+  var tip=topLapses.length?"Hoy repasa primero las más falladas y después haz 1 ronda corta de gramática.":"Guarda 5 frases nuevas y haz una ronda de flashcards para crear historial real.";
   return {learned:learned, error:error, tip:tip};
 }
 function renderInsight(host){
@@ -5542,7 +5542,7 @@ function renderShadowing(){
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","SOMBRA — PRONUNCIACIÓN","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Shadowing","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Escuchá la frase y repetila en voz alta. El micrófono transcribe y compara tu pronunciación palabra por palabra.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  hdr.appendChild(mk("p","Escucha la frase y repítela en voz alta. El micrófono transcribe y compara tu pronunciación palabra por palabra.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
 
   // Init pool
@@ -5577,7 +5577,7 @@ function renderShadowing(){
 
   // Mic row
   var micRow=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:16px;");
-  micRow.appendChild(mk("span","🎤  Repetir — grabá tu voz","font-size:14px;color:var(--teal-text);font-weight:700;flex:1;"));
+  micRow.appendChild(mk("span","🎤  Repetir — graba tu voz","font-size:14px;color:var(--teal-text);font-weight:700;flex:1;"));
   var micBtn=makeMicBtn("#4ECDC4",function(transcript){
     renderPronScore(scoreHost, sentence.de, transcript, "#4ECDC4"); logActivity("drillsDone",1); syncUp();
     nextBtn.style.display="block";
