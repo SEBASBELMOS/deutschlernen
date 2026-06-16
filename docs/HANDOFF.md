@@ -12,6 +12,8 @@
 - Icon system upgraded from Lucide-like outlines to chunky filled/duotone SVG shapes. Bottom nav, sheet buttons, and Vocabulario → Temas use rounded color chips with category colors.
 - Latest user QA feedback was added to `docs/checklist.md` before compaction: Hörverstehen audio cuts off, Casos needs failure tips, Género repeats nouns, Conectores has a `wenn` answer missing from options, and Flashcards needs a delete/stop-practicing action.
 - Latest QA backlog implemented in `public/index.html`: Hörverstehen chunked full TTS, Conectores option normalization, Género noun rotation, Flashcards delete/stop-practicing action, and Casos repeated-failure tips.
+- Gráfico de progreso histórico: inline SVG chart in Resumen showing level % curve from `dailyLog.levelPct` snapshots (last 30 days). Shadowing: new Practicar screen with 10-sentence pool, record/transcribe/score flow, and AI sentence generation.
+- Export progreso completo: JSON download in Settings with dailyLog, streak, level, grammarStats, errorJournal. Onboarding: 3-step card overlay for new users, skipped via localStorage.
 
 ## Files changed
 
@@ -66,7 +68,7 @@ Results:
 
 ## Pending final steps
 
-- Next recommended work: Gráfico de progreso histórico, Export progreso completo, Shadowing, then Onboarding corto.
+- Next recommended work: conversación voz continua, change-password, PWA, bulk edit, solo-audio.
 - HF Space commit/push after any code fixes.
 
 ## Risks/notes
