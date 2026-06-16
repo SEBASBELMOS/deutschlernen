@@ -159,6 +159,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 }
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
 .sheet-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .sheet-title{font-size:16px;font-weight:800;color:var(--text);}
 .sheet-close{background:none;border:none;font-size:24px;color:var(--muted);cursor:pointer;min-width:44px;min-height:44px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
@@ -2160,7 +2161,118 @@ function showApp() {
     document.getElementById("user-lbl").textContent=state.app.authUser;
     state.app.currentTab="hoy";
     updateBadge(); renderTabs(); showScreen("hoy");
+    // Onboarding for new users
+    if(!localStorage.getItem("dl_onboarding_done_"+state.app.authUser)) setTimeout(showOnboarding,400);
   },250);
+}
+
+// ── Onboarding (3-step tour) ────────────────────────────────────────────────
+function showOnboarding(){
+  if(localStorage.getItem("dl_onboarding_done_"+state.app.authUser)) return;
+
+  const steps=[
+    {
+      emoji:"🇩🇪",
+      title:"Bienvenido a DeutschLernen",
+      body:"Practicá alemán todos los días, aunque sean solo 5 minutos. La consistencia es lo que te va a llevar de A2 a B1.",
+      btn:"Siguiente →"
+    },
+    {
+      emoji:"🎯",
+      title:"Tu primera sesión",
+      body:"Empezá por Hoy → Flashcards para repasar las tarjetas pendientes. Después explorá Frases para descubrir vocabulario nuevo.",
+      btn:"Siguiente →"
+    },
+    {
+      emoji:"📈",
+      title:"Seguí tu progreso",
+      body:"Construí tu racha diaria, revisá tus stats en Resumen, y cuando menos te des cuenta ya estarás en B1. ¡Confianza!",
+      btn:"¡Empezar!"
+    }
+  ];
+
+  var stepIdx=0;
+  var releaseFocus=null;
+
+  // Overlay
+  var overlay=document.createElement("div");
+  overlay.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;";
+  if(state.app._motionOK) overlay.style.animation="fadeIn 0.25s var(--ease-out)";
+
+  // Card
+  var card=document.createElement("div");
+  card.style.cssText="background:var(--modal-bg);border:1px solid rgba(245,166,35,0.22);border-radius:20px;padding:32px 28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5);";
+  card.setAttribute("role","dialog"); card.setAttribute("aria-modal","true"); card.setAttribute("aria-label","Tour de bienvenida");
+  if(state.app._motionOK) card.style.animation="scaleIn 0.3s var(--ease-spring)";
+
+  // Content area
+  var emojiEl=mk("div",steps[0].emoji,"font-size:48px;margin-bottom:14px;");
+  card.appendChild(emojiEl);
+  var titleEl=mk("h2",steps[0].title,"font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:10px;");
+  card.appendChild(titleEl);
+  var bodyEl=mk("p",steps[0].body,"font-size:14px;color:var(--text2);line-height:1.6;font-weight:500;margin-bottom:22px;");
+  card.appendChild(bodyEl);
+
+  // Dots
+  var dots=mk("div","","display:flex;justify-content:center;gap:8px;margin-bottom:18px;");
+  for(var i=0;i<3;i++){
+    var dot=mk("div","","width:8px;height:8px;border-radius:50%;transition:all 0.25s var(--ease-out);background:"+(i===0?"var(--gold)":"var(--dim)")+";");
+    dot._idx=i;
+    dots.appendChild(dot);
+  }
+  card.appendChild(dots);
+
+  // Button
+  var nextBtn=document.createElement("button");
+  nextBtn.textContent=steps[0].btn;
+  nextBtn.style.cssText="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#F5A623,#e8950a);color:#0c0a00;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;letter-spacing:-0.01em;";
+  card.appendChild(nextBtn);
+
+  // Skip
+  var skipLink=mk("button","Saltar","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;margin-top:14px;text-decoration:underline;");
+  card.appendChild(skipLink);
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  releaseFocus=trapFocus(card, finishOnboarding);
+
+  function finishOnboarding(){
+    if(releaseFocus){ releaseFocus(); releaseFocus=null; }
+    localStorage.setItem("dl_onboarding_done_"+state.app.authUser,"1");
+    if(state.app._motionOK){overlay.style.opacity="0";overlay.style.transition="opacity 0.2s var(--ease-out)";setTimeout(function(){overlay.remove();},200);}
+    else overlay.remove();
+  }
+
+  function goToStep(idx){
+    if(idx>=steps.length){ finishOnboarding(); return; }
+    stepIdx=idx;
+    var s=steps[idx];
+    if(state.app._motionOK){
+      emojiEl.style.opacity="0";emojiEl.style.transform="translateY(10px)";
+      titleEl.style.opacity="0";titleEl.style.transform="translateY(10px)";
+      bodyEl.style.opacity="0";bodyEl.style.transform="translateY(10px)";
+    }
+    setTimeout(function(){
+      emojiEl.textContent=s.emoji;
+      titleEl.textContent=s.title;
+      bodyEl.textContent=s.body;
+      nextBtn.textContent=s.btn;
+      if(state.app._motionOK){
+        emojiEl.style.transition="all 0.25s var(--ease-out)";emojiEl.style.opacity="1";emojiEl.style.transform="translateY(0)";
+        titleEl.style.transition="all 0.25s var(--ease-out) 0.05s";titleEl.style.opacity="1";titleEl.style.transform="translateY(0)";
+        bodyEl.style.transition="all 0.25s var(--ease-out) 0.1s";bodyEl.style.opacity="1";bodyEl.style.transform="translateY(0)";
+      }
+    },state.app._motionOK?100:0);
+    // Update dots
+    for(var i=0;i<dots.children.length;i++){
+      dots.children[i].style.background=i===idx?"var(--gold)":"var(--dim)";
+    }
+  }
+
+  nextBtn.onclick=function(){ goToStep(stepIdx+1); };
+  skipLink.onclick=finishOnboarding;
+  skipLink.setAttribute("aria-label","Saltar el tour de bienvenida");
+  // Focus, Escape y focus-trap los maneja trapFocus(); el texto visible del botón es su nombre accesible (se actualiza solo).
 }
 
 function updateBadge() {
@@ -3882,6 +3994,52 @@ function exportSavedCsv(){
   setTimeout(function(){URL.revokeObjectURL(url);},2000);
 }
 
+// ── Full Progress JSON Export ────────────────────────────────────────────────
+function exportFullProgress(){
+  const _t=todayKey();
+  const str=computeStreak();
+  const lvlPct=computeLevelProgress();
+  var weekMins=weeklyMinutes();
+  var due=reviewDueCount();
+
+  // dailyLog → 30-day window for readability
+  var recentLog={};
+  for(var i=29;i>=0;i--){
+    var dk=addDays(_t,-i);
+    if(state.session.dailyLog[dk]) recentLog[dk]=state.session.dailyLog[dk];
+    else recentLog[dk]={minutes:0,phrasesReviewed:0,drillsDone:0};
+  }
+
+  var payload={
+    exportDate: _t,
+    level: state.app.level,
+    levelProgressPercent: lvlPct,
+    streak: str,
+    streakLabel: str+(str===1?" dia":" dias")+" seguidos",
+    weeklyMinutes: weekMins,
+    weeklyGoal: state.session.weeklyGoal,
+    totalPhrases: state.session.sessionPhrases,
+    totalMinutes: state.session.sessionMinutes,
+    savedPhrases: state.session.saved.length,
+    reviewDueCount: due,
+    grammarStats: state.grammar.grammarStats||{},
+    errorJournalCount: (state.session.errorJournal||[]).length,
+    errorJournal: (state.session.errorJournal||[]).slice(0,100),
+    chatLogsCount: state.session.chatLogs.length,
+    shownPhrasesTopics: Object.keys(state.session.shownPhrases||{}).length,
+    dailyLog: state.session.dailyLog,
+    dailyLogLast30Days: recentLog
+  };
+
+  var json=JSON.stringify(payload,null,2);
+  var blob=new Blob([json],{type:"application/json;charset=utf-8"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a"); a.href=url; a.download="deutschlernen-progreso-"+_t+".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
+  showToast("Progreso exportado → deutschlernen-progreso-"+_t+".json","success");
+}
+
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function renderSettings(){
   const el=document.getElementById("s-config"); el.innerHTML="";
@@ -3970,6 +4128,18 @@ function renderSettings(){
   });
   lvlCard.appendChild(lvlRow);
   el.appendChild(lvlCard);
+
+  // Export progreso completo
+  const exportCard=document.createElement("div"); exportCard.className="card";
+  exportCard.appendChild(mk("p","💾  DATOS","font-size:10px;color:var(--purple-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  const exportBtn=document.createElement("button");
+  exportBtn.textContent="📥 Export progreso completo (JSON)";
+  exportBtn.setAttribute("aria-label","Exportar progreso completo en JSON");
+  exportBtn.style.cssText="width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(167,139,250,0.22);background:rgba(167,139,250,0.08);color:var(--purple-text);font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all 0.2s;";
+  exportBtn.onclick=exportFullProgress;
+  exportCard.appendChild(exportBtn);
+  exportCard.appendChild(mk("p","dailyLog, racha, nivel, estadísticas de gramática, errores y más.","font-size:11px;color:var(--muted);margin-top:8px;font-weight:500;"));
+  el.appendChild(exportCard);
 }
 
 // ── POST-CHAT ANALYSIS ────────────────────────────────────────────────────────
