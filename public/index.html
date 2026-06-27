@@ -868,7 +868,6 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
     <div id="s-corrigeme" class="screen"></div>
     <div id="s-noentendi" class="screen"></div>
     <div id="s-lectura" class="screen"></div>
-    <div id="s-dictado" class="screen"></div>
     <div id="s-shadowing" class="screen"></div>
     <div id="s-gramatica" class="screen"></div>
     <div id="s-casos" class="screen"></div>
@@ -922,7 +921,7 @@ function parseJSONArray(text) {
 // ── Namespaced State ──────────────────────────────────────────────────────────
 const state = {
   app:{}, session:{}, flashcards:{}, guardadas:{},
-  chat:{}, lectura:{}, dictado:{}, grammar:{}, casos:{}, tempo:{}
+  chat:{}, lectura:{}, shadowing:{}, grammar:{}, casos:{}, tempo:{}
 };
 
 // ── TTS ───────────────────────────────────────────────────────────────────────
@@ -1386,7 +1385,7 @@ state.guardadas.vocabSortCol="de";
 state.guardadas.vocabSortAsc=true;
 state.app.serverInfo={model:"?"};
 if(localStorage.getItem("dl_theme")==="light") document.documentElement.classList.add("light-mode");
-const CATEGORIES = ["Trabajo","Viaje","Viajes","Comida","Naturaleza","Sentimientos","Hogar","Tr\u00e1mites","Tech","General"];
+const CATEGORIES = ["Trabajo","Viaje","Viajes","Comida","Naturaleza","Sentimientos","Hogar","Tr\u00e1mites","Tech","Conectores","General"];
 
 const TRAMITES_VOCAB = [
   {de:"der Termin", es:"la cita", tip:"beim B\u00fcrgeramt"},
@@ -1439,16 +1438,35 @@ const VIAJE_VOCAB = [
 ];
 
 const COMIDA_VOCAB = [
-  {de:"das Fr\u00fchst\u00fcck", es:"el desayuno", tip:"morgens"},
+  {de:"das Frühstück", es:"el desayuno", tip:"morgens"},
   {de:"das Mittagessen", es:"el almuerzo", tip:"mittags"},
   {de:"das Abendessen", es:"la cena", tip:"abends"},
-  {de:"das Getr\u00e4nk", es:"la bebida", tip:"Wasser, Saft, Bier"},
+  {de:"das Getränk", es:"la bebida", tip:"Wasser, Saft, Bier"},
   {de:"die Rechnung", es:"la cuenta", tip:"im Restaurant"},
   {de:"die Bestellung", es:"el pedido", tip:"Essen bestellen"},
   {de:"der Geschmack", es:"el sabor", tip:"lecker oder nicht"},
   {de:"der Hunger", es:"el hambre", tip:"Ich habe Hunger"},
   {de:"der Durst", es:"la sed", tip:"Ich habe Durst"},
   {de:"der Tisch", es:"la mesa", tip:"einen Tisch reservieren"}
+];
+
+const CONECTORES_VOCAB = [
+  {de:"weil", es:"porque", tip:"oración subordinada: verbo al final"},
+  {de:"obwohl", es:"aunque / a pesar de que", tip:"oración subordinada: verbo al final"},
+  {de:"deshalb", es:"por eso / por lo tanto", tip:"adverbio: invierte sujeto-verbo (V2)"},
+  {de:"trotzdem", es:"sin embargo / a pesar de eso", tip:"adverbio: invierte sujeto-verbo (V2)"},
+  {de:"sondern", es:"sino (que)", tip:"corrige una negación: nicht A, sondern B"},
+  {de:"denn", es:"porque / pues", tip:"conjunción coordinante: no cambia orden"},
+  {de:"damit", es:"para que", tip:"oración subordinada: verbo al final"},
+  {de:"als", es:"cuando (pasado único)", tip:"pasado puntual, una sola vez"},
+  {de:"wenn", es:"cuando (repetición) / si", tip:"presente, futuro o pasado repetido"},
+  {de:"bevor", es:"antes de que", tip:"subordinada: verbo al final"},
+  {de:"nachdem", es:"después de que", tip:"subordinada: verbo al final"},
+  {de:"während", es:"mientras / durante", tip:"+ Genitiv (sust.) o subordinada"},
+  {de:"seitdem", es:"desde que", tip:"subordinada: verbo al final"},
+  {de:"bis", es:"hasta / hasta que", tip:"+ Akkusativ o subordinada"},
+  {de:"falls", es:"en caso de que / si", tip:"subordinada: verbo al final"},
+  {de:"sobald", es:"tan pronto como", tip:"subordinada: verbo al final"}
 ];
 
 function showVocabPack(host, title, icon, vocabList, categoryName){
@@ -1864,95 +1882,6 @@ function renderHörverstehenResults(container){
   logActivity("drillsDone",1); syncUp();
 }
 
-// ── REDEMITTEL ──
-var REDEMITTEL_TOPICS=[
-  {id:"restaurant", label:"🍽️ Restaurante", desc:"Pedir comida, la cuenta, reservar"},
-  {id:"arzt",      label:"🏥 Médico",        desc:"Síntomas, cita, receta"},
-  {id:"interview", label:"💼 Entrevista",    desc:"Presentarse, experiencia, metas"},
-  {id:"anmeldung", label:"🏠 Mudanza",       desc:"Bürgeramt, contrato, vecinos"},
-  {id:"shopping",  label:"🛒 Compras",       desc:"Precios, talles, devolución"},
-  {id:"telefon",   label:"☎️ Teléfono",     desc:"Llamadas, citas, problemas"}
-];
-var _redemittelResult=null;
-
-function showRedemittel(host){
-  host.innerHTML="";
-  var c=mk("div","","padding:2px 0;");
-  c.appendChild(mk("p","🧩 REDEMITTEL","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
-  c.appendChild(mk("p","Frases útiles para situaciones reales","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:14px;"));
-  var grid=mk("div","","display:grid;grid-template-columns:1fr 1fr;gap:8px;");
-  REDEMITTEL_TOPICS.forEach(function(t){
-    var btn=mk("button","","padding:14px 10px;border-radius:12px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.05);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4;transition:all 0.15s;");
-    btn.innerHTML=t.label+"<br><span style='font-size:10px;color:var(--muted);font-weight:500'>"+t.desc+"</span>";
-    btn.onmouseover=function(){this.style.borderColor="rgba(245,166,35,0.4)";this.style.background="rgba(245,166,35,0.1)";};
-    btn.onmouseout=function(){this.style.borderColor="rgba(245,166,35,0.2)";this.style.background="rgba(245,166,35,0.05)";};
-    btn.onclick=function(){generateRedemittel(t,host);};
-    grid.appendChild(btn);
-  });
-  c.appendChild(grid);
-  var back=mk("button","← Volver","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:10px 0;margin-top:8px;");
-  back.onclick=function(){renderHoy();};
-  c.appendChild(back);
-  host.appendChild(c);
-}
-function generateRedemittel(topic,host){
-  var skelDiv=mk("div","","padding:14px;");
-  for(var si=0;si<3;si++) skelDiv.appendChild(skelCard(4));
-  host.appendChild(skelDiv);
-  var lvl=state.app.level||"B1";
-  var lvlRng=lvl==="A2"?"A2":lvl==="B1"?"A2-B1":"B1-B2";
-  ai("You are a native German speaker. Reply ONLY with valid JSON array, no markdown.",
-    [{role:"user",content:'Generate 5 useful German phrases ('+lvlRng+') for the situation: "'+topic.label.replace(/[^\w\s]/g,"").trim()+'". Include a brief Spanish explanation for each. Format: [{"de":"...","es":"..."}]. Focus on practical, everyday language.'}],1500)
-    .then(function(raw){
-      var arr=parseJSONArray(raw);
-      if(!arr||!arr.length){showToast("Error generando frases","error");_redemittelResult=null;host.innerHTML="";showRedemittel(host);return;}
-      _redemittelResult={phrases:arr,topic:topic};
-      renderRedemittelPhrases(host);
-    })
-    .catch(function(){showToast("Error generando","error");});
-}
-function renderRedemittelPhrases(host){
-  host.innerHTML="";
-  var r=_redemittelResult;
-  if(!r||!r.phrases.length){showRedemittel(host);return;}
-  var c=mk("div","","");
-  c.appendChild(mk("p","🧩 "+r.topic.label,"font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;margin-bottom:8px;"));
-  r.phrases.forEach(function(ph){
-    var card=mk("div","","padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:8px;");
-    card.appendChild(mk("p",ph.de,"font-size:16px;font-weight:800;color:var(--text);margin-bottom:2px;letter-spacing:-0.01em;"));
-    card.appendChild(mk("p",ph.es,"font-size:12px;color:var(--muted);font-weight:500;margin-bottom:8px;"));
-    var row=mk("div","","display:flex;gap:8px;");
-    // Play button
-    var play=mk("button","🔊 Escuchar","padding:6px 12px;border-radius:8px;border:1px solid rgba(78,205,196,0.2);background:rgba(78,205,196,0.06);color:#4ECDC4;font-size:11px;font-weight:700;cursor:pointer;");
-    play.onclick=function(){speak(ph.de);};
-    row.appendChild(play);
-    // Save button
-    var save=mk("button","","padding:6px 12px;border-radius:8px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.06);color:#F5A623;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;");
-    setSaveIcon(save,false,"Guardar");
-    save.onclick=function(){
-      var phr=ensureSrsFields({de:ph.de,es:ph.es,tip:r.topic.label.replace(/[^\w\s]/g,"").trim(),source:"redemittel"});
-      if(!state.session.saved.some(function(x){return x.de===phr.de;})){
-        state.session.saved.push(phr);logActivity("phrasesReviewed",1);syncUp();
-        save.textContent="✓ Guardada";save.style.opacity="0.5";save.disabled=true;
-        showToast("Guardada en flashcards","success");
-      } else {showToast("Ya existe","info");}
-    };
-    row.appendChild(save);
-    card.appendChild(row);
-    c.appendChild(card);
-  });
-  // Retry button
-  var retryRow=mk("div","","display:flex;gap:8px;margin-top:4px;");
-  var other=mk("button","🔄 Otra situación","flex:1;padding:12px;border-radius:10px;border:none;background:rgba(255,255,255,0.04);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;");
-  other.onclick=function(){showRedemittel(host);};
-  retryRow.appendChild(other);
-  var newPh=mk("button","↻ Regenerar","flex:1;padding:12px;border-radius:10px;border:none;background:rgba(245,166,35,0.1);color:#F5A623;font-size:13px;font-weight:600;cursor:pointer;");
-  newPh.onclick=function(){generateRedemittel(r.topic,host);};
-  retryRow.appendChild(newPh);
-  c.appendChild(retryRow);
-  host.appendChild(c);
-}
-
 // ── REPASO DEL DÍA ──
 function startDailyReview(){
   var steps=[];
@@ -1968,8 +1897,6 @@ function startDailyReview(){
   });
   if(weakTopics.length) steps.push({type:"grammar",topic:weakTopics[0]});
   else if(Object.keys(gStats).length<GRAMMAR_TOPICS.length) steps.push({type:"grammar",topic:null}); // try new topic
-  // Step 3: dictado
-  steps.push({type:"dictado"});
   state.app._reviewPlan={steps:steps,currentStep:0,done:false};
   goToReviewStep(0);
 }
@@ -1987,7 +1914,6 @@ function goToReviewStep(idx){
       if(found>=0) setTimeout(function(){loadGrammarDrills(GRAMMAR_TOPICS[found]);},200);
     }
   }
-  else if(step.type==="dictado") { state.app.currentTab="dictado";renderTabs();showScreen("dictado"); }
 }
 function nextReviewStep(){
   var plan=state.app._reviewPlan;
@@ -2008,7 +1934,7 @@ function showReviewComplete(){
     c.appendChild(mk("p","Hiciste todas las actividades del plan.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:10px;"));
     var stepsDone=mk("div","","display:flex;justify-content:center;gap:10px;font-size:12px;");
     plan.steps.forEach(function(s){
-      var icons={flashcards:"🃏",grammar:"📐",dictado:"✍️"};
+      var icons={flashcards:"🃏",grammar:"📐"};
       stepsDone.appendChild(mk("span",(icons[s.type]||"✅")+" "+s.type,"color:#94a3b8;font-weight:600;"));
     });
     c.appendChild(stepsDone);
@@ -2311,7 +2237,6 @@ const TABS=[
   {id:"corrigeme",label:"Corrigeme", icon:"pen"},
   {id:"noentendi",label:"No entendi", icon:"target"},
   {id:"lectura",  label:"Lectura", icon:"book"},
-  {id:"dictado",  label:"Dictado", icon:"headphones"},
   {id:"shadowing",label:"Shadowing", icon:"headphones"},
   {id:"gramatica",label:"Gramatica", icon:"grammar"},
   {id:"casos",    label:"Casos", icon:"scale"},
@@ -2325,7 +2250,7 @@ const TABS=[
 ];
 const NAV_GROUPS=[
   {id:"hoy",       label:"Hoy",        icon:"home", screens:["hoy"]},
-  {id:"practicar", label:"Practicar",  icon:"chat", screens:["conversar","corrigeme","noentendi","dictado","shadowing","lectura"]},
+  {id:"practicar", label:"Practicar",  icon:"chat", screens:["conversar","corrigeme","noentendi","shadowing","lectura"]},
   {id:"gramatica", label:"Gramática",  icon:"grammar", screens:["gramatica","casos","genero","conectores","tempus"]},
   {id:"vocabulario",label:"Vocabulario",icon:"cards", screens:["frases","flashcards","guardadas"]},
   {id:"mas",       label:"Más",        icon:"more", screens:["resumen","config"]}
@@ -2426,7 +2351,6 @@ function showScreen(id) {
     else if(id==="corrigeme") renderCorrigeme();
     else if(id==="noentendi") renderNoEntendi();
     else if(id==="lectura") renderLectura();
-    else if(id==="dictado") renderDictado();
     else if(id==="shadowing") renderShadowing();
     else if(id==="gramatica") renderGramatica();
     else if(id==="casos") renderCasos();
@@ -2611,7 +2535,7 @@ function renderHoy(){
   const actBtns=[
     {label:"💬 Conversar", tab:"conversar", color:"#4ECDC4"},
     {label:"✏️ Corrigeme", tab:"corrigeme", color:"#F87171"},
-    {label:"🎧 Dictado",   tab:"dictado",   color:"#F5A623"},
+    {label:"🎧 Shadowing", tab:"shadowing", color:"#F5A623"},
     {label:"📐 Gramática", tab:"gramatica", color:"#A78BFA"}
   ];
   const actGrid=mk("div","","display:grid;grid-template-columns:1fr 1fr;gap:8px;");
@@ -2637,12 +2561,15 @@ function renderHoy(){
       var rCard=document.createElement("div"); rCard.className="card";
       rCard.style.cssText="border-left:3px solid #4ECDC4;margin-bottom:10px;padding:14px;";
       rCard.appendChild(mk("p","🔄 REPASO EN CURSO","font-size:10px;color:var(--teal-text);letter-spacing:2px;font-weight:700;margin-bottom:4px;"));
-      var rIcons={flashcards:"🃏",grammar:"📐",dictado:"✍️"};
-      var rNames={flashcards:"Flashcards",grammar:"Gramática",dictado:"Dictado"};
+      var rIcons={flashcards:"🃏",grammar:"📐"};
+      var rNames={flashcards:"Flashcards",grammar:"Gramática"};
       rCard.appendChild(mk("p","Paso "+(rp.currentStep+1)+"/"+rp.steps.length+": <b>"+(rNames[rStep.type]||rStep.type)+"</b>","font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px;"));
       var contBtn=mk("button","▶ Continuar","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(78,205,196,0.12);color:#4ECDC4;font-size:13px;font-weight:700;cursor:pointer;");
       contBtn.onclick=function(){goToReviewStep(rp.currentStep);};
       rCard.appendChild(contBtn);
+      var backBtn=mk("button","← Volver al inicio","width:100%;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;margin-top:6px;");
+      backBtn.onclick=function(){state.app._reviewPlan=null;renderHoy();};
+      rCard.appendChild(backBtn);
       el.appendChild(rCard);
     }
   } else if(reviewDueCount()>0||state.session.saved.length>0){
@@ -2652,7 +2579,7 @@ function renderHoy(){
     repasoCard.appendChild(mk("p","🔄 REPASO DEL DÍA","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
     repasoCard.appendChild(mk("p","Sesión guiada para hoy","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
     var dueN=reviewDueCount();
-    repasoCard.appendChild(mk("p",(dueN>0?dueN+" pendientes · ":"")+"Gramática · Dictado","font-size:11px;color:var(--muted);font-weight:500;"));
+    repasoCard.appendChild(mk("p",(dueN>0?dueN+" pendientes · ":"")+"Gramática","font-size:11px;color:var(--muted);font-weight:500;"));
     el.appendChild(repasoCard);
   }
 
@@ -2671,22 +2598,6 @@ function renderHoy(){
   hvCard.appendChild(mk("p","Comprensión auditiva","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
   hvCard.appendChild(mk("p","Escucha un diálogo y responde preguntas","font-size:11px;color:var(--muted);font-weight:500;"));
   el.appendChild(hvCard);
-
-  // ── Redemittel card ──
-  var rmCard=document.createElement("div"); rmCard.className="card hover-lift";
-  rmCard.style.cssText="background:linear-gradient(135deg,rgba(245,166,35,0.08),rgba(245,166,35,0.02));border:1px solid rgba(245,166,35,0.2);border-radius:var(--r-lg,16px);padding:18px;cursor:pointer;margin-bottom:10px;";
-  rmCard.onclick=function(){
-    rmCard.style.display="none";
-    var rmContainer=document.createElement("div"); rmContainer.id="rm-container";
-    rmContainer.style.cssText="margin-bottom:10px;";
-    el.insertBefore(rmContainer,el.lastChild);
-    showRedemittel(rmContainer);
-  };
-  rmCard.appendChild(mk("p","🧩 REDEMITTEL","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
-  rmCard.appendChild(mk("p","Frases para situaciones reales","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
-  rmCard.appendChild(mk("p","Restaurante, médico, entrevista, mudanza...","font-size:11px;color:var(--muted);font-weight:500;"));
-  el.appendChild(rmCard);
-
 
 
   state.app._lastStreakSeen=streak;
@@ -3649,6 +3560,18 @@ function renderTempusCard(el,hdr){
   card.appendChild(sent);
   el.appendChild(card);
 
+  // Hint toggle for this question
+  var hintBox=mk("div","","display:none;padding:10px 12px;border-radius:10px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;margin-bottom:8px;animation:fadeUp 0.15s ease;");
+  hintBox.textContent="💡 "+d.tip;
+  var hintBtn=mk("button","💡 Pista","margin-bottom:10px;background:transparent;border:1px dashed rgba(167,139,250,0.3);color:var(--purple-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
+  hintBtn.setAttribute("aria-expanded","false");
+  hintBtn.onclick=function(){
+    if(hintBox.style.display==="block"){hintBox.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
+    hintBox.style.display="block";hintBtn.setAttribute("aria-expanded","true");
+  };
+  el.appendChild(hintBtn);
+  el.appendChild(hintBox);
+
   // Options — shuffle
   var opts=d.options.slice();
   for(var i=opts.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=opts[i];opts[i]=opts[j];opts[j]=t;}
@@ -3668,6 +3591,7 @@ function renderTempusCard(el,hdr){
       fb.appendChild(mk("p",correct?"✓ Correcto! — "+d.sentence.replace("___",d.correct):"✗ Incorrecto — "+d.sentence.replace("___",d.correct),"font-size:14px;font-weight:700;color:"+(correct?"var(--green-text)":"var(--red-text)")+";margin-bottom:6px;line-height:1.5;"));
       fb.appendChild(mk("p","💡 "+d.tip,"font-size:12px;color:var(--text);font-weight:500;line-height:1.5;background:rgba(245,166,35,0.08);padding:8px 12px;border-radius:8px;"));
       el.removeChild(row);
+      if(skip&&skip.parentNode) skip.parentNode.removeChild(skip);
       el.insertBefore(fb,card.nextSibling);
       var nextBtn=mk("button",(idx+1<data.length?"Siguiente →":"Ver resultado"),"width:100%;padding:12px;border-radius:12px;border:none;background:rgba(245,166,35,0.12);color:var(--gold-text);font-size:13px;font-weight:800;cursor:pointer;margin-top:6px;");
       nextBtn.setAttribute("aria-label",(idx+1<data.length?"Siguiente pregunta":"Ver resultado"));
@@ -3991,10 +3915,11 @@ function renderGuardadas() {
     const intro=mk("p","Elige un paquete, guarda palabras y mira tu avance al instante.","font-size:13px;color:var(--muted);font-weight:500;margin-bottom:14px;");
     el.appendChild(intro);
     var packs=[
-      {icon:"file",name:"Tr\u00e1mites",desc:"Documentos, citas y burocracia",list:TRAMITES_VOCAB,cat:"Tr\u00e1mites",color:"#F5A623",textColor:"var(--gold-text)",rgb:"245,166,35"},
+      {icon:"file",name:"Trámites",desc:"Documentos, citas y burocracia",list:TRAMITES_VOCAB,cat:"Trámites",color:"#F5A623",textColor:"var(--gold-text)",rgb:"245,166,35"},
       {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#4ECDC4",textColor:"var(--teal-text)",rgb:"78,205,196"},
       {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:VIAJE_VOCAB,cat:"Viaje",color:"#4ade80",textColor:"var(--green-text)",rgb:"74,222,128"},
-      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:COMIDA_VOCAB,cat:"Comida",color:"#F87171",textColor:"var(--red-text)",rgb:"248,113,113"}
+      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:COMIDA_VOCAB,cat:"Comida",color:"#F87171",textColor:"var(--red-text)",rgb:"248,113,113"},
+      {icon:"link",name:"Conectores",desc:"weil, obwohl, deshalb, wenn...",list:CONECTORES_VOCAB,cat:"Conectores",color:"#A78BFA",textColor:"var(--purple-text)",rgb:"167,139,250"}
     ];
     var grid=mk("div",""); grid.className="vocab-pack-grid";
     packs.forEach(function(p){
@@ -4554,6 +4479,7 @@ function renderLectura(){
     {id:"daily",label:"Vida diaria",icon:"🏠"},
     {id:"travel",label:"Viajes",icon:"✈️"},
     {id:"work",label:"Trabajo",icon:"💼"},
+    {id:"tech",label:"Tecnología",icon:"💻"},
     {id:"food",label:"Comida",icon:"🍕"},
     {id:"nature",label:"Naturaleza",icon:"🌿"},
     {id:"feelings",label:"Emociones",icon:"😊"}
@@ -4576,7 +4502,7 @@ function generateLectura(topicId,host){
   const ta=host.querySelector("#lectura-text");
   ta.innerHTML=""; ta.style.cssText="padding:20px;";
   ta.appendChild(skelCard(6));
-  const topicLabels={daily:"daily life",travel:"traveling in Germany",work:"at the workplace",food:"ordering food at a restaurant",nature:"a walk in nature",feelings:"expressing emotions"};
+  const topicLabels={daily:"daily life",travel:"traveling in Germany",work:"at the workplace",tech:"technology and IT",food:"ordering food at a restaurant",nature:"a walk in nature",feelings:"expressing emotions"};
   var topicLabel=topicLabels[topicId]||"daily life";
   var sys='You are a German language teacher. Generate a short German text about '+topicLabel+' at '+state.app.level+' level. Reply ONLY with valid JSON, no markdown: {"text":"the German text (3-5 sentences, natural, no translations in the text)","words":[{"de":"German word","es":"Spanish meaning"}]}. Include 8-12 key words in the words array. Level '+state.app.level+'.';
   ai(sys,[{role:"user",content:"Generate a reading passage."}],1200).then(function(reply){
@@ -4795,115 +4721,6 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
 function hideLecturaTranslation(){
   var tt=document.getElementById("lectura-tt"); if(tt) tt.remove();
   var popup=document.getElementById("lectura-popup"); if(popup) popup.remove();
-}
-
-// ── DICTADO ───────────────────────────────────────────────────────────────────
-state.dictado._dictadoTarget=null;
-function renderDictado() {
-  const el=document.getElementById("s-dictado"); el.innerHTML="";
-  const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ENTRENA TU OIDO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","Dictado","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Escucha en aleman y escribe lo que oyes.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
-  el.appendChild(hdr);
-
-  const card=document.createElement("div"); card.className="card";
-  card.style.padding="18px"; card.style.borderColor="rgba(78,205,196,0.2)";
-  const playBtn=document.createElement("button");
-  playBtn.style.cssText="width:100%;background:#4ECDC4;color:#000;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;box-shadow:0 4px 16px rgba(78,205,196,0.3);margin-bottom:12px;";
-  playBtn.textContent="▶  Escuchar frase";
-  card.appendChild(playBtn);
-
-  const ta=document.createElement("textarea"); ta.rows=3; ta.placeholder="Escribe lo que escuchaste..."; ta.setAttribute("aria-label","Escribe lo que escuchaste");
-  ta.style.cssText="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:12px;font-size:14px;color:var(--text);outline:none;resize:none;font-family:inherit;font-weight:500;margin-bottom:10px;";
-  card.appendChild(ta);
-
-  const actions=mk("div","","display:flex;gap:8px;");
-  const checkBtn=mk("button","Comprobar","flex:1;background:#F5A623;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;box-shadow:0 4px 14px rgba(245,166,35,0.3);");
-  checkBtn.disabled=true; checkBtn.style.opacity="0.5"; checkBtn.title="Primero escucha la frase";
-  const newBtn=mk("button","Otra frase","background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:700;");
-  actions.appendChild(checkBtn); actions.appendChild(newBtn); card.appendChild(actions);
-  el.appendChild(card);
-
-  const result=document.createElement("div"); result.style.marginTop="14px"; el.appendChild(result);
-
-  async function pickTarget(){
-    result.innerHTML="";
-    ta.value="";
-    playBtn.textContent="Generando..."; playBtn.disabled=true;
-    try {
-      if(state.session.saved.length>=5 && Math.random()<0.6){
-        // Prefer cards with lower box (más difíciles para Sebastian)
-        const pool=state.session.saved.slice().sort(function(a,b){ensureSrsFields(a);ensureSrsFields(b);return a.box-b.box;}).slice(0, Math.max(5, Math.floor(state.session.saved.length/2)));
-        state.dictado._dictadoTarget=pool[Math.floor(Math.random()*pool.length)];
-      } else {
-        const sys='Reply ONLY with valid JSON: {"de":"...","es":"..."}. Generate ONE '+lvlRange()+' German phrase, 4-9 words, useful, common. No markdown.';
-        const text=await ai(sys,[{role:"user",content:"random topic, seed: "+Date.now()}], 200);
-        const m=text.replace(/```json|```/g,"").trim().match(/\{[\s\S]*\}/);
-        state.dictado._dictadoTarget=JSON.parse(m[0]);
-      }
-      playBtn.textContent="▶  Escuchar frase";
-    } catch(e){
-      playBtn.textContent="▶  Escuchar frase";
-      result.appendChild(mk("p","Error: "+e.message,"color:#ef4444;font-size:13px;text-align:center;font-weight:500;"));
-    }
-    playBtn.disabled=false;
-    checkBtn.disabled=false; checkBtn.style.opacity="1"; checkBtn.title="";
-  }
-
-  playBtn.onclick=function(){ if(state.dictado._dictadoTarget) speak(state.dictado._dictadoTarget.de); };
-  newBtn.onclick=function(){ checkBtn.disabled=true; checkBtn.style.opacity="0.5"; checkBtn.title="Generando..."; pickTarget(); };
-  checkBtn.onclick=function(){
-    if(!state.dictado._dictadoTarget) return;
-    const user=ta.value.trim();
-    if(!user){ showToast("Escribe lo que escuchaste","error"); return; }
-    result.innerHTML="";
-    const target=state.dictado._dictadoTarget.de.trim();
-    // Word-level comparison (normalize: lowercase, strip punctuation)
-    function norm(s){ return s.toLowerCase().replace(/[.,!?¿¡;:"'()]/g,"").replace(/\s+/g," ").trim(); }
-    const tWords=norm(target).split(" "); const uWords=norm(user).split(" ");
-    const total=tWords.length; let correct=0;
-    const wrap=document.createElement("div");
-    wrap.className="result-box surface";
-    wrap.appendChild(mk("p","TU RESPUESTA","font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:6px;"));
-    const wrapWords=mk("p","","font-size:16px;line-height:1.6;font-weight:600;");
-    tWords.forEach(function(w,i){
-      const got=uWords[i]||"";
-      const ok=got===w;
-      if(ok) correct++;
-      const sp=document.createElement("span");
-      sp.textContent=(got||"_")+" ";
-      sp.style.color=ok?"#4ade80":"#F87171";
-      sp.style.textDecoration=ok?"none":"underline";
-      wrapWords.appendChild(sp);
-    });
-    wrap.appendChild(wrapWords);
-    result.appendChild(wrap);
-
-    const score=Math.round((correct/total)*100);
-    const sBox=document.createElement("div");
-    sBox.style.cssText="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;";
-    sBox.appendChild(mk("div","Score","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;"));
-    sBox.appendChild(mk("span",score+"%","font-size:28px;font-weight:900;color:"+(score>=80?"#4ade80":score>=50?"#fbbf24":"#F87171")+";"));
-    result.appendChild(sBox);
-
-    const orig=document.createElement("div");
-    orig.style.cssText="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.2);border-radius:14px;padding:14px;";
-    orig.appendChild(mk("p","ORIGINAL","font-size:10px;color:#4ECDC4;letter-spacing:2px;font-weight:700;margin-bottom:6px;"));
-    orig.appendChild(mk("p",target,"font-size:16px;font-weight:800;color:var(--text);letter-spacing:-0.01em;"));
-    if(state.dictado._dictadoTarget.es) orig.appendChild(mk("p",state.dictado._dictadoTarget.es,"font-size:13px;color:#94a3b8;margin-top:4px;font-weight:500;"));
-    result.appendChild(orig);
-
-    logActivity("phrasesReviewed",1);
-    syncUp();
-    if(state.app._reviewPlan&&!state.app._reviewPlan.done){
-      var cont=mk("button","✅  Siguiente →","width:100%;padding:14px;border-radius:12px;border:none;background:rgba(78,205,196,0.12);color:#4ECDC4;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;");
-      cont.onclick=function(){nextReviewStep();};
-      result.appendChild(cont);
-    }
-  };
-
-  pickTarget();
 }
 
 // ── GRAMATICA ─────────────────────────────────────────────────────────────────
@@ -5408,6 +5225,7 @@ function casosRenderQ(mount){
     +'<p style="font-size:18px;line-height:1.5;margin-bottom:4px;color:var(--text);">'+frase+'</p>'
     +(q.pista?'<p style="font-size:12px;color:var(--muted);margin-bottom:14px;">'+q.pista+'</p>':'<div style="margin-bottom:14px;"></div>')
     +'<div class="cs-opts" id="cs-opts"></div>'
+    +'<div id="cs-hint" style="margin-top:8px;display:none;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;"></div>'
     +'<div id="cs-fb" style="margin-top:14px;display:none;"></div>'
     +'<div id="cs-next" style="margin-top:14px;display:none;justify-content:flex-end;">'
     +'<button id="cs-nextbtn" style="font-size:14px;font-weight:700;padding:10px 18px;border-radius:11px;border:0;background:var(--gold);color:#000;">Siguiente →</button></div>'
@@ -5418,6 +5236,17 @@ function casosRenderQ(mount){
     b.onclick=function(){casosChoose(q,o,opts,b);};
     opts.appendChild(b);
   });
+  // Hint button
+  var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(245,166,35,0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
+  hintBtn.setAttribute("aria-expanded","false");
+  hintBtn.onclick=function(){
+    var h=document.getElementById("cs-hint");
+    if(h.style.display==="block"){h.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
+    var css=casosCaseForQuestion(q);
+    var tip=casosFailureTip(q)||(CASOS_TIPS[css]||"Pista: mira el verbo y la preposición para decidir el caso.");
+    h.innerHTML="💡 "+tip; h.style.display="block"; hintBtn.setAttribute("aria-expanded","true");
+  };
+  opts.parentNode.insertBefore(hintBtn,opts.nextSibling);
   const nb=document.getElementById("cs-nextbtn"); if(nb) nb.onclick=function(){state.casos.casosIdx++;casosNextQ();};
 }
 
@@ -5494,7 +5323,17 @@ function casosRenderTrad(q,mount){
     document.getElementById("cs-nexttrad").onclick=function(){state.casos.casosIdx++;casosNextQ();};
   };
   clear.onclick=function(){ if(state.casos.casosAnswered) return; chosen=[]; render(); };
-  card.appendChild(answer); card.appendChild(bankEl); row.appendChild(check); row.appendChild(clear); card.appendChild(row); card.appendChild(fb); mount.appendChild(card); render();
+  // Hint toggle — same per-question rule reminder as multiple-choice mode (case derived from q.de)
+  var hintBox=mk("div","","display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;");
+  var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(245,166,35,0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
+  hintBtn.setAttribute("aria-expanded","false");
+  hintBtn.onclick=function(){
+    if(hintBox.style.display==="block"){hintBox.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
+    var css=casosCaseForQuestion(q);
+    hintBox.textContent="💡 "+(CASOS_TIPS[css]||"Identifica la función (sujeto, objeto, receptor) para elegir el caso.");
+    hintBox.style.display="block"; hintBtn.setAttribute("aria-expanded","true");
+  };
+  card.appendChild(answer); card.appendChild(bankEl); card.appendChild(hintBtn); card.appendChild(hintBox); row.appendChild(check); row.appendChild(clear); card.appendChild(row); card.appendChild(fb); mount.appendChild(card); render();
 }
 
 // ── RESUMEN ───────────────────────────────────────────────────────────────────
@@ -5762,7 +5601,7 @@ function renderResumen() {
           if(!groups[e.source]) groups[e.source]={items:[], count:0};
           groups[e.source].items.push(e); groups[e.source].count++;
         });
-        var sourceLabels={grammar:"📐 Gramatica",genero:"🎯 Genero",chat:"💬 Chat",dictado:"🎧 Dictado",corrigeme:"✏️ Corrígeme"};
+        var sourceLabels={grammar:"📐 Gramatica",genero:"🎯 Genero",chat:"💬 Chat",shadowing:"🎤 Shadowing",corrigeme:"✏️ Corrígeme"};
         Object.keys(groups).forEach(function(src){
           var g=groups[src];
           var sec=document.createElement("div"); sec.style.cssText="margin-top:10px;";
@@ -5817,7 +5656,8 @@ function renderInsight(host){
     "<p style='font-size:10px;color:var(--dim);margin-top:12px;'>Semana "+week+" · Datos locales de los últimos 7 días</p></div>";
 }
 
-// ── SHADOWING ──────────────────────────────────────────────────────────────────
+// ── SHADOWING (pronunciación con transcripción en alemán) ──────────────────────
+// TTS: de-DE vía makeGermanUtterance. Transcripción: AssemblyAI con language_code="de".
 const SHADOWING_POOL=[
   {de:"Ich heiße Sebastian und komme aus Kolumbien.",es:"Me llamo Sebastian y vengo de Colombia."},
   {de:"Ich arbeite als Datenanalyst bei einem deutschen Unternehmen.",es:"Trabajo como analista de datos en una empresa alemana."},
@@ -5836,7 +5676,7 @@ function renderShadowing(){
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","SOMBRA — PRONUNCIACIÓN","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Shadowing","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Escucha la frase y repítela en voz alta. El micrófono transcribe y compara tu pronunciación palabra por palabra.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  hdr.appendChild(mk("p","Escucha en alemán, graba tu voz y compará la pronunciación. La transcripción usa alemán (de-DE).","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
 
   // Init pool
