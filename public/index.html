@@ -1902,18 +1902,29 @@ function startDailyReview(){
 }
 function goToReviewStep(idx){
   var plan=state.app._reviewPlan;
-  if(!plan||idx>=plan.steps.length){ showReviewComplete(); return; }
+  if(!plan||idx>=plan.steps.length){ removeReviewBackBtn(); showReviewComplete(); return; }
   plan.currentStep=idx;
   var step=plan.steps[idx];
   if(step.type==="flashcards") { state.app.currentTab="flashcards";renderTabs();showScreen("flashcards"); }
   else if(step.type==="grammar") {
     state.app.currentTab="gramatica";renderTabs();showScreen("gramatica");
-    // Auto-select topic if specified
     if(step.topic && typeof step.topic==="string"){
       var found=GRAMMAR_TOPICS.findIndex(function(t){return t.key===step.topic;});
       if(found>=0) setTimeout(function(){loadGrammarDrills(GRAMMAR_TOPICS[found]);},200);
     }
   }
+  showReviewBackBtn();
+}
+function showReviewBackBtn(){
+  removeReviewBackBtn();
+  var btn=mk("button","\u2190 Volver a Hoy","position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;padding:10px 24px;border-radius:24px;border:1px solid var(--border);background:var(--modal-bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);");
+  btn.id="review-back-fab";
+  btn.onclick=function(){state.app._reviewPlan=null;removeReviewBackBtn();state.app.currentTab="hoy";renderTabs();showScreen("hoy");renderHoy();};
+  document.body.appendChild(btn);
+}
+function removeReviewBackBtn(){
+  var el=document.getElementById("review-back-fab");
+  if(el) el.remove();
 }
 function nextReviewStep(){
   var plan=state.app._reviewPlan;
@@ -1944,6 +1955,7 @@ function showReviewComplete(){
     el.insertBefore(c,el.firstChild);
   },300);
   state.app._reviewPlan.done=true;
+  removeReviewBackBtn();
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -2369,6 +2381,7 @@ function showScreen(id) {
 // ── HOY (home motivacional) ──────────────────────────────────────────────────
 state.app._lastStreakSeen=-1;
 function renderHoy(){
+  removeReviewBackBtn();
   const el=document.getElementById("s-hoy"); el.innerHTML="";
   const streak=computeStreak();
   const due=reviewDueCount();
