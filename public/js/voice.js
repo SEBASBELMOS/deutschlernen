@@ -1,0 +1,220 @@
+// ── TTS ───────────────────────────────────────────────────────────────────────
+state.app._deVoice = null;
+function loadDeVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  // Prioriza una voz alemana real: de-DE exacta → cualquier de* → null
+  state.app._deVoice = voices.find(function(v){return /^de[-_]DE/i.test(v.lang);})
+          || voices.find(function(v){return v.lang && v.lang.toLowerCase().indexOf("de")===0;})
+          || null;
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = loadDeVoice;
+  loadDeVoice();
+}
+state.app._noDeVoiceWarned = false;
+state.app._reviewPlan = null; // {steps:[{type,topic?}], currentStep, done} — daily review session plan
+function makeGermanUtterance(text) {
+  if (!window.speechSynthesis) return;
+  if (!state.app._deVoice) loadDeVoice();  // reintenta por si las voces cargaron tarde
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "de-DE"; u.rate = parseFloat(localStorage.getItem("ttsRate")||"0.82");
+  if (state.app._deVoice) u.voice = state.app._deVoice;
+  else if (!state.app._noDeVoiceWarned) {
+    state.app._noDeVoiceWarned = true;
+    showToast("Sin voz alemana en tu dispositivo — instalá una en Ajustes del sistema (Voz/Spoken Content) para mejor pronunciación", "info", 6000);
+  }
+  return u;
+}
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = makeGermanUtterance(text);
+  window.speechSynthesis.speak(u);
+}
+function splitSpeechChunks(text) {
+  var clean=(text||"").replace(/\s+/g," ").trim();
+  if(!clean) return [];
+  var parts=clean.match(/[^.!?;:]+[.!?;:]?/g)||[clean];
+  var chunks=[], current="";
+  parts.forEach(function(part){
+    part=part.trim(); if(!part) return;
+    if((current+" "+part).trim().length>170 && current){ chunks.push(current.trim()); current=part; }
+    else current=(current+" "+part).trim();
+  });
+  if(current) chunks.push(current.trim());
+  return chunks;
+}
+function speakFull(text, onDone) {
+  if (!window.speechSynthesis) { if(onDone) onDone(); return; }
+  var chunks=splitSpeechChunks(text);
+  var seq=(state.app._ttsSeq||0)+1; state.app._ttsSeq=seq;
+  window.speechSynthesis.cancel();
+  function next(i){
+    if(seq!==state.app._ttsSeq) return;
+    if(i>=chunks.length){ if(onDone) onDone(); return; }
+    var u=makeGermanUtterance(chunks[i]);
+    u.onend=function(){ next(i+1); };
+    u.onerror=function(){ next(i+1); };
+    window.speechSynthesis.speak(u);
+  }
+  next(0);
+}
+function speakGerman(text) {
+  const clean=text.replace(/\([^)]*\)/g,"").replace(/Better:?.*/i,"").replace(/\s+/g," ").trim();
+  speak(clean);
+}
+
+// ── AssemblyAI ────────────────────────────────────────────────────────────────
+async function transcribe(blob, mimeType) {
+  if (!blob || blob.size < 1000) throw new Error("Audio muy corto, habla un poco mas.");
+  const headers = {"content-type": mimeType || "audio/webm", "x-token": state.app.authToken||""};
+
+  const upRes = await fetch("/api/upload", {method:"POST", headers:headers, body:blob});
+  const up = await upRes.json();
+  if (!up.upload_url) throw new Error("Error al subir el audio: "+(up.error||JSON.stringify(up)));
+
+  const txRes = await fetch("/api/transcript", {
+    method:"POST",
+    headers:{"content-type":"application/json","x-token":state.app.authToken||""},
+    body:JSON.stringify({audio_url:up.upload_url, language_code:"de"})
+  });
+  const tx = await txRes.json();
+  if (!tx.id) throw new Error("Error al iniciar transcripcion: "+(tx.error||JSON.stringify(tx)));
+
+  for (let i=0; i<25; i++) {
+    await new Promise(function(r){setTimeout(r,2500);});
+    const p = await (await fetch("/api/transcript/"+tx.id, {headers:{"x-token":state.app.authToken||""}})).json();
+    if (p.status==="completed") return p.text || "";
+    if (p.status==="error") throw new Error("AssemblyAI error: "+(p.error||"desconocido"));
+  }
+  throw new Error("Timeout: la transcripcion tardo demasiado.");
+}
+
+// ── Mic ───────────────────────────────────────────────────────────────────────
+state.app.mr=null, state.app.chunks=[];
+
+// Elige el mejor formato de audio soportado por este browser/dispositivo
+function getBestMimeType() {
+  const types = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4","audio/aac",""];
+  for (let i=0; i<types.length; i++) {
+    if (!types[i] || MediaRecorder.isTypeSupported(types[i])) return types[i];
+  }
+  return "";
+}
+
+function makeMicBtn(color, cb) {
+  const btn = document.createElement("button");
+  btn.className="mic-btn";
+  btn.style.borderColor=color||"#4ECDC4";
+  btn.style.color=color||"#4ECDC4";
+  btn.style.background="rgba("+hexToRgb(color||"#4ECDC4")+",0.08)";
+  btn.textContent="MIC";
+  btn.onclick=async function(){
+    if (state.app.mr&&state.app.mr.state==="recording") { state.app.mr.stop(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      state.app.chunks=[];
+      const mimeType = getBestMimeType();
+      state.app.mr = mimeType ? new MediaRecorder(stream, {mimeType:mimeType}) : new MediaRecorder(stream);
+      state.app.mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) state.app.chunks.push(e.data); };
+      state.app.mr.onstop=async function(){
+        stream.getTracks().forEach(function(t){t.stop();});
+        btn.textContent="..."; btn.style.borderColor="#64748b"; btn.style.color="#64748b"; btn.style.animation="none";
+        const usedType = state.app.mr.mimeType || mimeType || "audio/webm";
+        try {
+          const blob = new Blob(state.app.chunks, {type:usedType});
+          const text = await transcribe(blob, usedType);
+          btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
+          if (text && text.trim() && cb) cb(text.trim());
+          else if (!text || !text.trim()) showMicError(btn, color, "No se detecto voz. Intenta de nuevo.");
+        } catch(err) {
+          showMicError(btn, color, err.message);
+        }
+      };
+      state.app.mr.start(250); // timeslice de 250ms para capturar chunks continuamente
+      btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
+    } catch(e){
+      alert("Permite el acceso al microfono en tu browser.");
+    }
+  };
+  return btn;
+}
+
+// Mic button that records, transcribes, then scores against a target phrase.
+// Renders the score inline inside `host`.
+function makePronMicBtn(color, targetPhrase, host){
+  const btn=document.createElement("button");
+  btn.className="mic-btn";
+  btn.style.borderColor=color; btn.style.color=color;
+  btn.style.background="rgba("+hexToRgb(color)+",0.08)";
+  btn.style.minWidth="60px";
+  btn.textContent="MIC";
+  btn.onclick=async function(){
+    if(state.app.mr&&state.app.mr.state==="recording"){ state.app.mr.stop(); return; }
+    try {
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      state.app.chunks=[];
+      const mimeType=getBestMimeType();
+      state.app.mr = mimeType ? new MediaRecorder(stream,{mimeType:mimeType}) : new MediaRecorder(stream);
+      state.app.mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) state.app.chunks.push(e.data); };
+      state.app.mr.onstop=async function(){
+        stream.getTracks().forEach(function(t){t.stop();});
+        btn.textContent="..."; btn.style.borderColor="#64748b"; btn.style.color="#64748b"; btn.style.animation="none";
+        const usedType=state.app.mr.mimeType||mimeType||"audio/webm";
+        try {
+          const blob=new Blob(state.app.chunks,{type:usedType});
+          const transcript=await transcribe(blob, usedType);
+          btn.textContent="MIC"; btn.style.borderColor=color; btn.style.color=color;
+          renderPronScore(host, targetPhrase, transcript||"", color);
+        } catch(err){ showMicError(btn, color, err.message); }
+      };
+      state.app.mr.start(250);
+      btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
+    } catch(e){ alert("Permite el acceso al microfono."); }
+  };
+  return btn;
+}
+
+function renderPronScore(host, target, transcript, color){
+  // Remove previous score block if any
+  const old=host.querySelector(".pron-score"); if(old) old.remove();
+  function norm(s){ return (s||"").toLowerCase().replace(/[.,!?¿¡;:"'()]/g,"").replace(/\s+/g," ").trim(); }
+  const tw=norm(target).split(" "); const uw=norm(transcript).split(" ");
+  const total=tw.length||1; let correct=0;
+  const wordSpans=[];
+  tw.forEach(function(w,i){
+    const got=uw[i]||"";
+    const ok=got===w;
+    if(ok) correct++;
+    wordSpans.push({w:w, got:got, ok:ok});
+  });
+  const score=Math.round((correct/total)*100);
+  const box=document.createElement("div");
+  box.className="pron-score";
+  box.style.cssText="margin-top:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;";
+  const top=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
+  top.appendChild(mk("span","Pronunciacion","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:700;"));
+  top.appendChild(mk("span",score+"%","font-size:20px;font-weight:900;color:"+(score>=80?"#4ade80":score>=50?"#fbbf24":"#F87171")+";"));
+  box.appendChild(top);
+  const p=mk("p","","font-size:14px;line-height:1.6;font-weight:600;");
+  wordSpans.forEach(function(s){
+    const sp=document.createElement("span");
+    sp.textContent=(s.got||"_")+" ";
+    sp.style.color=s.ok?"#4ade80":"#F87171";
+    sp.style.textDecoration=s.ok?"none":"underline";
+    p.appendChild(sp);
+  });
+  box.appendChild(p);
+  if(transcript) box.appendChild(mk("p","Detectado: "+transcript,"font-size:11px;color:var(--muted);margin-top:6px;font-weight:500;"));
+  host.appendChild(box);
+}
+
+function showMicError(btn, color, msg) {
+  btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
+  // Muestra el error de forma visible sin interrumpir el flujo
+  const errEl = document.createElement("div");
+  errEl.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e2e;border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:9999;max-width:300px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
+  errEl.textContent="🎤 "+msg;
+  document.body.appendChild(errEl);
+  setTimeout(function(){if(errEl.parentNode) errEl.parentNode.removeChild(errEl);}, 4000);
+}
