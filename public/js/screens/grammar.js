@@ -3,6 +3,9 @@ state.grammar._gramDrills=[], state.grammar._gramIdx=0, state.grammar._gramCorre
 
 function renderGrammar() {
   const el=document.getElementById("s-gramatica"); el.innerHTML="";
+  var backBtn=mk("button","\u2190 Volver a Hoy","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;margin-bottom:8px;display:block;");
+  backBtn.onclick=function(){state.app.currentTab="hoy";renderTabs();showScreen("hoy");renderToday();};
+  el.appendChild(backBtn);
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","DRILLS DE GRAMATICA","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Gramatica","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
