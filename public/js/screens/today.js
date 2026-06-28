@@ -204,33 +204,32 @@ function renderToday(){
   actions.appendChild(actGrid);
   el.appendChild(actions);
 
-  // ── Daily review card ──
-  if(state.app._reviewPlan&&!state.app._reviewPlan.done){
+  // ── Personalized review card ──
+  if(state.app._reviewPlan&&state.app._reviewPlan.started&&!state.app._reviewPlan.done){
     var rp=state.app._reviewPlan;
     var rStep=rp.steps[rp.currentStep];
     if(rStep){
       var rCard=document.createElement("div"); rCard.className="card";
       rCard.style.cssText="border-left:3px solid #4ECDC4;margin-bottom:10px;padding:14px;";
       rCard.appendChild(mk("p","🔄 REPASO EN CURSO","font-size:10px;color:var(--teal-text);letter-spacing:2px;font-weight:700;margin-bottom:4px;"));
-      var rIcons={flashcards:"🃏",grammar:"📐"};
-      var rNames={flashcards:"Flashcards",grammar:"Gramática"};
-      rCard.appendChild(mk("p","Paso "+(rp.currentStep+1)+"/"+rp.steps.length+": <b>"+(rNames[rStep.type]||rStep.type)+"</b>","font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px;"));
+      rCard.appendChild(mk("p","Paso "+(rp.currentStep+1)+"/"+rp.steps.length+" · "+rStep.icon+" "+rStep.label,"font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px;"));
       var contBtn=mk("button","▶ Continuar","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(78,205,196,0.12);color:#4ECDC4;font-size:13px;font-weight:700;cursor:pointer;");
-      contBtn.onclick=function(){goToReviewStep(rp.currentStep);};
+      contBtn.onclick=function(){runPersonalizedStep(rp.currentStep);};
       rCard.appendChild(contBtn);
-      var backBtn=mk("button","← Volver al inicio","width:100%;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;margin-top:6px;");
+      var backBtn=mk("button","← Descartar repaso","width:100%;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;margin-top:6px;");
       backBtn.onclick=function(){state.app._reviewPlan=null;renderToday();};
       rCard.appendChild(backBtn);
       el.appendChild(rCard);
     }
   } else if(reviewDueCount()>0||state.session.saved.length>0){
     var reviewCard=document.createElement("div"); reviewCard.className="card hover-lift";
+    reviewCard.setAttribute("role","button"); reviewCard.setAttribute("tabindex","0");
     reviewCard.style.cssText="background:linear-gradient(135deg,rgba(78,205,196,0.08),rgba(78,205,196,0.02));border:1px solid rgba(78,205,196,0.2);border-radius:var(--r-lg,16px);padding:18px;cursor:pointer;margin-bottom:10px;";
-    reviewCard.onclick=function(){startDailyReview();};
-    reviewCard.appendChild(mk("p","🔄 REPASO DEL DÍA","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
-    reviewCard.appendChild(mk("p","Sesión guiada para hoy","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
-    var dueN=reviewDueCount();
-    reviewCard.appendChild(mk("p",(dueN>0?dueN+" pendientes · ":"")+"Gramática","font-size:11px;color:var(--muted);font-weight:500;"));
+    reviewCard.onclick=function(){startPersonalizedReview();};
+    reviewCard.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();this.click();}};
+    reviewCard.appendChild(mk("p","🔄 REPASO PERSONALIZADO","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
+    reviewCard.appendChild(mk("p","Sesión guiada a tu medida","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
+    reviewCard.appendChild(mk("p","Armada con tus fallos, errores y temas débiles","font-size:11px;color:var(--muted);font-weight:500;"));
     el.appendChild(reviewCard);
   }
 
@@ -252,42 +251,299 @@ function renderToday(){
   state.app._lastStreakSeen=streak;
 }
 
-// ── DAILY REVIEW ──
-function startDailyReview(){
-  var steps=[];
-  // Step 1: flashcards if due
-  if(reviewDueCount()>0) steps.push({type:"flashcards"});
-  // Step 2: grammar — weakest topic
+// ── PERSONALIZED REVIEW ────────────────────────────────────────────────────────
+// Builds an adaptive 3-5 step plan from the user's real data (lapses, due cards,
+// errorJournal, weak grammar, conversation phrases) and runs it as an inline
+// guided session inside #s-hoy with progress, per-step cancel and a final summary.
+
+function buildPersonalizedPlan(){
+  var steps=[]; var t=todayKey(); var saved=state.session.saved||[];
+  saved.forEach(ensureSrsFields);
+  var used={};
+  // 1. Critical cards (high lapses) first; then due high-box (about to be forgotten); then other due
+  var byLapses=saved.map(function(_,i){return i;}).filter(function(i){return (saved[i].lapses||0)>=2;})
+    .sort(function(a,b){return (saved[b].lapses||0)-(saved[a].lapses||0);});
+  var dueHigh=saved.map(function(_,i){return i;}).filter(function(i){return saved[i].nextReview<=t && (saved[i].box||0)>=3 && (saved[i].lapses||0)<2;})
+    .sort(function(a,b){return (saved[b].box||0)-(saved[a].box||0);});
+  var dueOther=saved.map(function(_,i){return i;}).filter(function(i){return saved[i].nextReview<=t && (saved[i].box||0)<3 && (saved[i].lapses||0)<2;});
+  var cardItems=[];
+  byLapses.forEach(function(i){if(cardItems.length<8&&!used[i]){cardItems.push(i);used[i]=1;}});
+  var critCount=cardItems.length;
+  dueHigh.forEach(function(i){if(cardItems.length<8&&!used[i]){cardItems.push(i);used[i]=1;}});
+  dueOther.forEach(function(i){if(cardItems.length<6&&!used[i]){cardItems.push(i);used[i]=1;}});
+  if(cardItems.length){
+    var lbl=critCount>0?(critCount+" crítica"+(critCount>1?"s":"")+(cardItems.length>critCount?" + "+(cardItems.length-critCount)+" más":"")):(cardItems.length+" pendiente"+(cardItems.length>1?"s":""));
+    steps.push({type:"cards", icon:"🃏", label:critCount>0?"Tarjetas críticas":"Tarjetas pendientes", detail:lbl, items:cardItems});
+  }
+  // 2. errorJournal → mini correction exercise
+  var errs=(state.session.errorJournal||[]).filter(function(e){return e&&e.original&&e.correction;}).slice(0,3);
+  if(errs.length) steps.push({type:"errors", icon:"✏️", label:"Corregir errores", detail:errs.length+" error"+(errs.length>1?"es":"")+" reciente"+(errs.length>1?"s":"")+" del chat", items:errs});
+  // 3. Weakest grammar topic (worst right/total ratio)
   var gStats=state.grammar.grammarStats||{};
-  var weakTopics=Object.keys(gStats).filter(function(k){
-    var s=gStats[k]; return s.right+s.wrong>0 && s.right/(s.right+s.wrong)<0.6;
-  }).sort(function(a,b){
-    var sa=gStats[a],sb=gStats[b];
-    return (sa.right/(sa.right+sa.wrong))-(sb.right/(sb.right+sb.wrong));
-  });
-  if(weakTopics.length) steps.push({type:"grammar",topic:weakTopics[0]});
-  else if(Object.keys(gStats).length<GRAMMAR_TOPICS.length) steps.push({type:"grammar",topic:null}); // try new topic
-  state.app._reviewPlan={steps:steps,currentStep:0,done:false};
-  goToReviewStep(0);
+  var weak=Object.keys(gStats).filter(function(k){var s=gStats[k];return (s.right+s.wrong)>0 && s.right/(s.right+s.wrong)<0.7;})
+    .sort(function(a,b){var sa=gStats[a],sb=gStats[b];return (sa.right/(sa.right+sa.wrong))-(sb.right/(sb.right+sb.wrong));});
+  if(weak.length){ var tk=weak[0]; var topo=GRAMMAR_TOPICS.filter(function(x){return x.key===tk;})[0]; steps.push({type:"grammar", icon:(topo?topo.icon:"📐"), label:"Gramática", topic:tk, detail:(topo?topo.label:tk)+" — tu tema más flojo"}); }
+  // 4. Shadowing of phrases saved from conversar/noentendi
+  var shadowItems=saved.filter(function(p){return ["conversar","noentendi"].indexOf(p.source)>=0;}).slice(0,3);
+  if(shadowItems.length) steps.push({type:"shadow", icon:"🎧", label:"Pronunciación", detail:shadowItems.length+" frase"+(shadowItems.length>1?"s":"")+" de tus charlas", items:shadowItems});
+  // 5. Have something but it's thin → pad with one random bonus (vocab pack / reading / tempus).
+  //    Zero real steps falls through to an empty plan → "all caught up" screen.
+  if(steps.length>=1 && steps.length<2){
+    var bonus=[{tab:"conectores",icon:"🔗",detail:"Practicá conectores"},{tab:"lectura",icon:"📖",detail:"Leé un texto corto"},{tab:"tempus",icon:"⏳",detail:"Drill de antes/después"}];
+    var pick=bonus[Math.floor(Math.random()*bonus.length)];
+    steps.push({type:"explore", icon:pick.icon, label:"Bonus", detail:pick.detail, tab:pick.tab});
+  }
+  return steps.slice(0,5);
 }
-function goToReviewStep(idx){
-  var plan=state.app._reviewPlan;
-  if(!plan||idx>=plan.steps.length){ removeReviewBackBtn(); showReviewComplete(); return; }
+
+function startPersonalizedReview(){
+  var steps=buildPersonalizedPlan();
+  if(!steps.length){ showAllCaughtUp(); return; }
+  state.app._reviewPlan={steps:steps, currentStep:0, started:false, done:false, personalized:true,
+    results:{cardsReviewed:0, errorsReviewed:0, shadowDone:0, grammarDone:0, stepsCompleted:0}};
+  renderReviewPlanPreview();
+}
+
+// Plan preview — user can accept, drop steps (tap to toggle), or cancel
+function renderReviewPlanPreview(){
+  var plan=state.app._reviewPlan; if(!plan) return;
+  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy"); removeReviewBackBtn();
+  var el=document.getElementById("s-hoy"); el.innerHTML="";
+  var hdr=mk("div","","margin-bottom:14px;");
+  hdr.appendChild(mk("p","REPASO PERSONALIZADO","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("h2","Hoy te recomiendo","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
+  hdr.appendChild(mk("p","Armado con tus datos. Tocá un paso para sacarlo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  el.appendChild(hdr);
+  plan.steps.forEach(function(step){
+    var row=mk("div","","display:flex;align-items:center;gap:12px;padding:14px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);margin-bottom:8px;cursor:pointer;transition:opacity 0.15s;");
+    row.setAttribute("role","button"); row.setAttribute("tabindex","0"); row.setAttribute("aria-label",step.label+" — "+step.detail);
+    row.appendChild(mk("span",step.icon,"font-size:24px;flex-shrink:0;"));
+    var txt=mk("div","","flex:1;min-width:0;");
+    txt.appendChild(mk("p",step.label,"font-size:14px;font-weight:700;color:var(--text);"));
+    txt.appendChild(mk("p",step.detail,"font-size:12px;color:var(--muted);font-weight:500;margin-top:1px;"));
+    row.appendChild(txt);
+    var check=mk("span","✓","width:22px;height:22px;border-radius:var(--r-pill);flex-shrink:0;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gold);font-weight:900;");
+    row.appendChild(check);
+    function paint(){ row.style.opacity=step.skipped?"0.45":"1"; check.style.borderColor=step.skipped?"var(--muted)":"var(--gold)"; check.textContent=step.skipped?"":"✓"; }
+    function toggle(){ step.skipped=!step.skipped; paint(); }
+    row.onclick=toggle;
+    row.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle();}};
+    paint(); el.appendChild(row);
+  });
+  var start=mk("button","Empezar repaso →","width:100%;padding:15px;border-radius:14px;border:none;background:var(--gold);color:#000;font-size:15px;font-weight:800;cursor:pointer;margin-top:10px;");
+  start.onclick=function(){
+    plan.steps=plan.steps.filter(function(s){return !s.skipped;});
+    if(!plan.steps.length){ state.app._reviewPlan=null; renderToday(); showToast("Elegí al menos un paso","error"); return; }
+    plan.currentStep=0; plan.started=true; runPersonalizedStep(0);
+  };
+  el.appendChild(start);
+  var cancel=mk("button","Cancelar","width:100%;padding:11px;border-radius:12px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;margin-top:6px;");
+  cancel.onclick=function(){ state.app._reviewPlan=null; renderToday(); };
+  el.appendChild(cancel);
+}
+
+// Progress header shown above every inline step
+function reviewProgressHeader(idx, total, step){
+  var h=mk("div","","margin-bottom:16px;");
+  var top=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;");
+  top.appendChild(mk("p","Paso "+(idx+1)+"/"+total+" · "+step.icon+" "+step.label,"font-size:13px;font-weight:800;color:var(--text);"));
+  top.appendChild(mk("p",Math.round(idx/total*100)+"%","font-size:12px;font-weight:700;color:var(--gold-text);font-variant-numeric:tabular-nums;"));
+  h.appendChild(top);
+  var bar=mk("div","","background:rgba(255,255,255,0.06);border-radius:var(--r-pill);height:6px;overflow:hidden;");
+  var fill=mk("div","","background:linear-gradient(90deg,var(--gold),#fbbf24);height:100%;width:"+Math.round(idx/total*100)+"%;border-radius:var(--r-pill);transition:width 0.4s var(--ease-out);");
+  bar.appendChild(fill); h.appendChild(bar);
+  return h;
+}
+
+function runPersonalizedStep(idx){
+  var plan=state.app._reviewPlan; if(!plan) return;
+  if(idx>=plan.steps.length){ removeReviewBackBtn(); showPersonalizedSummary(); return; }
   plan.currentStep=idx;
   var step=plan.steps[idx];
-  if(step.type==="flashcards") { state.app.currentTab="flashcards";renderTabs();showScreen("flashcards"); }
-  else if(step.type==="grammar") {
-    state.app.currentTab="gramatica";renderTabs();showScreen("gramatica");
-    if(step.topic && typeof step.topic==="string"){
-      var found=GRAMMAR_TOPICS.findIndex(function(t){return t.key===step.topic;});
-      if(found>=0) setTimeout(function(){loadGrammarDrills(GRAMMAR_TOPICS[found]);},200);
-    }
-  }
+  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy");
+  var el=document.getElementById("s-hoy"); el.innerHTML="";
+  el.appendChild(reviewProgressHeader(idx, plan.steps.length, step));
+  var host=mk("div","",""); el.appendChild(host);
+  if(step.type==="cards") renderReviewCardsStep(host, step);
+  else if(step.type==="errors") renderReviewErrorsStep(host, step);
+  else if(step.type==="shadow") renderReviewShadowStep(host, step);
+  else if(step.type==="grammar") renderReviewGrammarStep(host, step);
+  else if(step.type==="explore") renderReviewExploreStep(host, step);
+  // Per-step cancel
+  var skip=mk("button","Saltar este paso →","width:100%;background:transparent;border:1px dashed var(--border);color:var(--muted);border-radius:12px;padding:10px;font-size:12px;font-weight:600;cursor:pointer;margin-top:14px;");
+  skip.onclick=function(){ step.skipped=true; runPersonalizedStep(plan.currentStep+1); };
+  el.appendChild(skip);
   showReviewBackBtn();
 }
+
+// Advance to the next step (also called by grammar.js / flashcards.js on completion)
+function nextReviewStep(){
+  var plan=state.app._reviewPlan; if(!plan) return;
+  var cur=plan.steps[plan.currentStep];
+  if(cur && !cur.skipped && !cur._counted){ cur._counted=true; plan.results.stepsCompleted++; if(cur.type==="grammar") plan.results.grammarDone++; }
+  runPersonalizedStep(plan.currentStep+1);
+}
+
+function renderReviewCardsStep(host, step){
+  if(typeof step._i!=="number") step._i=0;
+  if(step._i>=step.items.length){ nextReviewStep(); return; }
+  var ph=state.session.saved[step.items[step._i]];
+  if(!ph){ step._i++; renderReviewCardsStep(host, step); return; }
+  ensureSrsFields(ph); host.innerHTML="";
+  host.appendChild(mk("p",(step._i+1)+"/"+step.items.length+" · caja "+ph.box+"/5"+((ph.lapses||0)?" · "+ph.lapses+" fallos":""),"text-align:center;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
+  var card=mk("div","","background:linear-gradient(135deg,rgba(245,166,35,0.09),rgba(245,166,35,0.03));border:1px solid rgba(245,166,35,0.2);border-radius:var(--r-lg);padding:24px;text-align:center;margin-bottom:12px;");
+  card.appendChild(mk("p",ph.de,"font-size:21px;font-weight:900;color:var(--text);line-height:1.4;margin-bottom:12px;"));
+  var listen=mk("button","▶ Escuchar","background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);color:var(--gold-text);border-radius:var(--r-pill);padding:7px 18px;font-size:13px;font-weight:700;cursor:pointer;");
+  listen.onclick=function(){speak(ph.de);};
+  card.appendChild(listen);
+  var answer=mk("div","","display:none;margin-top:14px;");
+  answer.appendChild(mk("p",ph.es,"font-size:18px;color:var(--text);font-weight:600;line-height:1.4;"));
+  if(ph.tip) answer.appendChild(mk("p","💡 "+ph.tip,"font-size:13px;color:var(--muted);font-style:italic;margin-top:6px;"));
+  card.appendChild(answer);
+  host.appendChild(card);
+  var gradeRow=mk("div","","grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;display:none;");
+  [{k:"fail",lbl:"Fallé",col:"#F87171"},{k:"hard",lbl:"Difícil",col:"#fbbf24"},{k:"good",lbl:"Bien",col:"#4ade80"},{k:"easy",lbl:"Fácil",col:"#4ECDC4"}].forEach(function(g){
+    var b=mk("button",g.lbl,"border-radius:12px;padding:12px 6px;font-size:13px;font-weight:800;border:1px solid "+g.col+"55;background:rgba("+hexToRgb(g.col)+",0.1);color:"+g.col+";cursor:pointer;");
+    b.onclick=function(){ srsUpdate(ph,g.k); logActivity("phrasesReviewed",1); state.app._reviewPlan.results.cardsReviewed++; syncUp(); if(typeof updateBadge==="function") updateBadge(); step._i++; renderReviewCardsStep(host,step); };
+    gradeRow.appendChild(b);
+  });
+  var show=mk("button","Mostrar respuesta","width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:#000;font-size:14px;font-weight:800;cursor:pointer;");
+  show.onclick=function(){ answer.style.display="block"; gradeRow.style.display="grid"; show.style.display="none"; };
+  host.appendChild(show);
+  host.appendChild(gradeRow);
+}
+
+function renderReviewErrorsStep(host, step){
+  if(typeof step._i!=="number") step._i=0;
+  if(step._i>=step.items.length){ nextReviewStep(); return; }
+  var e=step.items[step._i]; host.innerHTML="";
+  host.appendChild(mk("p",(step._i+1)+"/"+step.items.length,"text-align:center;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
+  var card=mk("div","","background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r-lg);padding:20px;margin-bottom:12px;");
+  card.appendChild(mk("p","Corregí esta frase:","font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;"));
+  card.appendChild(mk("p",e.original,"font-size:16px;color:var(--text);font-weight:700;line-height:1.5;margin-bottom:10px;"));
+  var input=document.createElement("textarea"); input.rows=2; input.className="input-field"; input.placeholder="Escribí tu corrección..."; input.setAttribute("aria-label","Tu corrección"); input.style.resize="none";
+  card.appendChild(input);
+  var reveal=mk("div","","display:none;margin-top:12px;"); card.appendChild(reveal);
+  host.appendChild(card);
+  var nextB=mk("button",(step._i+1<step.items.length?"Siguiente error →":"Siguiente paso →"),"width:100%;padding:12px;border-radius:12px;border:none;background:rgba(78,205,196,0.12);color:var(--teal-text);font-weight:800;font-size:13px;cursor:pointer;margin-top:8px;display:none;");
+  nextB.onclick=function(){ step._i++; renderReviewErrorsStep(host,step); };
+  var showBtn=mk("button","Ver corrección","width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:#000;font-weight:800;font-size:14px;cursor:pointer;");
+  showBtn.onclick=function(){
+    reveal.innerHTML="";
+    if(input.value.trim()){ reveal.appendChild(mk("p","Tu respuesta","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;")); reveal.appendChild(mk("p",input.value.trim(),"font-size:14px;color:var(--text2);margin-bottom:10px;line-height:1.4;")); }
+    reveal.appendChild(mk("p","Correcta","font-size:11px;color:var(--green-text);font-weight:700;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;"));
+    reveal.appendChild(mk("p",e.correction,"font-size:16px;color:var(--green-text);font-weight:700;line-height:1.5;"));
+    if(e.tip) reveal.appendChild(mk("p","💡 "+e.tip,"font-size:13px;color:var(--muted);font-style:italic;margin-top:6px;"));
+    reveal.style.display="block"; showBtn.style.display="none"; nextB.style.display="block";
+    logActivity("drillsDone",1); state.app._reviewPlan.results.errorsReviewed++; syncUp();
+  };
+  host.appendChild(showBtn); host.appendChild(nextB);
+}
+
+function renderReviewShadowStep(host, step){
+  if(typeof step._i!=="number") step._i=0;
+  if(step._i>=step.items.length){ nextReviewStep(); return; }
+  var ph=step.items[step._i]; host.innerHTML="";
+  host.appendChild(mk("p",(step._i+1)+"/"+step.items.length+" · "+ph.es,"text-align:center;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
+  var card=mk("div","","background:rgba(78,205,196,0.05);border:1px solid rgba(78,205,196,0.18);border-radius:var(--r-lg);padding:20px;text-align:center;margin-bottom:12px;");
+  card.appendChild(mk("p",ph.de,"font-size:18px;font-weight:800;color:var(--text);line-height:1.5;margin-bottom:6px;"));
+  card.appendChild(mk("p",ph.es,"font-size:13px;color:var(--muted);font-weight:500;"));
+  host.appendChild(card);
+  var listen=mk("button","▶ Escuchar","width:100%;padding:13px;border-radius:12px;border:none;background:rgba(78,205,196,0.12);color:var(--teal-text);font-weight:800;font-size:14px;cursor:pointer;margin-bottom:10px;");
+  listen.onclick=function(){speak(ph.de);};
+  host.appendChild(listen);
+  var scoreHost=mk("div","","margin-bottom:10px;"); host.appendChild(scoreHost);
+  var nextB=mk("button",(step._i+1<step.items.length?"Siguiente →":"Siguiente paso →"),"width:100%;padding:12px;border-radius:12px;border:none;background:rgba(245,166,35,0.1);color:var(--gold-text);font-weight:800;font-size:13px;cursor:pointer;display:none;");
+  nextB.onclick=function(){ step._i++; renderReviewShadowStep(host,step); };
+  var micRow=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:8px;");
+  micRow.appendChild(mk("span","🎤 Repetí — graba tu voz","font-size:13px;color:var(--teal-text);font-weight:700;flex:1;"));
+  var mic=makeMicBtn("#4ECDC4",function(tr){ renderPronScore(scoreHost, ph.de, tr, "#4ECDC4"); logActivity("drillsDone",1); state.app._reviewPlan.results.shadowDone++; syncUp(); nextB.style.display="block"; });
+  mic.setAttribute("aria-label","Grabar tu voz para puntuar la pronunciación");
+  micRow.appendChild(mic); host.appendChild(micRow); host.appendChild(nextB);
+  var skipPhrase=mk("button","Saltar frase","width:100%;background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;");
+  skipPhrase.onclick=function(){ step._i++; renderReviewShadowStep(host,step); };
+  host.appendChild(skipPhrase);
+}
+
+function renderReviewGrammarStep(host, step){
+  host.innerHTML="";
+  var topo=GRAMMAR_TOPICS.filter(function(x){return x.key===step.topic;})[0];
+  var card=mk("div","","background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.22);border-radius:var(--r-lg);padding:22px;text-align:center;margin-bottom:12px;");
+  card.appendChild(mk("p",(topo?topo.icon:"📐"),"font-size:34px;margin-bottom:6px;"));
+  card.appendChild(mk("p","DRILL DE GRAMÁTICA","font-size:11px;color:var(--purple-text);font-weight:700;letter-spacing:1px;margin-bottom:4px;"));
+  card.appendChild(mk("p",(topo?topo.label:"Tema"),"font-size:18px;font-weight:800;color:var(--text);"));
+  host.appendChild(card);
+  var go=mk("button","Empezar drill →","width:100%;padding:14px;border-radius:12px;border:none;background:var(--purple);color:#000;font-weight:800;font-size:14px;cursor:pointer;");
+  go.onclick=function(){ state.app.currentTab="gramatica"; renderTabs(); showScreen("gramatica"); if(topo) setTimeout(function(){loadGrammarDrills(topo);},200); };
+  host.appendChild(go);
+  host.appendChild(mk("p","Al terminar el drill, tocá “Siguiente” para continuar el repaso.","font-size:11px;color:var(--muted);text-align:center;margin-top:10px;font-weight:500;"));
+}
+
+function renderReviewExploreStep(host, step){
+  host.innerHTML="";
+  var card=mk("div","","background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;text-align:center;margin-bottom:12px;");
+  card.appendChild(mk("p",step.icon,"font-size:34px;margin-bottom:6px;"));
+  card.appendChild(mk("p","BONUS","font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;"));
+  card.appendChild(mk("p",step.detail,"font-size:15px;font-weight:700;color:var(--text);line-height:1.4;"));
+  host.appendChild(card);
+  var go=mk("button","Ir →","width:100%;padding:14px;border-radius:12px;border:none;background:var(--gold);color:#000;font-weight:800;font-size:14px;cursor:pointer;");
+  go.onclick=function(){
+    if(!step._counted){ step._counted=true; state.app._reviewPlan.results.stepsCompleted++; }
+    state.app._reviewPlan=null; removeReviewBackBtn();
+    state.app.currentTab=step.tab; renderTabs(); showScreen(step.tab);
+  };
+  host.appendChild(go);
+}
+
+function showPersonalizedSummary(){
+  var plan=state.app._reviewPlan; if(!plan){ renderToday(); return; }
+  plan.done=true; removeReviewBackBtn();
+  var r=plan.results, total=plan.steps.length;
+  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy");
+  var el=document.getElementById("s-hoy"); el.innerHTML="";
+  var c=mk("div","","text-align:center;padding:26px 20px;background:linear-gradient(135deg,rgba(74,222,128,0.12),rgba(78,205,196,0.06));border:1px solid rgba(74,222,128,0.25);border-radius:var(--r-lg);margin-bottom:14px;animation:winPop 0.45s var(--ease-spring) both;");
+  c.appendChild(mk("p","✅","font-size:40px;margin-bottom:6px;"));
+  c.appendChild(mk("p","Completaste "+r.stepsCompleted+"/"+total+" pasos","font-size:18px;font-weight:800;color:var(--green-text);margin-bottom:10px;"));
+  var lines=[];
+  if(r.cardsReviewed) lines.push("🃏 "+r.cardsReviewed+" flashcard"+(r.cardsReviewed>1?"s":"")+" revisada"+(r.cardsReviewed>1?"s":""));
+  if(r.grammarDone) lines.push("📐 "+r.grammarDone+" tema"+(r.grammarDone>1?"s":"")+" de gramática");
+  if(r.errorsReviewed) lines.push("✏️ "+r.errorsReviewed+" error"+(r.errorsReviewed>1?"es":"")+" corregido"+(r.errorsReviewed>1?"s":""));
+  if(r.shadowDone) lines.push("🎧 "+r.shadowDone+" frase"+(r.shadowDone>1?"s":"")+" de pronunciación");
+  var detail=mk("div","","display:flex;flex-direction:column;gap:4px;");
+  if(lines.length) lines.forEach(function(l){detail.appendChild(mk("p",l,"font-size:13px;color:var(--text2);font-weight:600;"));});
+  else detail.appendChild(mk("p","Saltaste los pasos — mañana va.","font-size:13px;color:var(--muted);font-weight:500;"));
+  c.appendChild(detail); el.appendChild(c);
+  var done=mk("button","Listo","width:100%;padding:13px;border-radius:12px;border:none;background:var(--gold);color:#000;font-size:14px;font-weight:800;cursor:pointer;");
+  done.onclick=function(){ state.app._reviewPlan=null; renderToday(); };
+  el.appendChild(done);
+  if(r.stepsCompleted>=Math.ceil(total/2) && typeof fireConfetti==="function") fireConfetti();
+}
+
+// Everything is up to date — nothing urgent to review
+function showAllCaughtUp(){
+  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy"); removeReviewBackBtn();
+  var el=document.getElementById("s-hoy"); el.innerHTML="";
+  var c=mk("div","","text-align:center;padding:28px 20px;background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(78,205,196,0.05));border:1px solid rgba(74,222,128,0.22);border-radius:var(--r-lg);margin-bottom:14px;animation:winPop 0.45s var(--ease-spring) both;");
+  c.appendChild(mk("p","🎉","font-size:44px;margin-bottom:8px;"));
+  c.appendChild(mk("p","Todo al día","font-size:19px;font-weight:800;color:var(--green-text);margin-bottom:4px;"));
+  c.appendChild(mk("p","Tomate un descanso o elegí algo para practicar.","font-size:13px;color:var(--muted);font-weight:500;"));
+  el.appendChild(c);
+  var grid=mk("div","","display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;");
+  [{lbl:"💬 Conversar",tab:"conversar"},{lbl:"🎧 Shadowing",tab:"shadowing"},{lbl:"📖 Lectura",tab:"lectura"},{lbl:"🃏 Flashcards",tab:"flashcards"}].forEach(function(a){
+    var b=mk("button",a.lbl,"padding:14px;border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:700;cursor:pointer;");
+    b.onclick=function(){ state.app.currentTab=a.tab; renderTabs(); showScreen(a.tab); };
+    grid.appendChild(b);
+  });
+  el.appendChild(grid);
+  var back=mk("button","← Volver a Hoy","width:100%;padding:11px;border-radius:12px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;");
+  back.onclick=function(){ renderToday(); };
+  el.appendChild(back);
+}
+
+// Floating back-to-Hoy FAB, persistent across every review step
 function showReviewBackBtn(){
   removeReviewBackBtn();
-  var btn=mk("button","\u2190 Volver a Hoy","position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;padding:10px 24px;border-radius:24px;border:1px solid var(--border);background:var(--modal-bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);");
+  var btn=mk("button","← Volver a Hoy","position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;padding:10px 24px;border-radius:24px;border:1px solid var(--border);background:var(--modal-bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);");
   btn.id="review-back-fab";
   btn.onclick=function(){state.app._reviewPlan=null;removeReviewBackBtn();state.app.currentTab="hoy";renderTabs();showScreen("hoy");renderToday();};
   document.body.appendChild(btn);
@@ -295,34 +551,4 @@ function showReviewBackBtn(){
 function removeReviewBackBtn(){
   var el=document.getElementById("review-back-fab");
   if(el) el.remove();
-}
-function nextReviewStep(){
-  var plan=state.app._reviewPlan;
-  if(!plan) return;
-  goToReviewStep(plan.currentStep+1);
-}
-function showReviewComplete(){
-  var plan=state.app._reviewPlan;
-  var el=document.getElementById("s-hoy");
-  state.app.currentTab="hoy";renderTabs();showScreen("hoy");
-  setTimeout(function(){
-    var c=document.createElement("div"); c.id="review-done-card";
-    c.className="card";
-    c.style.cssText="background:linear-gradient(135deg,rgba(74,222,128,0.12),rgba(78,205,196,0.06));border:1px solid rgba(74,222,128,0.25);border-radius:var(--r-lg,16px);padding:24px;text-align:center;margin-bottom:10px;animation:winPop 0.45s var(--ease-spring) both;";
-    c.appendChild(mk("p","🎉","font-size:40px;margin-bottom:6px;"));
-    c.appendChild(mk("p","¡Repaso completo!","font-size:18px;font-weight:800;color:var(--green-text);margin-bottom:4px;"));
-    c.appendChild(mk("p","Hiciste todas las actividades del plan.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:10px;"));
-    var stepsDone=mk("div","","display:flex;justify-content:center;gap:10px;font-size:12px;");
-    plan.steps.forEach(function(s){
-      var icons={flashcards:"🃏",grammar:"📐"};
-      stepsDone.appendChild(mk("span",(icons[s.type]||"✅")+" "+s.type,"color:#94a3b8;font-weight:600;"));
-    });
-    c.appendChild(stepsDone);
-    var resetBtn=mk("button","Cerrar","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(255,255,255,0.06);color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;margin-top:14px;");
-    resetBtn.onclick=function(){c.remove();state.app._reviewPlan=null;};
-    c.appendChild(resetBtn);
-    el.insertBefore(c,el.firstChild);
-  },300);
-  state.app._reviewPlan.done=true;
-  removeReviewBackBtn();
 }
