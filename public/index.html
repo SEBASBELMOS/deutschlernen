@@ -244,7 +244,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .modal-box { background:var(--modal-bg);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:24px;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,0.6); }
 .modal-box.post { background:var(--modal-post-bg);border-color:rgba(245,166,35,0.25);max-width:560px;margin-top:30px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,0.5); }
 
-.btn-solid { border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:800;transition:background 0.2s,transform 0.1s,box-shadow 0.2s;cursor:pointer; }
+.btn-solid { border:none;border-radius:var(--r-md);padding:var(--s-3);font-size:var(--t-base);font-weight:800;transition:background var(--d-base),transform var(--d-fast),box-shadow var(--d-base);cursor:pointer; }
 .btn-solid:active { transform:scale(0.97); }
 .btn-solid.gold { background:var(--gold);color:#000; }
 .btn-solid.gold:hover { background:#f7b84b; }
@@ -255,7 +255,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .btn-solid.purple { background:#A78BFA;color:#000; }
 .btn-solid.purple:hover { background:#b69cff; }
 
-.btn-ghost { background:rgba(255,255,255,0.06);border:none;color:#94a3b8;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;transition:background 0.2s;cursor:pointer; }
+.btn-ghost { background:rgba(255,255,255,0.06);border:none;color:#94a3b8;border-radius:var(--r-md);padding:var(--s-3) var(--s-4);font-size:var(--t-sm);font-weight:600;transition:background var(--d-base);cursor:pointer; }
 .btn-ghost:hover { background:rgba(255,255,255,0.1); }
 
 .bubble-play-btn { background:none;border:none;font-size:11px;color:#475569;padding:0 4px;cursor:pointer;font-weight:600;transition:color 0.15s; }
@@ -280,10 +280,10 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .cat-edit-btn { background:none;border:none;font-size:12px;cursor:pointer;padding:0;opacity:0.5;transition:opacity 0.15s; }
 .cat-edit-btn:hover { opacity:1; }
 
-.btn-danger { background:none;border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:10px;padding:9px;font-weight:600;font-size:14px;transition:background 0.2s;cursor:pointer; }
+.btn-danger { background:none;border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:var(--r-md);padding:var(--s-3);font-weight:600;font-size:var(--t-base);transition:background var(--d-base);cursor:pointer; }
 .btn-danger:hover { background:rgba(239,68,68,0.06); }
 
-.input-field { width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 13px;font-size:14px;color:var(--text);outline:none;font-family:inherit; }
+.input-field { width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r-md);padding:var(--s-3);font-size:var(--t-base);color:var(--text);outline:none;font-family:inherit; }
 .input-field:focus { border-color:rgba(245,166,35,0.5); }
 
 .hover-lift { transition:transform 0.15s var(--ease-out),box-shadow 0.2s;cursor:pointer; }
@@ -294,7 +294,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .hover-glow:hover { box-shadow:0 0 12px var(--btn-color);background:var(--btn-bg);border-color:var(--btn-border); }
 .hover-glow:active { transform:scale(0.97) !important; }
 
-.result-box { border-radius:16px;padding:18px;margin-bottom:10px; }
+.result-box { border-radius:var(--r-lg);padding:var(--s-4);margin-bottom:var(--s-3); }
 .result-box.green { background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.18); }
 .result-box.red { background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.18); }
 .result-box.purple { background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.18); }
@@ -304,7 +304,7 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .result-box.surface { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px; }
 
 .text-muted { color:var(--muted);font-size:12px;font-weight:500; }
-.chip { display:inline-block;border-radius:20px;padding:2px 10px;font-size:11px; }
+.chip { display:inline-block;border-radius:var(--r-xl);padding:2px 10px;font-size:var(--t-xs); }
 
 .logout-btn { background:none;border:none;padding:0;display:flex;align-items:center;justify-content:center;width:44px;height:44px;opacity:0.45;cursor:pointer;transition:opacity 0.2s; }
 .logout-btn:hover { opacity:1; }
@@ -335,29 +335,29 @@ button,input,textarea { font-family:'Inter',system-ui,sans-serif; cursor:pointer
 .check-btn-flat { flex:1;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;box-shadow:0 4px 14px rgba(245,166,35,0.3); }
 .gen-btn { width:100%;border-radius:var(--r-md,12px);padding:12px;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s;margin-bottom:10px; }
 
-.info-chip { background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);color:#4ECDC4;border-radius:10px;padding:6px 13px;font-size:12px;font-weight:700; }
+.info-chip { background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);color:var(--teal-text);border-radius:var(--r-md);padding:6px 13px;font-size:12px;font-weight:700; }
 
 /* ── CARDS ───────────────────────────────────────────────────────────────── */
 .card {
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:16px;
-  padding:14px 16px;
-  margin-bottom:10px;
-  transition:border-color 0.2s, box-shadow 0.2s;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:var(--s-4);
+  margin-bottom:var(--s-3);
+  transition:border-color var(--d-base) var(--ease-out), box-shadow var(--d-base) var(--ease-out);
 }
-.card:hover { border-color:rgba(255,255,255,0.13); box-shadow:0 4px 24px rgba(0,0,0,0.2); }
+.card:hover { border-color:rgba(255,255,255,0.13); box-shadow:var(--e-2); }
 
 /* ── COMMON BUTTONS ──────────────────────────────────────────────────────── */
 .btn-back {
   background:rgba(255,255,255,0.07);
   border:none;
   color:#94a3b8;
-  border-radius:10px;
-  padding:7px 14px;
-  font-size:13px;
+  border-radius:var(--r-md);
+  padding:var(--s-2) var(--s-4);
+  font-size:var(--t-sm);
   font-weight:600;
-  transition:background 0.2s;
+  transition:background var(--d-base);
 }
 .btn-back:hover { background:rgba(255,255,255,0.12); }
 .btn-back:active { transform:scale(.97); }
@@ -2390,50 +2390,72 @@ function renderHoy(){
   const todayTotal=(todayLog.minutes||0)+(todayLog.phrasesReviewed||0)+(todayLog.drillsDone||0);
   const allDone=due===0&&state.session.saved.length>0;
 
-  // ── Streak hero ──
-  const streakBox=document.createElement("div");
-  streakBox.style.cssText="text-align:center;padding:28px 20px 20px;margin-bottom:6px;";
-  const flameScale=streak>=30?1.3:streak>=14?1.2:streak>=7?1.15:streak>=3?1.08:1;
-  const flameOpacity=streak>0?1:0.3;
+  // ── Hero band: Tagesbahn (habit spine) + streak + fused due CTA ──
   // Solo celebra cuando la racha CRECIÓ (no en cada visita al tab) — evita animation fatigue
   const streakGrew = streak > state.app._lastStreakSeen;
-  const flameEl=mk("span","🔥","font-size:"+(48*flameScale)+"px;display:inline-block;opacity:"+flameOpacity+";filter:"+(streak>=7?"drop-shadow(0 0 12px rgba(245,166,35,0.6))":"none")+";");
-  if(streak>0&&streakGrew){
-    flameEl.style.animation="flameGrow 0.6s var(--ease-spring) 1";
-  }
-  streakBox.appendChild(flameEl);
-  if(streak>0){
-    const streakNum=mk("p",String(streak),"font-size:42px;font-weight:900;color:var(--text);letter-spacing:-0.03em;margin-top:4px;line-height:1;font-variant-numeric:tabular-nums;");
-    if(streakGrew) streakNum.style.animation="counterPop 0.4s var(--ease-spring) 0.2s 1";
-    streakBox.appendChild(streakNum);
-    streakBox.appendChild(mk("p",(streak===1?"dia":"dias")+" seguidos","font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;"));
-  } else {
-    streakBox.appendChild(mk("p","Sin racha","font-size:18px;font-weight:800;color:var(--muted);margin-top:6px;"));
-    streakBox.appendChild(mk("p","Empieza hoy — practica 1 minuto","font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;"));
-  }
-  el.appendChild(streakBox);
+  const hero=document.createElement("div");
+  hero.style.cssText="padding:var(--s-5) var(--s-4) var(--s-4);margin-bottom:var(--s-3);text-align:center;";
 
-  // ── Due cards CTA ──
-  if(!allDone&&due>0){
-    const ctaCard=document.createElement("div"); ctaCard.className="card hover-lift";
-    ctaCard.setAttribute("role","button"); ctaCard.setAttribute("tabindex","0");
-    ctaCard.style.cssText="background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04));border:1px solid rgba(245,166,35,0.25);border-radius:var(--r-lg,16px);padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;";
-    ctaCard.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
-    ctaCard.onkeydown=function(e){if(e.key==="Enter"||e.key===" ") this.click();};
-    ctaCard.appendChild(mk("p",String(due),"font-size:38px;font-weight:900;color:var(--gold-text);line-height:1;font-variant-numeric:tabular-nums;"));
-    ctaCard.appendChild(mk("p","tarjetas pendientes","font-size:14px;color:var(--gold-text);font-weight:700;margin-top:4px;"));
-    ctaCard.appendChild(mk("p","Toca para repasar ahora","font-size:12px;color:var(--muted);margin-top:6px;"));
-    if(streak>0) ctaCard.appendChild(mk("p","⚠️ Tu racha de "+streak+" está en riesgo","font-size:11px;color:var(--red-text);font-weight:700;margin-top:8px;"));
-    el.appendChild(ctaCard);
-  } else if(allDone){
-    const winCard=document.createElement("div"); winCard.className="card";
-    winCard.style.cssText="background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(74,222,128,0.03));border:1px solid rgba(74,222,128,0.2);border-radius:var(--r-lg,16px);padding:24px;text-align:center;margin-bottom:10px;animation:winPop 0.45s var(--ease-spring) both;";
-    winCard.appendChild(mk("p","🎉","font-size:40px;"));
-    winCard.appendChild(mk("p","¡Por hoy terminaste!","font-size:18px;font-weight:800;color:var(--green-text);margin-top:6px;"));
-    const sumToday=todayLog.phrasesReviewed||0;
-    winCard.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;"));
-    el.appendChild(winCard);
+  // Tagesbahn — los últimos 7 días como columna vertebral del hábito (elemento firma)
+  const bahn=mk("div","","display:flex;gap:var(--s-2);justify-content:center;align-items:center;margin-bottom:var(--s-4);");
+  for(var bi=6;bi>=0;bi--){
+    var dkey=addDays(t,-bi);
+    var dlog=state.session.dailyLog[dkey];
+    var dActive=!!(dlog&&((dlog.minutes||0)>0||(dlog.phrasesReviewed||0)>0||(dlog.drillsDone||0)>0));
+    var isToday=bi===0;
+    var dot=mk("span","","border-radius:var(--r-pill);flex-shrink:0;transition:transform var(--d-base) var(--ease-out);");
+    if(dActive){
+      dot.style.width="11px"; dot.style.height="11px"; dot.style.background="var(--gold)";
+      if(isToday) dot.style.boxShadow="0 0 10px rgba(245,166,35,0.6)";
+    } else if(isToday){
+      dot.style.width="13px"; dot.style.height="13px"; dot.style.background="transparent";
+      dot.style.border="2px solid var(--gold)"; dot.style.boxShadow="0 0 8px rgba(245,166,35,0.35)";
+    } else {
+      dot.style.width="11px"; dot.style.height="11px"; dot.style.background="var(--dim)"; dot.style.opacity="0.55";
+    }
+    dot.setAttribute("aria-label",(isToday?"hoy":dkey)+": "+(dActive?"estudiado":"sin estudiar"));
+    bahn.appendChild(dot);
   }
+  hero.appendChild(bahn);
+
+  // Streak line — el numeral héroe
+  if(streak>0){
+    const streakLine=mk("div","","display:flex;align-items:baseline;justify-content:center;gap:var(--s-2);");
+    const streakNum=mk("span",String(streak),"font-size:var(--t-2xl);font-weight:900;color:var(--gold-text);letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums;");
+    if(streakGrew) streakNum.style.animation="counterPop 0.4s var(--ease-spring) 0.2s 1";
+    streakLine.appendChild(streakNum);
+    streakLine.appendChild(mk("span",(streak===1?"día de racha":"días de racha"),"font-size:var(--t-sm);font-weight:700;color:var(--text2);"));
+    hero.appendChild(streakLine);
+    hero.appendChild(mk("p","últimos 7 días","font-size:var(--t-xs);color:var(--muted);font-weight:600;margin-top:var(--s-1);letter-spacing:1px;"));
+  } else {
+    hero.appendChild(mk("p","Empezá tu racha hoy","font-size:var(--t-md);font-weight:800;color:var(--text);"));
+    hero.appendChild(mk("p","1 minuto ya cuenta","font-size:var(--t-sm);color:var(--muted);font-weight:500;margin-top:var(--s-1);"));
+  }
+
+  // Fused due CTA / win state — el único llamado a la acción
+  if(allDone){
+    const win=mk("div","","margin-top:var(--s-4);padding:var(--s-4);border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(74,222,128,0.12),rgba(74,222,128,0.03));border:1px solid rgba(74,222,128,0.2);animation:winPop 0.45s var(--ease-spring) both;");
+    win.appendChild(mk("p","🎉 Por hoy terminaste","font-size:var(--t-md);font-weight:800;color:var(--green-text);"));
+    const sumToday=todayLog.phrasesReviewed||0;
+    win.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:var(--t-sm);color:var(--muted);font-weight:600;margin-top:var(--s-1);"));
+    hero.appendChild(win);
+  } else if(due>0){
+    const cta=document.createElement("div"); cta.className="hover-lift";
+    cta.setAttribute("role","button"); cta.setAttribute("tabindex","0");
+    cta.setAttribute("aria-label","Repasar "+due+" tarjetas pendientes");
+    cta.style.cssText="margin-top:var(--s-4);padding:var(--s-3) var(--s-4);border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(245,166,35,0.14),rgba(245,166,35,0.04));border:1px solid rgba(245,166,35,0.28);cursor:pointer;display:flex;align-items:center;gap:var(--s-3);text-align:left;transition:transform var(--d-fast) var(--ease-out),box-shadow var(--d-base);";
+    cta.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
+    cta.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();this.click();}};
+    cta.appendChild(mk("span",String(due),"font-size:var(--t-3xl);font-weight:900;color:var(--gold-text);line-height:1;font-variant-numeric:tabular-nums;flex-shrink:0;"));
+    const dueTxt=mk("div","","flex:1;min-width:0;");
+    dueTxt.appendChild(mk("p",due===1?"tarjeta pendiente":"tarjetas pendientes","font-size:var(--t-sm);color:var(--gold-text);font-weight:700;"));
+    const riskMsg=streak>0?"tu racha de "+streak+" está en juego":"repasá para empezar tu racha";
+    dueTxt.appendChild(mk("p",riskMsg,"font-size:var(--t-xs);color:"+(streak>0?"var(--red-text)":"var(--muted)")+";font-weight:600;margin-top:2px;"));
+    cta.appendChild(dueTxt);
+    cta.appendChild(mk("span","Repasar →","font-size:var(--t-sm);font-weight:800;color:#000;background:var(--gold);padding:var(--s-2) var(--s-3);border-radius:var(--r-md);flex-shrink:0;white-space:nowrap;"));
+    hero.appendChild(cta);
+  }
+  el.appendChild(hero);
 
   // ── Level progress ──
   var lvlPct=computeLevelProgress();
@@ -5204,7 +5226,7 @@ function casosPracticar(host){
   });
   c.appendChild(modes);
 
-  const score=mk("div","","display:flex;gap:16px;align-items:baseline;margin-bottom:14px;font-size:13px;color:var(--muted);");
+  const score=mk("div","","display:flex;gap:16px;align-items:baseline;margin-bottom:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;");
   score.innerHTML='<span>Aciertos <b id="cs-hit" style="color:var(--text);font-size:17px;font-weight:800;">'+state.casos.casosHits+'</b>/<b id="cs-tot" style="color:var(--text);font-weight:800;">'+state.casos.casosTotal+'</b></span>'
     +'<span>Racha <b id="cs-streak" style="color:var(--gold-text);font-size:17px;font-weight:800;">'+state.casos.casosStreak+'</b></span>'
     +'<span>Acierto <b id="cs-pct" style="color:var(--text);font-size:17px;font-weight:800;">'+(state.casos.casosTotal?Math.round(state.casos.casosHits/state.casos.casosTotal*100)+'%':'—')+'</b></span>';
@@ -5466,7 +5488,7 @@ function renderResumen() {
     const left=mk("div","","display:flex;align-items:center;gap:10px;");
     left.appendChild(mk("span",s.icon,"font-size:20px;"));
     left.appendChild(mk("span",s.label,"font-size:14px;color:var(--text2);font-weight:600;"));
-    const val=mk("span",String(s.value),"font-size:30px;font-weight:900;color:"+s.color+";letter-spacing:-0.03em;");
+    const val=mk("span",String(s.value),"font-size:30px;font-weight:900;color:"+s.color+";letter-spacing:-0.03em;font-variant-numeric:tabular-nums;");
     row.appendChild(left); row.appendChild(val);
     el.appendChild(row);
   });
