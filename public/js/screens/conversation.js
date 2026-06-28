@@ -1,6 +1,6 @@
-// ── CONVERSAR ─────────────────────────────────────────────────────────────────
+// ── Conversation ──────────────────────────────────────────────────────────────
 
-function renderConversar() {
+function renderConversation() {
   if(state.chat.chatScenario) return;
   const el=document.getElementById("s-conversar"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
@@ -47,7 +47,7 @@ function startChat(scenario) {
     clearInterval(state.session.minTimer);
     runPostChatAnalysis();
     saveChatLog();
-    state.chat.chatScenario=null; state.chat.chatHistory=[]; renderConversar();
+    state.chat.chatScenario=null; state.chat.chatHistory=[]; renderConversation();
   };
 
   const bar=document.createElement("div"); bar.className="chat-bar";

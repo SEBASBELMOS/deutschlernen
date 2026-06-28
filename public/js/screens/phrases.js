@@ -1,6 +1,6 @@
-// ── FRASES ────────────────────────────────────────────────────────────────────
+// ── Phrases (phrase of the day) ───────────────────────────────────────────────
 
-function renderFrases() {
+function renderPhrases() {
   const el=document.getElementById("s-frases"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","Elige un tema","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -84,7 +84,7 @@ async function loadPhrases(sit) {
   const el=document.getElementById("s-frases"); el.innerHTML="";
   const top=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:16px;");
   const back=document.createElement("button"); back.className="btn-back"; back.textContent="← Volver";
-  back.onclick=function(){renderFrases();};
+  back.onclick=function(){renderPhrases();};
   top.appendChild(back);
   top.appendChild(mk("span",sit,"font-size:13px;color:var(--text);font-weight:700;"));
   el.appendChild(top);
@@ -200,7 +200,7 @@ function showVocabPack(host, title, icon, vocabList, categoryName){
     c.appendChild(card);
   });
   var back=mk("button","\u2190 Volver","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:10px 0;margin-top:6px;");
-  back.onclick=function(){renderGuardadas();};
+  back.onclick=function(){renderSaved();};
   c.appendChild(back);
   host.appendChild(c);
 }

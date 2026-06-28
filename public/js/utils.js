@@ -1,13 +1,14 @@
-// Extrae y parsea el primer array JSON válido del texto del AI
+// ── Utils (parse JSON, DOM mk()/ico, skeletons, focus-trap a11y) ──────────────
+// Extracts and parses the first valid JSON array from the AI text
 function parseJSONArray(text) {
   const clean = text.replace(/```json|```/g,"").trim();
-  // Busca el array aunque haya texto extra antes/después
+  // Find the array even if there is extra text before/after
   const match = clean.match(/\[[\s\S]*\]/);
   if (!match) throw new Error("No JSON array found");
   try {
     return JSON.parse(match[0]);
   } catch(e) {
-    // Intenta truncar en el último objeto completo si el JSON fue cortado
+    // Try to truncate at the last complete object if the JSON was cut off
     const truncated = match[0].replace(/,?\s*\{[^}]*$/, "]");
     const parsed = JSON.parse(truncated);
     if (!parsed.length) throw new Error("JSON vacío después de reparar");

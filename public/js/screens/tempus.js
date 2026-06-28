@@ -1,4 +1,4 @@
-// ── TEMPUS (antes/después: vor/nach, bevor/nachdem, vorher/danach, früher/später) ──
+// ── Tempus (before/after: vor/nach, bevor/nachdem, vorher/danach, früher/später) ───
 function normalizeTempusExercise(d){
   d=d||{};
   d.correct=String(d.correct||"").trim().toLowerCase();
@@ -22,14 +22,14 @@ function prepareTempusExercises(raw){
   return arr.slice(0,24);
 }
 function resetTempusRound(data){
-  state.tempo.tempusData=prepareTempusExercises(data);
-  state.tempo.tempusIdx=0;
-  state.tempo.tempusRight=0;
-  state.tempo.tempusWrong=0;
-  state.tempo.tempusDone=false;
-  state.tempo.tempusResults=[];
-  state.tempo.tempusSkipped=[];
-  state.tempo.tempusLogged=false;
+  state.tempus.tempusData=prepareTempusExercises(data);
+  state.tempus.tempusIdx=0;
+  state.tempus.tempusRight=0;
+  state.tempus.tempusWrong=0;
+  state.tempus.tempusDone=false;
+  state.tempus.tempusResults=[];
+  state.tempus.tempusSkipped=[];
+  state.tempus.tempusLogged=false;
 }
 function appendTempusSentence(host,sentence){
   var parts=String(sentence||"").split("___");
@@ -49,8 +49,8 @@ function renderTempus(){
   hdr.appendChild(mk("p","vor/nach, bevor/nachdem, vorher/danach — el color diferencia la regla, no el tipo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
 
-  if(state.tempo.tempusDone){ renderTempusResults(el); return; }
-  if(state.tempo.tempusData&&state.tempo.tempusData.length){ renderTempusCard(el,hdr); return; }
+  if(state.tempus.tempusDone){ renderTempusResults(el); return; }
+  if(state.tempus.tempusData&&state.tempus.tempusData.length){ renderTempusCard(el,hdr); return; }
 
   var refCard=document.createElement("div"); refCard.className="card";
   refCard.style.cssText="padding:16px;margin-bottom:14px;border-radius:var(--r-lg,16px);overflow-x:auto;";
@@ -123,15 +123,15 @@ function renderTempus(){
 }
 
 function renderTempusCard(el,hdr){
-  var data=state.tempo.tempusData;
-  var idx=state.tempo.tempusIdx;
-  if(idx>=data.length){ state.tempo.tempusDone=true; el.innerHTML=""; renderTempus(); return; }
+  var data=state.tempus.tempusData;
+  var idx=state.tempus.tempusIdx;
+  if(idx>=data.length){ state.tempus.tempusDone=true; el.innerHTML=""; renderTempus(); return; }
   var d=data[idx]; d=normalizeTempusExercise(d); data[idx]=d;
   el.innerHTML="";
   hdr.innerHTML="";
   hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","⏳ Antes / Después","font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p",(idx+1)+"/"+data.length+" · Aciertos: "+state.tempo.tempusRight+" · Fallos: "+state.tempo.tempusWrong,"font-size:13px;color:var(--gold-text);margin-top:4px;font-weight:600;"));
+  hdr.appendChild(mk("p",(idx+1)+"/"+data.length+" · Aciertos: "+state.tempus.tempusRight+" · Fallos: "+state.tempus.tempusWrong,"font-size:13px;color:var(--gold-text);margin-top:4px;font-weight:600;"));
   el.appendChild(hdr);
 
   var card=document.createElement("div"); card.className="card";
@@ -164,9 +164,9 @@ function renderTempusCard(el,hdr){
     btn.onmouseleave=function(){this.style.transform="";this.style.borderColor="rgba(245,166,35,0.25)";};
     btn.onclick=function(){
       var correct=opt===d.correct;
-      if(correct) state.tempo.tempusRight++; else state.tempo.tempusWrong++;
-      state.tempo.tempusResults[idx]=correct;
-      state.tempo.tempusSkipped[idx]=false;
+      if(correct) state.tempus.tempusRight++; else state.tempus.tempusWrong++;
+      state.tempus.tempusResults[idx]=correct;
+      state.tempus.tempusSkipped[idx]=false;
       var fb=document.createElement("div"); fb.className="card";
       fb.style.cssText="padding:16px;margin-bottom:10px;border-radius:var(--r-lg,14px);background:"+(correct?"rgba(74,222,128,0.08)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"rgba(74,222,128,0.2)":"rgba(248,113,113,0.2)")+";animation:fadeUp 0.2s ease;";
       fb.appendChild(mk("p",correct?"✓ Correcto! — "+d.sentence.replace("___",d.correct):"✗ Incorrecto — "+d.sentence.replace("___",d.correct),"font-size:14px;font-weight:700;color:"+(correct?"var(--green-text)":"var(--red-text)")+";margin-bottom:6px;line-height:1.5;"));
@@ -176,7 +176,7 @@ function renderTempusCard(el,hdr){
       el.insertBefore(fb,card.nextSibling);
       var nextBtn=mk("button",(idx+1<data.length?"Siguiente →":"Ver resultado"),"width:100%;padding:12px;border-radius:12px;border:none;background:rgba(245,166,35,0.12);color:var(--gold-text);font-size:13px;font-weight:800;cursor:pointer;margin-top:6px;");
       nextBtn.setAttribute("aria-label",(idx+1<data.length?"Siguiente pregunta":"Ver resultado"));
-      nextBtn.onclick=function(){state.tempo.tempusIdx++;renderTempusCard(el,hdr);};
+      nextBtn.onclick=function(){state.tempus.tempusIdx++;renderTempusCard(el,hdr);};
       el.insertBefore(nextBtn,fb.nextSibling);
     };
     row.appendChild(btn);
@@ -184,7 +184,7 @@ function renderTempusCard(el,hdr){
   el.appendChild(row);
   var skip=mk("button","Saltar →","background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;display:block;margin:0 auto;");
   skip.setAttribute("aria-label","Saltar pregunta");
-  skip.onclick=function(){state.tempo.tempusResults[idx]=false;state.tempo.tempusSkipped[idx]=true;state.tempo.tempusWrong++;state.tempo.tempusIdx++;renderTempusCard(el,hdr);};
+  skip.onclick=function(){state.tempus.tempusResults[idx]=false;state.tempus.tempusSkipped[idx]=true;state.tempus.tempusWrong++;state.tempus.tempusIdx++;renderTempusCard(el,hdr);};
   el.appendChild(skip);
 }
 
@@ -194,19 +194,19 @@ function renderTempusResults(el){
   hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","⏳ Resultados","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
-  var data=state.tempo.tempusData;
-  var total=state.tempo.tempusRight+state.tempo.tempusWrong;
-  var pct=total>0?Math.round(state.tempo.tempusRight/total*100):0;
+  var data=state.tempus.tempusData;
+  var total=state.tempus.tempusRight+state.tempus.tempusWrong;
+  var pct=total>0?Math.round(state.tempus.tempusRight/total*100):0;
   var scoreColor=pct>=80?"var(--green-text)":pct>=50?"var(--gold-text)":"var(--red-text)";
   var resultCard=document.createElement("div"); resultCard.className="card";
   resultCard.style.cssText="text-align:center;padding:28px;margin-bottom:16px;";
-  resultCard.appendChild(mk("p",state.tempo.tempusRight+"/"+total,"font-size:42px;font-weight:900;color:"+scoreColor+";line-height:1;font-variant-numeric:tabular-nums;"));
+  resultCard.appendChild(mk("p",state.tempus.tempusRight+"/"+total,"font-size:42px;font-weight:900;color:"+scoreColor+";line-height:1;font-variant-numeric:tabular-nums;"));
   resultCard.appendChild(mk("p","Aciertos","font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;"));
   resultCard.appendChild(mk("p",pct+"%","font-size:14px;font-weight:700;color:"+scoreColor+";margin-top:2px;"));
   el.appendChild(resultCard);
 
   data.forEach(function(d,i){
-    if(state.tempo.tempusResults[i]===false&&!state.tempo.tempusSkipped[i]){
+    if(state.tempus.tempusResults[i]===false&&!state.tempus.tempusSkipped[i]){
       var fullDe=d.sentence.replace("___",d.correct);
       var phr=ensureSrsFields({de:fullDe,es:d.tip,tip:d.correct,source:"antes-despues"});
       if(!state.session.saved.some(function(x){return x.de===phr.de;})){
@@ -220,22 +220,22 @@ function renderTempusResults(el){
   sumCard.style.cssText="margin-bottom:16px;";
   sumCard.appendChild(mk("p","Lo que practicaste:","font-size:11px;color:var(--gold-text);letter-spacing:1.5px;font-weight:700;margin-bottom:8px;"));
   data.forEach(function(d,i){
-    var color=state.tempo.tempusResults[i]?"var(--green-text)":"var(--red-text)";
+    var color=state.tempus.tempusResults[i]?"var(--green-text)":"var(--red-text)";
     var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;");
     var full=d.sentence.replace("___",d.correct);
-    var mark=state.tempo.tempusResults[i]?"✓ ":"✗ ";
-    if(state.tempo.tempusSkipped[i]) mark="Saltada · ";
+    var mark=state.tempus.tempusResults[i]?"✓ ":"✗ ";
+    if(state.tempus.tempusSkipped[i]) mark="Saltada · ";
     row.appendChild(mk("span",mark+(i+1)+". "+full,"font-weight:600;color:"+color+";flex:1;line-height:1.4;"));
     sumCard.appendChild(row);
   });
   el.appendChild(sumCard);
 
   var restart=mk("button","← Reiniciar","width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--muted);border-radius:12px;padding:12px;font-size:13px;font-weight:600;margin-top:12px;cursor:pointer;");
-  restart.onclick=function(){state.tempo.tempusData=null;state.tempo.tempusDone=false;state.tempo.tempusIdx=0;state.tempo.tempusRight=0;state.tempo.tempusWrong=0;state.tempo.tempusResults=[];state.tempo.tempusSkipped=[];state.tempo.tempusLogged=false;renderTempus();};
+  restart.onclick=function(){state.tempus.tempusData=null;state.tempus.tempusDone=false;state.tempus.tempusIdx=0;state.tempus.tempusRight=0;state.tempus.tempusWrong=0;state.tempus.tempusResults=[];state.tempus.tempusSkipped=[];state.tempus.tempusLogged=false;renderTempus();};
   el.appendChild(restart);
 
-  if(!state.tempo.tempusLogged){
-    state.tempo.tempusLogged=true;
+  if(!state.tempus.tempusLogged){
+    state.tempus.tempusLogged=true;
     logActivity("drillsDone",1); syncUp();
   }
 }

@@ -1,6 +1,6 @@
-// ── HOY (home motivacional) ──────────────────────────────────────────────────
+// ── Today (motivational home: streak, due cards, habit spine) ─────────────────
 state.app._lastStreakSeen=-1;
-function renderHoy(){
+function renderToday(){
   removeReviewBackBtn();
   const el=document.getElementById("s-hoy"); el.innerHTML="";
   const streak=computeStreak();
@@ -11,12 +11,12 @@ function renderHoy(){
   const allDone=due===0&&state.session.saved.length>0;
 
   // ── Hero band: Tagesbahn (habit spine) + streak + fused due CTA ──
-  // Solo celebra cuando la racha CRECIÓ (no en cada visita al tab) — evita animation fatigue
+  // Only celebrate when the streak GREW (not on every tab visit) — avoids animation fatigue
   const streakGrew = streak > state.app._lastStreakSeen;
   const hero=document.createElement("div");
   hero.style.cssText="padding:var(--s-5) var(--s-4) var(--s-4);margin-bottom:var(--s-3);text-align:center;";
 
-  // Tagesbahn — los últimos 7 días como columna vertebral del hábito (elemento firma)
+  // Tagesbahn — the last 7 days as the habit's spine (signature element)
   const bahn=mk("div","","display:flex;gap:var(--s-2);justify-content:center;align-items:center;margin-bottom:var(--s-4);");
   for(var bi=6;bi>=0;bi--){
     var dkey=addDays(t,-bi);
@@ -38,7 +38,7 @@ function renderHoy(){
   }
   hero.appendChild(bahn);
 
-  // Streak line — el numeral héroe
+  // Streak line — the hero numeral
   if(streak>0){
     const streakLine=mk("div","","display:flex;align-items:baseline;justify-content:center;gap:var(--s-2);");
     const streakNum=mk("span",String(streak),"font-size:var(--t-2xl);font-weight:900;color:var(--gold-text);letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums;");
@@ -52,7 +52,7 @@ function renderHoy(){
     hero.appendChild(mk("p","1 minuto ya cuenta","font-size:var(--t-sm);color:var(--muted);font-weight:500;margin-top:var(--s-1);"));
   }
 
-  // Fused due CTA / win state — el único llamado a la acción
+  // Fused due CTA / win state — the single call to action
   if(allDone){
     const win=mk("div","","margin-top:var(--s-4);padding:var(--s-4);border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(74,222,128,0.12),rgba(74,222,128,0.03));border:1px solid rgba(74,222,128,0.2);animation:winPop 0.45s var(--ease-spring) both;");
     win.appendChild(mk("p","🎉 Por hoy terminaste","font-size:var(--t-md);font-weight:800;color:var(--green-text);"));
@@ -142,7 +142,7 @@ function renderHoy(){
     el.appendChild(tipCard);
   }
 
-  // ── Cómo mejorar (insight accionable, compartido con Resumen) ──
+  // ── How to improve (actionable insight, shared with Summary) ──
   var imp=getInsightData();
   const impCard=document.createElement("div"); impCard.className="card";
   impCard.style.cssText="margin-bottom:10px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.05);";
@@ -204,7 +204,7 @@ function renderHoy(){
   actions.appendChild(actGrid);
   el.appendChild(actions);
 
-  // ── Repaso del día card ──
+  // ── Daily review card ──
   if(state.app._reviewPlan&&!state.app._reviewPlan.done){
     var rp=state.app._reviewPlan;
     var rStep=rp.steps[rp.currentStep];
@@ -219,19 +219,19 @@ function renderHoy(){
       contBtn.onclick=function(){goToReviewStep(rp.currentStep);};
       rCard.appendChild(contBtn);
       var backBtn=mk("button","← Volver al inicio","width:100%;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;margin-top:6px;");
-      backBtn.onclick=function(){state.app._reviewPlan=null;renderHoy();};
+      backBtn.onclick=function(){state.app._reviewPlan=null;renderToday();};
       rCard.appendChild(backBtn);
       el.appendChild(rCard);
     }
   } else if(reviewDueCount()>0||state.session.saved.length>0){
-    var repasoCard=document.createElement("div"); repasoCard.className="card hover-lift";
-    repasoCard.style.cssText="background:linear-gradient(135deg,rgba(78,205,196,0.08),rgba(78,205,196,0.02));border:1px solid rgba(78,205,196,0.2);border-radius:var(--r-lg,16px);padding:18px;cursor:pointer;margin-bottom:10px;";
-    repasoCard.onclick=function(){startDailyReview();};
-    repasoCard.appendChild(mk("p","🔄 REPASO DEL DÍA","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
-    repasoCard.appendChild(mk("p","Sesión guiada para hoy","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
+    var reviewCard=document.createElement("div"); reviewCard.className="card hover-lift";
+    reviewCard.style.cssText="background:linear-gradient(135deg,rgba(78,205,196,0.08),rgba(78,205,196,0.02));border:1px solid rgba(78,205,196,0.2);border-radius:var(--r-lg,16px);padding:18px;cursor:pointer;margin-bottom:10px;";
+    reviewCard.onclick=function(){startDailyReview();};
+    reviewCard.appendChild(mk("p","🔄 REPASO DEL DÍA","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
+    reviewCard.appendChild(mk("p","Sesión guiada para hoy","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
     var dueN=reviewDueCount();
-    repasoCard.appendChild(mk("p",(dueN>0?dueN+" pendientes · ":"")+"Gramática","font-size:11px;color:var(--muted);font-weight:500;"));
-    el.appendChild(repasoCard);
+    reviewCard.appendChild(mk("p",(dueN>0?dueN+" pendientes · ":"")+"Gramática","font-size:11px;color:var(--muted);font-weight:500;"));
+    el.appendChild(reviewCard);
   }
 
   // ── Hörverstehen card ──
@@ -252,7 +252,7 @@ function renderHoy(){
   state.app._lastStreakSeen=streak;
 }
 
-// ── REPASO DEL DÍA ──
+// ── DAILY REVIEW ──
 function startDailyReview(){
   var steps=[];
   // Step 1: flashcards if due
@@ -289,7 +289,7 @@ function showReviewBackBtn(){
   removeReviewBackBtn();
   var btn=mk("button","\u2190 Volver a Hoy","position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;padding:10px 24px;border-radius:24px;border:1px solid var(--border);background:var(--modal-bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);");
   btn.id="review-back-fab";
-  btn.onclick=function(){state.app._reviewPlan=null;removeReviewBackBtn();state.app.currentTab="hoy";renderTabs();showScreen("hoy");renderHoy();};
+  btn.onclick=function(){state.app._reviewPlan=null;removeReviewBackBtn();state.app.currentTab="hoy";renderTabs();showScreen("hoy");renderToday();};
   document.body.appendChild(btn);
 }
 function removeReviewBackBtn(){

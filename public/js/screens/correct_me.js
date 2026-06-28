@@ -1,5 +1,5 @@
-// ── CORRIGEME ─────────────────────────────────────────────────────────────────
-function renderCorrigeme() {
+// ── Correct me ────────────────────────────────────────────────────────────────
+function renderCorrectMe() {
   const el=document.getElementById("s-corrigeme"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","CORRECTOR DE ALEMAN","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -72,7 +72,7 @@ async function doFix(ta, fixBtn, el) {
     const reset=document.createElement("button");
     reset.className="reset-btn";
     reset.textContent="Corregir otra frase";
-    reset.onclick=renderCorrigeme; result.appendChild(reset);
+    reset.onclick=renderCorrectMe; result.appendChild(reset);
     el.appendChild(result);
   } catch(e){
     el.appendChild(mk("p","Error al corregir. Intenta de nuevo.","color:#ef4444;font-size:13px;text-align:center;margin-top:10px;font-weight:500;"));

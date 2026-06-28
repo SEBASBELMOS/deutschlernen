@@ -1,4 +1,4 @@
-// ── SHADOWING (pronunciación con transcripción en alemán) ──────────────────────
+// ── Shadowing (pronunciation with German transcription) ───────────────────────
 function renderShadowing(){
   const el=document.getElementById("s-shadowing"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");

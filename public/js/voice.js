@@ -2,7 +2,7 @@
 state.app._deVoice = null;
 function loadDeVoice() {
   const voices = window.speechSynthesis.getVoices();
-  // Prioriza una voz alemana real: de-DE exacta → cualquier de* → null
+  // Prioritise a real German voice: exact de-DE → any de* → null
   state.app._deVoice = voices.find(function(v){return /^de[-_]DE/i.test(v.lang);})
           || voices.find(function(v){return v.lang && v.lang.toLowerCase().indexOf("de")===0;})
           || null;
@@ -15,7 +15,7 @@ state.app._noDeVoiceWarned = false;
 state.app._reviewPlan = null; // {steps:[{type,topic?}], currentStep, done} — daily review session plan
 function makeGermanUtterance(text) {
   if (!window.speechSynthesis) return;
-  if (!state.app._deVoice) loadDeVoice();  // reintenta por si las voces cargaron tarde
+  if (!state.app._deVoice) loadDeVoice();  // retry in case the voices loaded late
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "de-DE"; u.rate = parseFloat(localStorage.getItem("ttsRate")||"0.82");
   if (state.app._deVoice) u.voice = state.app._deVoice;
@@ -93,7 +93,7 @@ async function transcribe(blob, mimeType) {
 // ── Mic ───────────────────────────────────────────────────────────────────────
 state.app.mr=null, state.app.chunks=[];
 
-// Elige el mejor formato de audio soportado por este browser/dispositivo
+// Pick the best audio format supported by this browser/device
 function getBestMimeType() {
   const types = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4","audio/aac",""];
   for (let i=0; i<types.length; i++) {
@@ -131,7 +131,7 @@ function makeMicBtn(color, cb) {
           showMicError(btn, color, err.message);
         }
       };
-      state.app.mr.start(250); // timeslice de 250ms para capturar chunks continuamente
+      state.app.mr.start(250); // 250ms timeslice to capture chunks continuously
       btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
     } catch(e){
       alert("Permite el acceso al microfono en tu browser.");
@@ -211,7 +211,7 @@ function renderPronScore(host, target, transcript, color){
 
 function showMicError(btn, color, msg) {
   btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
-  // Muestra el error de forma visible sin interrumpir el flujo
+  // Show the error visibly without interrupting the flow
   const errEl = document.createElement("div");
   errEl.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e2e;border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:9999;max-width:300px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
   errEl.textContent="🎤 "+msg;

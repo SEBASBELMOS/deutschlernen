@@ -87,7 +87,7 @@ function renderSettings(){
   lvlCard.appendChild(lvlRow);
   el.appendChild(lvlCard);
 
-  // Export progreso completo
+  // Export full progress
   const exportCard=document.createElement("div"); exportCard.className="card";
   exportCard.appendChild(mk("p","💾  DATOS","font-size:10px;color:var(--purple-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
   const exportBtn=document.createElement("button");

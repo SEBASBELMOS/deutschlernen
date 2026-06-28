@@ -42,14 +42,14 @@ function setSyncChip(state){
   else if(state==="done"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">✓</span><span class="sr-only">Guardado</span>'; el.title="Guardado"; el.style.color="#4ade80"; el.style.background="rgba(74,222,128,0.1)"; setTimeout(function(){ if(el.dataset.syncState==="done") el.style.display="none"; },2000); }
   else if(state==="error"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">⚠</span><span class="sr-only">Error de conexión</span>'; el.title="Sin guardar"; el.style.color="#F87171"; el.style.background="rgba(248,113,113,0.1)"; }
 }
-// Debounced: agrupa ráfagas de cambios en un solo POST tras 1200ms de pausa.
+// Debounced: batches bursts of changes into a single POST after a 1200ms pause.
 function syncUp() {
   if (!state.app.authToken) return;
   setSyncChip("saving");
   clearTimeout(state.app.syncTimer);
   state.app.syncTimer=setTimeout(syncNow,1200);
 }
-// Flush inmediato con 3 reintentos (backoff 1s/2s/4s). Usado por logout y beforeunload.
+// Immediate flush with 3 retries (backoff 1s/2s/4s). Used by logout and beforeunload.
 async function syncNow() {
   if (!state.app.authToken) return false;
   clearTimeout(state.app.syncTimer); state.app.syncTimer=null;

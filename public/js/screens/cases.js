@@ -1,20 +1,20 @@
-// ── CASOS (entrenador de los 4 casos: Nom/Akk/Dat/Gen) ────────────────────────
-function casosCaseForQuestion(q){
+// ── Cases (4-case trainer: Nom/Akk/Dat/Gen) ───────────────────────────────────
+function casesCaseForQuestion(q){
   if(q.caso) return q.caso;
-  var src=(q.de||q.frase||q.why||"");
+  var src=(q.de||q.sentence||q.why||"");
   var m=src.match(/c-(nom|akk|dat|gen)|\b(Nominativ|Akkusativ|Dativ|Genitiv)\b/i);
   if(!m) return "";
   if(m[1]) return m[1];
   return {nominativ:"nom",akkusativ:"akk",dativ:"dat",genitiv:"gen"}[m[2].toLowerCase()]||"";
 }
-function casosFailureTip(q){
-  var cs=casosCaseForQuestion(q);
-  if(!cs || !CASOS_TIPS[cs]) return "";
-  if(state.casos.casosWrongStreak>=2 || (state.casos.casosCaseMisses[cs]||0)>=2) return CASOS_TIPS[cs];
+function casesFailureTip(q){
+  var cs=casesCaseForQuestion(q);
+  if(!cs || !CASES_TIPS[cs]) return "";
+  if(state.cases.casesWrongStreak>=2 || (state.cases.casesCaseMisses[cs]||0)>=2) return CASES_TIPS[cs];
   return "";
 }
 
-function renderCasos() {
+function renderCases() {
   const el=document.getElementById("s-casos"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:14px;");
   hdr.appendChild(mk("p","ALEMÁN · LOS 4 CASOS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -44,21 +44,21 @@ function renderCasos() {
     {id:"reglas",lbl:"3 · Reglas"},
     {id:"practicar",lbl:"4 · Practicar"}
   ].forEach(function(s){
-    const b=document.createElement("button"); b.className="cs-subtab"+(state.casos.casosSubtab===s.id?" on":"");
+    const b=document.createElement("button"); b.className="cs-subtab"+(state.cases.casesSubtab===s.id?" on":"");
     b.textContent=s.lbl;
-    b.onclick=function(){state.casos.casosSubtab=s.id;renderCasos();};
+    b.onclick=function(){state.cases.casesSubtab=s.id;renderCases();};
     sub.appendChild(b);
   });
   el.appendChild(sub);
 
   const body=document.createElement("div"); el.appendChild(body);
-  if(state.casos.casosSubtab==="identificar") casosIdentificar(body);
-  else if(state.casos.casosSubtab==="transformar") casosTransformar(body);
-  else if(state.casos.casosSubtab==="reglas") casosReglas(body);
-  else if(state.casos.casosSubtab==="practicar") casosPracticar(body);
+  if(state.cases.casesSubtab==="identificar") casesIdentify(body);
+  else if(state.cases.casesSubtab==="transformar") casesTransform(body);
+  else if(state.cases.casesSubtab==="reglas") casesRules(body);
+  else if(state.cases.casesSubtab==="practicar") casesPractice(body);
 }
 
-function casosIdentificar(host){
+function casesIdentify(host){
   const c1=document.createElement("div"); c1.className="card"; c1.style.padding="16px";
   c1.appendChild(mk("h3","¿Qué caso es? En 3 preguntas","font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;"));
   c1.appendChild(mk("p","Hazlas en orden. La primera que diga \"sí\" gana.","font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:500;"));
@@ -86,25 +86,25 @@ function casosIdentificar(host){
   host.appendChild(c2);
 }
 
-function casosTransformar(host){
+function casesTransform(host){
   const c=document.createElement("div"); c.className="card"; c.style.padding="16px";
   c.appendChild(mk("h3","Transformador de artículos","font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;"));
   c.appendChild(mk("p","Elige una palabra de tu mundo y el tipo de artículo. Ves los 4 casos al instante con su color.","font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:500;line-height:1.5;"));
 
   const sel=document.createElement("select"); sel.className="cs-select"; sel.style.marginBottom="10px";
-  CASOS_NOUNS.forEach(function(n,i){
+  CASES_NOUNS.forEach(function(n,i){
     const art=n.gen==='m'?'der':n.gen==='f'?'die':'das';
     const o=document.createElement("option"); o.value=i; o.textContent=art+" "+n.f[0]+" — "+n.es;
-    if(i===state.casos.casosNounIdx) o.selected=true;
+    if(i===state.cases.casesNounIdx) o.selected=true;
     sel.appendChild(o);
   });
-  sel.onchange=function(){state.casos.casosNounIdx=+this.value;paintCasosTable(out,note);};
+  sel.onchange=function(){state.cases.casesNounIdx=+this.value;paintCasesTable(out,note);};
   c.appendChild(sel);
 
   const seg=document.createElement("div"); seg.className="cs-seg"; seg.style.marginBottom="10px";
   [["der","der/die/das"],["ein","ein"],["mein","mein"]].forEach(function(a){
-    const b=document.createElement("button"); b.className=state.casos.casosArt===a[0]?"on":""; b.textContent=a[1];
-    b.onclick=function(){state.casos.casosArt=a[0];paintCasosTable(out,note);
+    const b=document.createElement("button"); b.className=state.cases.casesArt===a[0]?"on":""; b.textContent=a[1];
+    b.onclick=function(){state.cases.casesArt=a[0];paintCasesTable(out,note);
       Array.prototype.forEach.call(seg.children,function(x){x.className="";}); b.className="on";};
     seg.appendChild(b);
   });
@@ -114,12 +114,12 @@ function casosTransformar(host){
   const out=document.createElement("div"); out.className="cs-tcase"; c.appendChild(out);
   c.appendChild(mk("p","Las frases molde siempre son correctas: sehen obliga Akkusativ, mit obliga Dativ, \"die Idee…\" obliga Genitiv.","font-size:12px;color:var(--dim);margin-top:12px;font-weight:500;line-height:1.5;"));
   host.appendChild(c);
-  paintCasosTable(out,note);
+  paintCasesTable(out,note);
 }
 
-function paintCasosTable(out, note){
-  const n=CASOS_NOUNS[state.casos.casosNounIdx];
-  const arts=CASOS_ART[state.casos.casosArt][n.gen];
+function paintCasesTable(out, note){
+  const n=CASES_NOUNS[state.cases.casesNounIdx];
+  const arts=CASES_ART[state.cases.casesArt][n.gen];
   const genName={m:'masculino',f:'femenino',n:'neutro'}[n.gen];
   note.innerHTML="Género: <b style='color:var(--text2)'>"+genName+"</b>"
     +(n.weak?" · ojo, sustantivo débil (-n en Akk/Dat/Gen)":"")
@@ -131,7 +131,7 @@ function paintCasosTable(out, note){
     function(a){return {de:"die Idee "+a+" "+n.f[3], es:"la idea de "+n.es};}
   ];
   out.innerHTML="";
-  CASOS_CASES.forEach(function(cs,i){
+  CASES_CASES.forEach(function(cs,i){
     const fr=frames[i](arts[i]);
     const row=document.createElement("div"); row.className="cs-trow";
     row.innerHTML='<div class="cs-tlbl" style="background:var(--'+cs.cls+'-bg);color:var(--'+cs.cls+');">'
@@ -144,7 +144,7 @@ function paintCasosTable(out, note){
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function capEs(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 
-function casosReglas(host){
+function casesRules(host){
   const c=document.createElement("div"); c.className="card"; c.style.padding="16px";
   c.innerHTML = '<h3 style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;">Reglas express</h3>'
     + '<p style="font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:500;">Cerradas para que no te abrumen. Abre solo la que necesites.</p>'
@@ -194,7 +194,7 @@ function casosReglas(host){
   host.appendChild(c);
 }
 
-function casosPracticar(host){
+function casesPractice(host){
   const c=document.createElement("div"); c.className="card"; c.style.padding="16px";
   c.appendChild(mk("h3","Practicar","font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;"));
   c.appendChild(mk("p","Eliges, te corrige ahí mismo y te dice el porqué.","font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:500;"));
@@ -202,46 +202,46 @@ function casosPracticar(host){
   const modes=document.createElement("div"); modes.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;";
   [["all","Mezcla"],["articulo","Artículos"],["caso","Identificar"],["mov","Movimiento"],["traduccion","Traducir"]].forEach(function(m){
     const b=document.createElement("button");
-    b.className="pill-btn"+(state.casos.casosQuizModo===m[0]?" on":"");
+    b.className="pill-btn"+(state.cases.casesQuizMode===m[0]?" on":"");
     b.textContent=m[1];
-    b.onclick=function(){state.casos.casosQuizModo=m[0];casosBuildPool();casosNextQ();renderCasos();};
+    b.onclick=function(){state.cases.casesQuizMode=m[0];casesBuildPool();casesNextQ();renderCases();};
     modes.appendChild(b);
   });
   c.appendChild(modes);
 
   const score=mk("div","","display:flex;gap:16px;align-items:baseline;margin-bottom:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;");
-  score.innerHTML='<span>Aciertos <b id="cs-hit" style="color:var(--text);font-size:17px;font-weight:800;">'+state.casos.casosHits+'</b>/<b id="cs-tot" style="color:var(--text);font-weight:800;">'+state.casos.casosTotal+'</b></span>'
-    +'<span>Racha <b id="cs-streak" style="color:var(--gold-text);font-size:17px;font-weight:800;">'+state.casos.casosStreak+'</b></span>'
-    +'<span>Acierto <b id="cs-pct" style="color:var(--text);font-size:17px;font-weight:800;">'+(state.casos.casosTotal?Math.round(state.casos.casosHits/state.casos.casosTotal*100)+'%':'—')+'</b></span>';
+  score.innerHTML='<span>Aciertos <b id="cs-hit" style="color:var(--text);font-size:17px;font-weight:800;">'+state.cases.casesHits+'</b>/<b id="cs-tot" style="color:var(--text);font-weight:800;">'+state.cases.casesTotal+'</b></span>'
+    +'<span>Racha <b id="cs-streak" style="color:var(--gold-text);font-size:17px;font-weight:800;">'+state.cases.casesStreak+'</b></span>'
+    +'<span>Acierto <b id="cs-pct" style="color:var(--text);font-size:17px;font-weight:800;">'+(state.cases.casesTotal?Math.round(state.cases.casesHits/state.cases.casesTotal*100)+'%':'—')+'</b></span>';
   c.appendChild(score);
 
   const mount=document.createElement("div"); mount.id="cs-quiz-mount"; c.appendChild(mount);
   host.appendChild(c);
-  if(!state.casos.casosPool.length) casosBuildPool();
-  casosRenderQ(mount);
+  if(!state.cases.casesPool.length) casesBuildPool();
+  casesRenderQ(mount);
 }
 
-function casosShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0;var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-function casosBuildPool(){ state.casos.casosPool=casosShuffle(state.casos.casosQuizModo==='all'?CASOS_Q:CASOS_Q.filter(function(q){return q.modo===state.casos.casosQuizModo;})); state.casos.casosIdx=0; }
-function casosUpdateScore(){
+function casesShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0;var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function casesBuildPool(){ state.cases.casesPool=casesShuffle(state.cases.casesQuizMode==='all'?CASES_Q:CASES_Q.filter(function(q){return q.mode===state.cases.casesQuizMode;})); state.cases.casesIdx=0; }
+function casesUpdateScore(){
   var h=document.getElementById("cs-hit"); if(!h) return;
-  h.textContent=state.casos.casosHits; document.getElementById("cs-tot").textContent=state.casos.casosTotal;
-  document.getElementById("cs-streak").textContent=state.casos.casosStreak;
-  document.getElementById("cs-pct").textContent=state.casos.casosTotal?Math.round(state.casos.casosHits/state.casos.casosTotal*100)+'%':'—';
+  h.textContent=state.cases.casesHits; document.getElementById("cs-tot").textContent=state.cases.casesTotal;
+  document.getElementById("cs-streak").textContent=state.cases.casesStreak;
+  document.getElementById("cs-pct").textContent=state.cases.casesTotal?Math.round(state.cases.casesHits/state.cases.casesTotal*100)+'%':'—';
 }
-function casosNextQ(){ if(state.casos.casosIdx>=state.casos.casosPool.length){ state.casos.casosPool=casosShuffle(state.casos.casosPool); state.casos.casosIdx=0; } var m=document.getElementById("cs-quiz-mount"); if(m) casosRenderQ(m); }
+function casesNextQ(){ if(state.cases.casesIdx>=state.cases.casesPool.length){ state.cases.casesPool=casesShuffle(state.cases.casesPool); state.cases.casesIdx=0; } var m=document.getElementById("cs-quiz-mount"); if(m) casesRenderQ(m); }
 
-function casosRenderQ(mount){
-  if(!state.casos.casosPool.length){ mount.innerHTML="<p style='color:var(--muted);font-size:13px;text-align:center;padding:20px;'>Sin preguntas en este modo.</p>"; return; }
-  if(state.casos.casosIdx>=state.casos.casosPool.length){ state.casos.casosPool=casosShuffle(state.casos.casosPool); state.casos.casosIdx=0; }
-  const q=state.casos.casosPool[state.casos.casosIdx]; state.casos.casosAnswered=false;
-  if(q.modo==='traduccion'){ casosRenderTrad(q,mount); return; }
-  const modoLbl={articulo:'Elige el artículo',caso:'¿Qué caso es?',mov:'Movimiento o ubicación'}[q.modo];
-  const frase=q.frase.replace('___','<span class="cs-blank">___</span>');
+function casesRenderQ(mount){
+  if(!state.cases.casesPool.length){ mount.innerHTML="<p style='color:var(--muted);font-size:13px;text-align:center;padding:20px;'>Sin preguntas en este mode.</p>"; return; }
+  if(state.cases.casesIdx>=state.cases.casesPool.length){ state.cases.casesPool=casesShuffle(state.cases.casesPool); state.cases.casesIdx=0; }
+  const q=state.cases.casesPool[state.cases.casesIdx]; state.cases.casesAnswered=false;
+  if(q.mode==='traduccion'){ casesRenderTrad(q,mount); return; }
+  const modeLbl={articulo:'Elige el artículo',caso:'¿Qué caso es?',mov:'Movimiento o ubicación'}[q.mode];
+  const sentence=q.sentence.replace('___','<span class="cs-blank">___</span>');
   mount.innerHTML='<div style="border:1px solid var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,0.03);">'
-    +'<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">'+modoLbl+'</div>'
-    +'<p style="font-size:18px;line-height:1.5;margin-bottom:4px;color:var(--text);">'+frase+'</p>'
-    +(q.pista?'<p style="font-size:12px;color:var(--muted);margin-bottom:14px;">'+q.pista+'</p>':'<div style="margin-bottom:14px;"></div>')
+    +'<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">'+modeLbl+'</div>'
+    +'<p style="font-size:18px;line-height:1.5;margin-bottom:4px;color:var(--text);">'+sentence+'</p>'
+    +(q.hint?'<p style="font-size:12px;color:var(--muted);margin-bottom:14px;">'+q.hint+'</p>':'<div style="margin-bottom:14px;"></div>')
     +'<div class="cs-opts" id="cs-opts"></div>'
     +'<div id="cs-hint" style="margin-top:8px;display:none;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;"></div>'
     +'<div id="cs-fb" style="margin-top:14px;display:none;"></div>'
@@ -251,7 +251,7 @@ function casosRenderQ(mount){
   const opts=document.getElementById("cs-opts");
   q.op.forEach(function(o){
     const b=document.createElement("button"); b.className="cs-opt"; b.textContent=o;
-    b.onclick=function(){casosChoose(q,o,opts,b);};
+    b.onclick=function(){casesChoose(q,o,opts,b);};
     opts.appendChild(b);
   });
   var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(245,166,35,0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
@@ -259,20 +259,20 @@ function casosRenderQ(mount){
   hintBtn.onclick=function(){
     var h=document.getElementById("cs-hint");
     if(h.style.display==="block"){h.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
-    var css=casosCaseForQuestion(q);
-    var tip=casosFailureTip(q)||(CASOS_TIPS[css]||"Pista: mira el verbo y la preposición para decidir el caso.");
+    var css=casesCaseForQuestion(q);
+    var tip=casesFailureTip(q)||(CASES_TIPS[css]||"Pista: mira el verbo y la preposición para decidir el caso.");
     h.innerHTML="💡 "+tip; h.style.display="block"; hintBtn.setAttribute("aria-expanded","true");
   };
   opts.parentNode.insertBefore(hintBtn,opts.nextSibling);
-  const nb=document.getElementById("cs-nextbtn"); if(nb) nb.onclick=function(){state.casos.casosIdx++;casosNextQ();};
+  const nb=document.getElementById("cs-nextbtn"); if(nb) nb.onclick=function(){state.cases.casesIdx++;casesNextQ();};
 }
 
-function casosChoose(q,o,opts,btn){
-  if(state.casos.casosAnswered) return; state.casos.casosAnswered=true;
+function casesChoose(q,o,opts,btn){
+  if(state.cases.casesAnswered) return; state.cases.casesAnswered=true;
   const correct=o===q.ok;
-  state.casos.casosTotal++; if(correct){state.casos.casosHits++;state.casos.casosStreak++;state.casos.casosWrongStreak=0;} else {state.casos.casosStreak=0;state.casos.casosWrongStreak=(state.casos.casosWrongStreak||0)+1; var missCase=casosCaseForQuestion(q); if(missCase) state.casos.casosCaseMisses[missCase]=(state.casos.casosCaseMisses[missCase]||0)+1;}
+  state.cases.casesTotal++; if(correct){state.cases.casesHits++;state.cases.casesStreak++;state.cases.casesWrongStreak=0;} else {state.cases.casesStreak=0;state.cases.casesWrongStreak=(state.cases.casesWrongStreak||0)+1; var missCase=casesCaseForQuestion(q); if(missCase) state.cases.casesCaseMisses[missCase]=(state.cases.casesCaseMisses[missCase]||0)+1;}
   logActivity("drillsDone",1); syncUp();
-  casosUpdateScore();
+  casesUpdateScore();
   Array.prototype.forEach.call(opts.children,function(b){
     if(b.textContent===q.ok) b.classList.add("correct");
     else if(b===btn) b.classList.add("wrong");
@@ -284,21 +284,21 @@ function casosChoose(q,o,opts,btn){
   const tag=q.caso?'<span class="cs-tag '+q.caso+'">'+caseNames[q.caso]+'</span> ':'';
   fb.style.display="block";
   fb.style.cssText="margin-top:14px;display:block;border-radius:12px;padding:13px;font-size:14px;background:"+(correct?"var(--akk-bg)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"var(--akk-line)":"rgba(248,113,113,0.25)")+";";
-  var tip=correct?"":casosFailureTip(q);
+  var tip=correct?"":casesFailureTip(q);
   fb.innerHTML='<div style="font-weight:800;color:'+(correct?"#4ade80":"#F87171")+';margin-bottom:5px;">'+(correct?'✓ Correcto':'✗ Casi · la respuesta es '+q.ok)+'</div>'
     +'<div style="color:var(--text2);line-height:1.5;">'+tag+q.why+'</div>'
     +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.10);border:1px solid rgba(245,166,35,0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'');
   document.getElementById("cs-next").style.display="flex";
 }
 
-function casosRenderTrad(q,mount){
+function casesRenderTrad(q,mount){
   mount.innerHTML="";
   var targetText=q.de.replace(/<[^>]*>/g,"").replace(/\s+/g," ").trim();
   var targetWords=targetText.replace(/[.!?]$/g,"").split(" ").filter(Boolean);
   var distractors=["ich","du","wir","der","die","das","ein","eine","einen","dem","den","mit","für","auf","neben","ist","bin","habe","mache","lerne","arbeite","suche","gut","wichtig"];
   var used={}; targetWords.forEach(function(w){used[w.toLowerCase()]=true;});
   var extras=distractors.filter(function(w){return !used[w.toLowerCase()];}).slice(0,4);
-  var bank=casosShuffle(targetWords.concat(extras));
+  var bank=casesShuffle(targetWords.concat(extras));
   var chosen=[];
   var card=mk("div","","border:1px solid var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,0.03);");
   card.appendChild(mk("div","Ordena las palabras","font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;"));
@@ -314,7 +314,7 @@ function casosRenderTrad(q,mount){
     var b=document.createElement("button"); b.textContent=word;
     b.style.cssText="font-size:14px;font-weight:800;padding:9px 12px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.12);";
     b.onclick=function(){
-      if(state.casos.casosAnswered) return;
+      if(state.cases.casesAnswered) return;
       if(fromAnswer){ chosen.splice(chosen.indexOf(word),1); render(); }
       else { chosen.push(word); b.disabled=true; b.style.opacity="0.35"; renderAnswer(); }
     };
@@ -323,30 +323,30 @@ function casosRenderTrad(q,mount){
   function renderAnswer(){ answer.innerHTML=""; chosen.forEach(function(w){answer.appendChild(makeChip(w,true));}); }
   function render(){ bankEl.innerHTML=""; bank.forEach(function(w){var chip=makeChip(w,false); if(chosen.indexOf(w)>=0){chip.disabled=true;chip.style.opacity="0.35";} bankEl.appendChild(chip);}); renderAnswer(); }
   check.onclick=function(){
-    if(state.casos.casosAnswered) return;
+    if(state.cases.casesAnswered) return;
     var correct=normalize(chosen.join(" "))===normalize(targetWords.join(" "));
-    state.casos.casosAnswered=true;
-    state.casos.casosTotal++; if(correct){state.casos.casosHits++;state.casos.casosStreak++;state.casos.casosWrongStreak=0;} else {state.casos.casosStreak=0;state.casos.casosWrongStreak=(state.casos.casosWrongStreak||0)+1; var missCase=casosCaseForQuestion(q); if(missCase) state.casos.casosCaseMisses[missCase]=(state.casos.casosCaseMisses[missCase]||0)+1;}
-    logActivity("drillsDone",1); syncUp(); casosUpdateScore();
+    state.cases.casesAnswered=true;
+    state.cases.casesTotal++; if(correct){state.cases.casesHits++;state.cases.casesStreak++;state.cases.casesWrongStreak=0;} else {state.cases.casesStreak=0;state.cases.casesWrongStreak=(state.cases.casesWrongStreak||0)+1; var missCase=casesCaseForQuestion(q); if(missCase) state.cases.casesCaseMisses[missCase]=(state.cases.casesCaseMisses[missCase]||0)+1;}
+    logActivity("drillsDone",1); syncUp(); casesUpdateScore();
     fb.style.display="block";
     fb.style.background=correct?"var(--akk-bg)":"rgba(248,113,113,0.08)";
     fb.style.border="1px solid "+(correct?"var(--akk-line)":"rgba(248,113,113,0.25)");
-    var tip=correct?"":casosFailureTip(q);
+    var tip=correct?"":casesFailureTip(q);
     fb.innerHTML='<div style="font-weight:900;color:'+(correct?'#4ade80':'#F87171')+';margin-bottom:6px;">'+(correct?'✓ Correcto':'✗ Casi')+'</div>'
       +'<div style="font-size:16px;font-weight:700;color:var(--text);line-height:1.5;">'+q.de+'</div>'
       +'<div style="margin-top:6px;font-size:13px;color:var(--text2);line-height:1.5;">'+q.why+'</div>'
       +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.10);border:1px solid rgba(245,166,35,0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'')
       +'<button id="cs-nexttrad" style="margin-top:12px;width:100%;font-size:14px;font-weight:800;padding:10px 16px;border-radius:11px;border:0;background:var(--gold);color:#000;">Siguiente →</button>';
-    document.getElementById("cs-nexttrad").onclick=function(){state.casos.casosIdx++;casosNextQ();};
+    document.getElementById("cs-nexttrad").onclick=function(){state.cases.casesIdx++;casesNextQ();};
   };
-  clear.onclick=function(){ if(state.casos.casosAnswered) return; chosen=[]; render(); };
+  clear.onclick=function(){ if(state.cases.casesAnswered) return; chosen=[]; render(); };
   var hintBox=mk("div","","display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;");
   var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(245,166,35,0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
   hintBtn.setAttribute("aria-expanded","false");
   hintBtn.onclick=function(){
     if(hintBox.style.display==="block"){hintBox.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
-    var css=casosCaseForQuestion(q);
-    hintBox.textContent="💡 "+(CASOS_TIPS[css]||"Identifica la función (sujeto, objeto, receptor) para elegir el caso.");
+    var css=casesCaseForQuestion(q);
+    hintBox.textContent="💡 "+(CASES_TIPS[css]||"Identifica la función (sujeto, objeto, receptor) para elegir el caso.");
     hintBox.style.display="block"; hintBtn.setAttribute("aria-expanded","true");
   };
   card.appendChild(answer); card.appendChild(bankEl); card.appendChild(hintBtn); card.appendChild(hintBox); row.appendChild(check); row.appendChild(clear); card.appendChild(row); card.appendChild(fb); mount.appendChild(card); render();

@@ -1,4 +1,4 @@
-// ── CONECTORES ─────────────────────────────────────────────────────────────────
+// ── Connectors ────────────────────────────────────────────────────────────────
 function normalizeConnectorExercise(d){
   d=d||{};
   d.correct=String(d.correct||"").trim().toLowerCase();
@@ -11,7 +11,7 @@ function normalizeConnectorExercise(d){
   if(d.correct&&d.options.indexOf(d.correct)===-1) d.options[d.options.length-1]=d.correct;
   return d;
 }
-function renderConectores(){
+function renderConnectors(){
   const el=document.getElementById("s-conectores"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -35,7 +35,7 @@ function renderConectores(){
   renderConCard(el, hdr);
 }
 function renderConCard(el, hdr){
-  if(_conIdx>=_conData.length){ _conDone=true; el.innerHTML=""; renderConectores(); return; }
+  if(_conIdx>=_conData.length){ _conDone=true; el.innerHTML=""; renderConnectors(); return; }
   var d=normalizeConnectorExercise(_conData[_conIdx]);
   _conData[_conIdx]=d;
   el.innerHTML="";
@@ -105,6 +105,6 @@ function renderConResults(el){
   });
   el.appendChild(sumCard);
   var restart=mk("button","\u2190 Otros 5 ejercicios","width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:12px;font-size:13px;font-weight:600;margin-top:12px;cursor:pointer;");
-  restart.onclick=function(){_conData=null;_conDone=false;renderConectores();};
+  restart.onclick=function(){_conData=null;_conDone=false;renderConnectors();};
   el.appendChild(restart);
 }

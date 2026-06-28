@@ -166,7 +166,7 @@ function showOnboarding(){
   nextBtn.onclick=function(){ goToStep(stepIdx+1); };
   skipLink.onclick=finishOnboarding;
   skipLink.setAttribute("aria-label","Saltar el tour de bienvenida");
-  // Focus, Escape y focus-trap los maneja trapFocus(); el texto visible del botón es su nombre accesible (se actualiza solo).
+  // Focus, Escape and focus-trap are handled by trapFocus(); the button's visible text is its accessible name (it updates on its own).
 }
 
 function updateBadge() {

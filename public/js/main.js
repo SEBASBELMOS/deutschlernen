@@ -1,5 +1,5 @@
 // ── Init ──────────────────────────────────────────────────────────────────────
-// Flush-on-close: si hay un sync debounced pendiente, dispararlo con keepalive
+// Flush-on-close: if a debounced sync is pending, fire it with keepalive
 window.addEventListener("beforeunload",function(){
   if(!state.app.authToken) return;
   clearTimeout(state.app.syncTimer); state.app.syncTimer=null;

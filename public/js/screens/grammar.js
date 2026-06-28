@@ -1,7 +1,7 @@
-// ── GRAMATICA ─────────────────────────────────────────────────────────────────
+// ── Grammar ───────────────────────────────────────────────────────────────────
 state.grammar._gramDrills=[], state.grammar._gramIdx=0, state.grammar._gramCorrect=0, state.grammar._gramMissed=[];
 
-function renderGramatica() {
+function renderGrammar() {
   const el=document.getElementById("s-gramatica"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","DRILLS DE GRAMATICA","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -32,7 +32,7 @@ async function loadGrammarDrills(topic){
   const el=document.getElementById("s-gramatica"); el.innerHTML="";
   const top=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:16px;");
   const back=document.createElement("button"); back.className="btn-back"; back.textContent="← Volver";
-  back.onclick=renderGramatica;
+  back.onclick=renderGrammar;
   top.appendChild(back);
   top.appendChild(mk("span",topic.label,"font-size:13px;color:var(--text);font-weight:700;"));
   el.appendChild(top);

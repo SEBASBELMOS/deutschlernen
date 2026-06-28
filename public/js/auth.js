@@ -32,7 +32,7 @@ async function doAuth() {
 
 async function doLogout() {
   saveChatLog();
-  await syncNow();  // flush inmediato antes de limpiar el token (el debounce no alcanzaría)
+  await syncNow();  // immediate flush before clearing the token (the debounce wouldn't make it)
   try {await fetch("/api/logout",{method:"POST",headers:{"x-token":state.app.authToken||""}});} catch(e){console.error("logout failed",e);}
   state.app.authToken=null; state.app.authUser=null;
   state.session.saved=[]; state.session.chatLogs=[]; state.session.sessionPhrases=0; state.session.sessionMinutes=0; state.session.shownPhrases={};

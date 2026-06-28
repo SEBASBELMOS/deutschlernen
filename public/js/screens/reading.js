@@ -1,4 +1,4 @@
-// ── HÖRVERSTEHEN ──
+// ── Reading (Hörverstehen — listening comprehension) ──────────────────────────
 var _hvState=null; // {dialog, questions, answers, score, step, container}
 
 function startHörverstehen(container){
@@ -126,9 +126,9 @@ function renderHörverstehenResults(container){
   logActivity("drillsDone",1); syncUp();
 }
 
-// ── LECTURA ───────────────────────────────────────────────────────────────────
-state.lectura._lecturaWords=[]; state.lectura._lecturaTarget=-1; state.lectura._wordCache={};
-function renderLectura(){
+// ── READING ───────────────────────────────────────────────────────────────────
+state.reading._readingWords=[]; state.reading._readingTarget=-1; state.reading._wordCache={};
+function renderReading(){
   const el=document.getElementById("s-lectura"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","LECTURA INTERACTIVA","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -150,7 +150,7 @@ function renderLectura(){
     const b=document.createElement("button");
     b.className="lectura-topic-btn";
     b.textContent=t.icon+" "+t.label;
-    b.onclick=function(){generateLectura(t.id,el);};
+    b.onclick=function(){generateReading(t.id,el);};
     topicRow.appendChild(b);
   });
   el.appendChild(topicRow);
@@ -159,7 +159,7 @@ function renderLectura(){
   textArea.id="lectura-text";
   el.appendChild(textArea);
 }
-function generateLectura(topicId,host){
+function generateReading(topicId,host){
   const ta=host.querySelector("#lectura-text");
   ta.innerHTML=""; ta.style.cssText="padding:20px;";
   ta.appendChild(skelCard(6));
@@ -175,8 +175,8 @@ function generateLectura(topicId,host){
     (obj.words||[]).forEach(function(w){wordMap[w.de.toLowerCase()]=w.es;});
     var textEl=mk("div","","font-size:17px;line-height:1.8;color:var(--text);font-weight:500;margin-bottom:16px;");
     var words=obj.text.split(/(\s+)/);
-    state.lectura._lecturaWords=[];
-    state.lectura._lecturaTarget=-1;
+    state.reading._readingWords=[];
+    state.reading._readingTarget=-1;
     words.forEach(function(w,i){
       if(/^\s+$/.test(w)){textEl.appendChild(document.createTextNode(w));return;}
       var cleanW=w.replace(/[.,!?;:"'()]/g,"");
@@ -189,10 +189,10 @@ function generateLectura(topicId,host){
         var wasActive=btn.classList.contains("active");
         var prevActive=textEl.querySelector(".lectura-word.active");
         if(prevActive) prevActive.classList.remove("active");
-        if(wasActive){ state.lectura._lecturaTarget=-1; hideLecturaTranslation(); return; }
+        if(wasActive){ state.reading._readingTarget=-1; hideReadingTranslation(); return; }
         btn.classList.add("active");
-        state.lectura._lecturaTarget=i;
-        var trans=wordMap[cleanW.toLowerCase()]||state.lectura._wordCache[cleanW.toLowerCase()]||null;
+        state.reading._readingTarget=i;
+        var trans=wordMap[cleanW.toLowerCase()]||state.reading._wordCache[cleanW.toLowerCase()]||null;
         var contextSentence="";
         var sentences=obj.text.split(/[.!?]+/);
         for(var si=0;si<sentences.length;si++){
@@ -201,9 +201,9 @@ function generateLectura(topicId,host){
             break;
           }
         }
-        showLecturaTranslation(w,cleanW,trans,host,contextSentence,this);
+        showReadingTranslation(w,cleanW,trans,host,contextSentence,this);
       };
-      state.lectura._lecturaWords.push(cleanW);
+      state.reading._readingWords.push(cleanW);
       textEl.appendChild(btn);
     });
     ta.appendChild(textEl);
@@ -220,17 +220,17 @@ function generateLectura(topicId,host){
     var newBtn=document.createElement("button");
     newBtn.className="gen-btn gen-btn-muted";
     newBtn.textContent="🔄 Otro texto";
-    newBtn.onclick=function(){generateLectura(topicId,host);};
+    newBtn.onclick=function(){generateReading(topicId,host);};
     ta.appendChild(newBtn);
   }).catch(function(e){
     ta.innerHTML="";
     ta.appendChild(mk("p","Error al generar texto. Intenta de nuevo.","color:#ef4444;font-size:13px;text-align:center;margin-top:20px;font-weight:500;"));
     var retry=mk("button","Reintentar","margin-top:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;");
-    retry.onclick=function(){generateLectura(topicId,host);};
+    retry.onclick=function(){generateReading(topicId,host);};
     ta.appendChild(retry);
   });
 }
-function showLecturaTranslationManual(rawWord,host,contextSentence){
+function showReadingTranslationManual(rawWord,host,contextSentence){
   var popup=mk("div","","background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:14px;");
   popup.id="lectura-popup";
   popup.appendChild(mk("p","📖 "+rawWord,"font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;"));
@@ -263,15 +263,15 @@ function showLecturaTranslationManual(rawWord,host,contextSentence){
   var dismissBtn=document.createElement("button");
   dismissBtn.textContent="✕ Cerrar";
   dismissBtn.style.cssText="background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);border-radius:999px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;";
-  dismissBtn.onclick=function(){hideLecturaTranslation();if(state.lectura._lecturaTarget>=0){state.lectura._lecturaTarget=-1;}};
+  dismissBtn.onclick=function(){hideReadingTranslation();if(state.reading._readingTarget>=0){state.reading._readingTarget=-1;}};
   btnRow.appendChild(dismissBtn);
   popup.appendChild(btnRow);
   var textArea=document.getElementById("lectura-text");
   if(textArea) textArea.appendChild(popup);
   setTimeout(function(){inp.focus();},100);
 }
-function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextSentence,spanEl){
-  hideLecturaTranslation();
+function showReadingTranslation(rawWord,cleanWord,knownTranslation,host,contextSentence,spanEl){
+  hideReadingTranslation();
   if(!knownTranslation){
     var tt=document.createElement("div"); tt.id="lectura-tt";
     var rect=spanEl.getBoundingClientRect();
@@ -288,8 +288,8 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
     var statusLine=mk("p","Traduciendo...","font-size:11px;color:var(--muted);font-weight:500;margin-top:2px;");
     tt.appendChild(statusLine);
     document.body.appendChild(tt);
-    setTimeout(function(){window.addEventListener("scroll",function doh(){hideLecturaTranslation();window.removeEventListener("scroll",doh);});},50);
-    tt.onclick=function(){hideLecturaTranslation();};
+    setTimeout(function(){window.addEventListener("scroll",function doh(){hideReadingTranslation();window.removeEventListener("scroll",doh);});},50);
+    tt.onclick=function(){hideReadingTranslation();};
     var ctx=contextSentence||rawWord;
     var cacheKey=cleanWord.toLowerCase();
     ai("You are a German-Spanish dictionary. Translate the German word to Spanish in the context of the given sentence. Reply ONLY with valid JSON, no markdown.",
@@ -300,7 +300,7 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
         var obj=JSON.parse(m[0]);
         if(!obj.es) throw new Error("empty translation");
         var es=obj.es, base=obj.base||rawWord;
-        state.lectura._wordCache[cacheKey]=es;
+        state.reading._wordCache[cacheKey]=es;
         tt.innerHTML="";
         var row2=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
         row2.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
@@ -324,7 +324,7 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
       })
       .catch(function(){
         tt.remove();
-        showLecturaTranslationManual(rawWord,host,contextSentence);
+        showReadingTranslationManual(rawWord,host,contextSentence);
       });
     return;
   }
@@ -358,16 +358,16 @@ function showLecturaTranslation(rawWord,cleanWord,knownTranslation,host,contextS
   closeMini.textContent="×";
   closeMini.title="Cerrar";
   closeMini.style.cssText="background:rgba(255,255,255,0.06);border:none;color:var(--muted);border-radius:8px;padding:4px 8px;font-size:16px;font-weight:800;cursor:pointer;line-height:1;";
-  closeMini.onclick=function(e){e.stopPropagation();hideLecturaTranslation();};
+  closeMini.onclick=function(e){e.stopPropagation();hideReadingTranslation();};
   actions.appendChild(closeMini);
   wordRow.appendChild(actions);
   tt.appendChild(wordRow);
   tt.appendChild(mk("p",knownTranslation,"font-size:12px;color:var(--tooltip-accent);font-weight:600;margin-top:2px;"));
   document.body.appendChild(tt);
-  setTimeout(function(){window.addEventListener("scroll",function doh(){hideLecturaTranslation();window.removeEventListener("scroll",doh);});},50);
-  tt.onclick=function(){hideLecturaTranslation();};
+  setTimeout(function(){window.addEventListener("scroll",function doh(){hideReadingTranslation();window.removeEventListener("scroll",doh);});},50);
+  tt.onclick=function(){hideReadingTranslation();};
 }
-function hideLecturaTranslation(){
+function hideReadingTranslation(){
   var tt=document.getElementById("lectura-tt"); if(tt) tt.remove();
   var popup=document.getElementById("lectura-popup"); if(popup) popup.remove();
 }

@@ -253,7 +253,7 @@ function openCreateModal(){
     state.session.saved.push(ph); updateBadge(); syncUp();
     closeModal();
     showToast("Flashcard creada");
-    renderGuardadas();
+    renderSaved();
   };
   const cancelBtn=document.createElement("button");
   cancelBtn.textContent="Cancelar";

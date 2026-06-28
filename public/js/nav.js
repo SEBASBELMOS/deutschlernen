@@ -77,21 +77,21 @@ function showScreen(id) {
   const apply=function(){
     TABS.forEach(function(t){document.getElementById("s-"+t.id).classList.remove("active");});
     document.getElementById("s-"+id).classList.add("active");
-    if(id==="hoy") renderHoy();
-    else if(id==="frases") renderFrases();
-    else if(id==="conversar") { renderConversar(); if(state.chat.chatScenario) startMinTimer(); }
-    else if(id==="corrigeme") renderCorrigeme();
-    else if(id==="noentendi") renderNoEntendi();
-    else if(id==="lectura") renderLectura();
+    if(id==="hoy") renderToday();
+    else if(id==="frases") renderPhrases();
+    else if(id==="conversar") { renderConversation(); if(state.chat.chatScenario) startMinTimer(); }
+    else if(id==="corrigeme") renderCorrectMe();
+    else if(id==="noentendi") renderDidntUnderstand();
+    else if(id==="lectura") renderReading();
     else if(id==="shadowing") renderShadowing();
-    else if(id==="gramatica") renderGramatica();
-    else if(id==="casos") renderCasos();
-    else if(id==="genero") renderGenero();
-    else if(id==="conectores") renderConectores();
+    else if(id==="gramatica") renderGrammar();
+    else if(id==="casos") renderCases();
+    else if(id==="genero") renderGender();
+    else if(id==="conectores") renderConnectors();
     else if(id==="tempus") renderTempus();
     else if(id==="flashcards") renderFlashcards();
-    else if(id==="guardadas") renderGuardadas();
-    else if(id==="resumen") renderResumen();
+    else if(id==="guardadas") renderSaved();
+    else if(id==="resumen") renderSummary();
     else if(id==="config") renderSettings();
   };
   if(!document.startViewTransition||matchMedia("(prefers-reduced-motion:reduce)").matches){apply();return;}

@@ -1,5 +1,5 @@
-// ── NO ENTENDI ────────────────────────────────────────────────────────────────
-function renderNoEntendi() {
+// ── Didn’t understand ─────────────────────────────────────────────────────────
+function renderDidntUnderstand() {
   const el=document.getElementById("s-noentendi"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","TRADUCTOR CONTEXTUAL","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -95,7 +95,7 @@ async function doExplain(ta, btn, el) {
     const reset=document.createElement("button");
     reset.className="reset-btn";
     reset.textContent="Preguntar otra cosa";
-    reset.onclick=renderNoEntendi; result.appendChild(reset);
+    reset.onclick=renderDidntUnderstand; result.appendChild(reset);
     el.appendChild(result);
   } catch(e){
     el.appendChild(mk("p","Error al procesar. Intenta de nuevo.","color:#ef4444;font-size:13px;text-align:center;margin-top:10px;font-weight:500;"));

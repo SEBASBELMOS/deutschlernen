@@ -1,5 +1,5 @@
-// ── GUARDADAS ─────────────────────────────────────────────────────────────────
-function renderGuardadas() {
+// ── Saved (vocab packs) ───────────────────────────────────────────────────────
+function renderSaved() {
   const el=document.getElementById("s-guardadas"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:14px;");
   hdr.appendChild(mk("h2","Guardadas","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
@@ -11,17 +11,17 @@ function renderGuardadas() {
     btn.style.cssText="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,color 0.2s,box-shadow 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;";
     var tabMeta=t==="frases"?{i:"star",l:"Frases"}:t==="chats"?{i:"chat",l:"Chats"}:t==="tabla"?{i:"table",l:"Tabla"}:{i:"package",l:"Temas"};
     btn.appendChild(ico(tabMeta.i,15)); btn.appendChild(document.createTextNode(tabMeta.l));
-    if(state.guardadas.guardadasTab===t){
+    if(state.savedView.savedTab===t){
       btn.style.background="#F5A623"; btn.style.color="#000"; btn.style.boxShadow="0 2px 10px rgba(245,166,35,0.3)";
     } else {
       btn.style.background="transparent"; btn.style.color="#64748b";
     }
-    btn.onclick=function(){state.guardadas.guardadasTab=t;renderGuardadas();};
+    btn.onclick=function(){state.savedView.savedTab=t;renderSaved();};
     subBar.appendChild(btn);
   });
   el.appendChild(subBar);
 
-  if(state.guardadas.guardadasTab==="frases"){
+  if(state.savedView.savedTab==="frases"){
     if(!state.session.saved.length){
       var empty=mk("div","","text-align:center;padding:50px 0;color:var(--muted);");
       var emptyIcon=mk("div","","font-size:44px;margin-bottom:14px;color:var(--gold-text);display:flex;justify-content:center;");
@@ -39,42 +39,42 @@ function renderGuardadas() {
     const catFilter=document.createElement("select");
     catFilter.className="input-field";
     catFilter.style.cssText="font-size:12px;font-weight:600;padding:6px 8px;color:var(--text);max-width:130px;";
-    ["Todas","Sin categoría",...CATEGORIES].forEach(function(c){const o=document.createElement("option");o.value=c;o.textContent=c;if(c===state.guardadas.guardadasFilterCat)o.selected=true;catFilter.appendChild(o);});
-    catFilter.onchange=function(){state.guardadas.guardadasFilterCat=this.value;renderGuardadasList(listHost);};
+    ["Todas","Sin categoría",...CATEGORIES].forEach(function(c){const o=document.createElement("option");o.value=c;o.textContent=c;if(c===state.savedView.savedFilterCat)o.selected=true;catFilter.appendChild(o);});
+    catFilter.onchange=function(){state.savedView.savedFilterCat=this.value;renderSavedList(listHost);};
     searchRow.appendChild(catFilter);
-    const search=document.createElement("input"); search.type="text"; search.placeholder="Buscar..."; search.value=state.guardadas.guardadasFilter;
+    const search=document.createElement("input"); search.type="text"; search.placeholder="Buscar..."; search.value=state.savedView.savedFilter;
     search.className="input-field";
     search.style.cssText="flex:1;font-size:13px;padding:8px 12px;font-weight:500;";
-    search.oninput=function(){ state.guardadas.guardadasFilter=this.value; renderGuardadasList(listHost); };
+    search.oninput=function(){ state.savedView.savedFilter=this.value; renderSavedList(listHost); };
     searchRow.appendChild(search);
     const exportBtn=mk("button","⤓ CSV","font-size:12px;color:#4ECDC4;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:8px;padding:7px 11px;font-weight:700;");
     exportBtn.onclick=exportSavedCsv;
     searchRow.appendChild(exportBtn);
     const clearBtn=mk("button","🗑","font-size:14px;color:#ef4444;background:none;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:6px 10px;font-weight:600;");
     clearBtn.title="Borrar todas";
-    clearBtn.onclick=function(){if(confirm("Borrar todas las frases?")){state.session.saved=[];updateBadge();syncUp();renderGuardadas();}};
+    clearBtn.onclick=function(){if(confirm("Borrar todas las frases?")){state.session.saved=[];updateBadge();syncUp();renderSaved();}};
     searchRow.appendChild(clearBtn);
     el.appendChild(searchRow);
     el.appendChild(mk("p",state.session.saved.length+" guardada(s)","color:var(--muted);font-size:12px;font-weight:600;margin-bottom:10px;"));
 
     const listHost=document.createElement("div"); el.appendChild(listHost);
-    renderGuardadasList(listHost);
-  } else if(state.guardadas.guardadasTab==="tabla"){
+    renderSavedList(listHost);
+  } else if(state.savedView.savedTab==="tabla"){
     if(!state.session.saved.length){
       el.innerHTML+="<div style='text-align:center;padding:50px 0;color:var(--muted);'><div style='font-size:44px;margin-bottom:14px;'>📊</div><p style='font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;'>Sin vocabulario</p><p style='font-size:13px;font-weight:500;'>No hay frases guardadas para mostrar.</p></div>";
       return;
     }
     const listHost=document.createElement("div"); el.appendChild(listHost);
     renderVocabTable(listHost);
-  } else if(state.guardadas.guardadasTab==="paquetes"){
+  } else if(state.savedView.savedTab==="paquetes"){
     const intro=mk("p","Elige un paquete, guarda palabras y mira tu avance al instante.","font-size:13px;color:var(--muted);font-weight:500;margin-bottom:14px;");
     el.appendChild(intro);
     var packs=[
-      {icon:"file",name:"Trámites",desc:"Documentos, citas y burocracia",list:TRAMITES_VOCAB,cat:"Trámites",color:"#F5A623",textColor:"var(--gold-text)",rgb:"245,166,35"},
+      {icon:"file",name:"Trámites",desc:"Documentos, citas y burocracia",list:ERRANDS_VOCAB,cat:"Trámites",color:"#F5A623",textColor:"var(--gold-text)",rgb:"245,166,35"},
       {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#4ECDC4",textColor:"var(--teal-text)",rgb:"78,205,196"},
-      {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:VIAJE_VOCAB,cat:"Viaje",color:"#4ade80",textColor:"var(--green-text)",rgb:"74,222,128"},
-      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:COMIDA_VOCAB,cat:"Comida",color:"#F87171",textColor:"var(--red-text)",rgb:"248,113,113"},
-      {icon:"link",name:"Conectores",desc:"weil, obwohl, deshalb, wenn...",list:CONECTORES_VOCAB,cat:"Conectores",color:"#A78BFA",textColor:"var(--purple-text)",rgb:"167,139,250"}
+      {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:TRAVEL_VOCAB,cat:"Viaje",color:"#4ade80",textColor:"var(--green-text)",rgb:"74,222,128"},
+      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:FOOD_VOCAB,cat:"Comida",color:"#F87171",textColor:"var(--red-text)",rgb:"248,113,113"},
+      {icon:"link",name:"Conectores",desc:"weil, obwohl, deshalb, wenn...",list:CONNECTORS_VOCAB,cat:"Conectores",color:"#A78BFA",textColor:"var(--purple-text)",rgb:"167,139,250"}
     ];
     var grid=mk("div",""); grid.className="vocab-pack-grid";
     packs.forEach(function(p){
@@ -134,17 +134,17 @@ function renderGuardadas() {
     clearBtn.textContent="Borrar historial";
     clearBtn.style.marginTop="8px";
     clearBtn.style.width="100%";
-    clearBtn.onclick=function(){if(confirm("Borrar historial de chats?")){state.session.chatLogs=[];syncUp();renderGuardadas();}};
+    clearBtn.onclick=function(){if(confirm("Borrar historial de chats?")){state.session.chatLogs=[];syncUp();renderSaved();}};
     el.appendChild(clearBtn);
   }
 }
 
-function renderGuardadasList(host){
+function renderSavedList(host){
   host.innerHTML="";
-  const q=state.guardadas.guardadasFilter.trim().toLowerCase();
+  const q=state.savedView.savedFilter.trim().toLowerCase();
   const filtered=state.session.saved.filter(function(ph){
     ensureSrsFields(ph);
-    const catMatch=state.guardadas.guardadasFilterCat==="Todas"||(state.guardadas.guardadasFilterCat==="Sin categoría"?(!ph.category):ph.category===state.guardadas.guardadasFilterCat);
+    const catMatch=state.savedView.savedFilterCat==="Todas"||(state.savedView.savedFilterCat==="Sin categoría"?(!ph.category):ph.category===state.savedView.savedFilterCat);
     if(!catMatch) return false;
     if(!q) return true;
     return (ph.de||"").toLowerCase().indexOf(q)>=0 || (ph.es||"").toLowerCase().indexOf(q)>=0;
@@ -170,7 +170,7 @@ function renderGuardadasList(host){
     del.title="Eliminar";
     del.onclick=function(){
       var removedPh=ph; var idx=state.session.saved.indexOf(ph);
-      if(idx>=0){ state.session.saved.splice(idx,1); updateBadge(); syncUp(); renderGuardadas(); showToast("Frase eliminada — Deshacer","undo",function(){state.session.saved.push(removedPh);updateBadge();syncUp();renderGuardadas();}); }
+      if(idx>=0){ state.session.saved.splice(idx,1); updateBadge(); syncUp(); renderSaved(); showToast("Frase eliminada — Deshacer","undo",function(){state.session.saved.push(removedPh);updateBadge();syncUp();renderSaved();}); }
     };
     right.appendChild(play); right.appendChild(del);
     topRow.appendChild(txt); topRow.appendChild(right); card.appendChild(topRow);
@@ -187,7 +187,7 @@ function renderGuardadasList(host){
       if(c===ph.category)o.selected=true;catSelect.appendChild(o);
     });
     catSelect.onchange=function(){
-      ph.category=this.value;state.session.saved[state.session.saved.indexOf(ph)]=ph;syncUp();renderGuardadas();
+      ph.category=this.value;state.session.saved[state.session.saved.indexOf(ph)]=ph;syncUp();renderSaved();
     };
     catRow.appendChild(catSelect);
     catBtn.onclick=function(){
@@ -207,13 +207,13 @@ function renderGuardadasList(host){
 function renderVocabTable(host){
   host.innerHTML="";
   const today=todayKey();
-  const sortField={cat:"category",de:"de",es:"es",box:"box",nextReview:"nextReview",lapses:"lapses"}[state.guardadas.vocabSortCol]||state.guardadas.vocabSortCol;
+  const sortField={cat:"category",de:"de",es:"es",box:"box",nextReview:"nextReview",lapses:"lapses"}[state.savedView.vocabSortCol]||state.savedView.vocabSortCol;
   const list=[...state.session.saved].sort(function(a,b){
     let va=a[sortField]||"", vb=b[sortField]||"";
-    if(state.guardadas.vocabSortCol==="box"||state.guardadas.vocabSortCol==="lapses"){ va=Number(va)||0; vb=Number(vb)||0; }
-    if(state.guardadas.vocabSortCol==="nextReview"){ va=String(va); vb=String(vb); }
-    if(va<vb) return state.guardadas.vocabSortAsc?-1:1;
-    if(va>vb) return state.guardadas.vocabSortAsc?1:-1;
+    if(state.savedView.vocabSortCol==="box"||state.savedView.vocabSortCol==="lapses"){ va=Number(va)||0; vb=Number(vb)||0; }
+    if(state.savedView.vocabSortCol==="nextReview"){ va=String(va); vb=String(vb); }
+    if(va<vb) return state.savedView.vocabSortAsc?-1:1;
+    if(va>vb) return state.savedView.vocabSortAsc?1:-1;
     return 0;
   });
   host.style.overflowX="auto"; host.style.webkitOverflowScrolling="touch";
@@ -224,11 +224,11 @@ function renderVocabTable(host){
   ["de","es","cat","box","nextReview","lapses"].forEach(function(col){
     const th=document.createElement("th");
     th.style.cssText="padding:8px 10px;text-align:left;color:var(--muted);font-weight:700;font-size:11px;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.08);cursor:pointer;user-select:none;white-space:nowrap;";
-    const arrow=state.guardadas.vocabSortCol===col?(state.guardadas.vocabSortAsc?" ▲":" ▼"):"";
+    const arrow=state.savedView.vocabSortCol===col?(state.savedView.vocabSortAsc?" ▲":" ▼"):"";
     th.textContent=col.toUpperCase()+arrow;
     th.onclick=function(){
-      if(state.guardadas.vocabSortCol===col) state.guardadas.vocabSortAsc=!state.guardadas.vocabSortAsc;
-      else{ state.guardadas.vocabSortCol=col; state.guardadas.vocabSortAsc=true; }
+      if(state.savedView.vocabSortCol===col) state.savedView.vocabSortAsc=!state.savedView.vocabSortAsc;
+      else{ state.savedView.vocabSortCol=col; state.savedView.vocabSortAsc=true; }
       renderVocabTable(host);
     };
     hrow.appendChild(th);

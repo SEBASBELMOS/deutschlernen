@@ -1,5 +1,5 @@
-// ── RESUMEN ───────────────────────────────────────────────────────────────────
-function renderResumen() {
+// ── Summary ───────────────────────────────────────────────────────────────────
+function renderSummary() {
   const el=document.getElementById("s-resumen"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","TU PROGRESO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));

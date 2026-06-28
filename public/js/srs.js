@@ -156,7 +156,7 @@ function getStudyRecommendation(){
     var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II",plurales:"Plurales"})[worstKey]||worstKey;
     scores[1].msg="Tu punto d\u00e9bil es Gram\u00e1tica: **"+tname+"**. Practícalo hoy \u2192 +4%.";
   }
-  // Elegir el más débil QUE tenga un consejo accionable (no solo el más débil a secas)
+  // Pick the weakest one that HAS an actionable tip (not just the weakest outright)
   scores.sort(function(a,b){return a.pct-b.pct;});
   var weakest=null;
   for(var j=0;j<scores.length;j++){ if(scores[j].msg && scores[j].pct<0.8){ weakest=scores[j]; break; } }
@@ -210,7 +210,7 @@ function getDailyGoal(){
   }
   if(days===0) return 5; // default 5 min if no history
   var avg=total/days;
-  return Math.round(Math.max(5,Math.min(avg*1.15,60))); // +15% buffer, cap 60, entero
+  return Math.round(Math.max(5,Math.min(avg*1.15,60))); // +15% buffer, cap 60, integer
 }
 function getWeakWords(){
   if(!state.session.saved.length) return null;
@@ -227,7 +227,7 @@ function startMinTimer() {
   state.session.minTimer=setInterval(function(){state.session.sessionMinutes++;logActivity("minutes",1);},60000);
 }
 
-// ── INSIGHT DATA (shared by hoy and resumen) ──
+// ── INSIGHT DATA (shared by Today and Summary) ──
 function getWeekKey(){
   var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7);
   var w=Math.floor((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/604800000);

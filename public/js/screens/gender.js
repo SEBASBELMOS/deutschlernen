@@ -1,4 +1,4 @@
-// ── GENERO ────────────────────────────────────────────────────────────────────
+// ── Gender (der/die/das trainer) ──────────────────────────────────────────────
 function genShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0;var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function genCleanNouns(arr){
   var seen={};
@@ -8,7 +8,7 @@ function genCleanNouns(arr){
 }
 function genPickNouns(aiNouns){
   var recent={}; _genRecentNouns.slice(-20).forEach(function(n){recent[n.toLowerCase()]=true;});
-  var pool=genCleanNouns(aiNouns).concat(genShuffle(GENERO_NOUN_POOL));
+  var pool=genCleanNouns(aiNouns).concat(genShuffle(GENDER_NOUN_POOL));
   var picked=[], used={};
   pool.forEach(function(n){
     var key=n.noun.toLowerCase();
@@ -20,7 +20,7 @@ function genPickNouns(aiNouns){
   _genRecentNouns=_genRecentNouns.concat(picked.map(function(n){return n.noun;})).slice(-30);
   return picked;
 }
-function renderGenero(){
+function renderGender(){
   const el=document.getElementById("s-genero"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
@@ -48,7 +48,7 @@ function renderGenero(){
   renderGenCard(el, hdr);
 }
 function renderGenCard(el, hdr){
-  if(_genIdx>=_genNouns.length){ _genDone=true; el.innerHTML=""; renderGenero(); return; }
+  if(_genIdx>=_genNouns.length){ _genDone=true; el.innerHTML=""; renderGender(); return; }
   var n=_genNouns[_genIdx];
   el.innerHTML="";
   hdr.innerHTML="";
@@ -134,6 +134,6 @@ function renderGenResults(el){
     el.appendChild(missCard);
   }
   var restart=mk("button","\u2190 Otros 10 sustantivos","width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:12px;font-size:13px;font-weight:600;margin-top:12px;cursor:pointer;");
-  restart.onclick=function(){_genNouns=null;_genDone=false;renderGenero();};
+  restart.onclick=function(){_genNouns=null;_genDone=false;renderGender();};
   el.appendChild(restart);
 }
