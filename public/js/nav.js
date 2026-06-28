@@ -71,6 +71,13 @@ function renderTabs(){
   });
 }
 
+// Activate tab without re-rendering — used by inline review steps that manage their own DOM
+function activateTab(id) {
+  state.app.currentTab = id;
+  renderTabs();
+  TABS.forEach(function(t){document.getElementById("s-"+t.id).classList.remove("active");});
+  document.getElementById("s-"+id).classList.add("active");
+}
 function showScreen(id) {
   clearInterval(state.session.minTimer);
   if (id!=="conversar"&&state.chat.chatScenario) { runPostChatAnalysis(); saveChatLog(); }

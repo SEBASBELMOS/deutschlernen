@@ -307,7 +307,7 @@ function startPersonalizedReview(){
 // Plan preview — user can accept, drop steps (tap to toggle), or cancel
 function renderReviewPlanPreview(){
   var plan=state.app._reviewPlan; if(!plan) return;
-  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy"); removeReviewBackBtn();
+  activateTab("hoy"); removeReviewBackBtn();
   var el=document.getElementById("s-hoy"); el.innerHTML="";
   var hdr=mk("div","","margin-bottom:14px;");
   hdr.appendChild(mk("p","REPASO PERSONALIZADO","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
@@ -360,7 +360,7 @@ function runPersonalizedStep(idx){
   if(idx>=plan.steps.length){ removeReviewBackBtn(); showPersonalizedSummary(); return; }
   plan.currentStep=idx;
   var step=plan.steps[idx];
-  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy");
+  activateTab("hoy");
   var el=document.getElementById("s-hoy"); el.innerHTML="";
   el.appendChild(reviewProgressHeader(idx, plan.steps.length, step));
   var host=mk("div","",""); el.appendChild(host);
@@ -499,7 +499,7 @@ function showPersonalizedSummary(){
   var plan=state.app._reviewPlan; if(!plan){ renderToday(); return; }
   plan.done=true; removeReviewBackBtn();
   var r=plan.results, total=plan.steps.length;
-  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy");
+  activateTab("hoy");
   var el=document.getElementById("s-hoy"); el.innerHTML="";
   var c=mk("div","","text-align:center;padding:26px 20px;background:linear-gradient(135deg,rgba(74,222,128,0.12),rgba(78,205,196,0.06));border:1px solid rgba(74,222,128,0.25);border-radius:var(--r-lg);margin-bottom:14px;animation:winPop 0.45s var(--ease-spring) both;");
   c.appendChild(mk("p","✅","font-size:40px;margin-bottom:6px;"));
@@ -521,7 +521,7 @@ function showPersonalizedSummary(){
 
 // Everything is up to date — nothing urgent to review
 function showAllCaughtUp(){
-  state.app.currentTab="hoy"; renderTabs(); showScreen("hoy"); removeReviewBackBtn();
+  activateTab("hoy"); removeReviewBackBtn();
   var el=document.getElementById("s-hoy"); el.innerHTML="";
   var c=mk("div","","text-align:center;padding:28px 20px;background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(78,205,196,0.05));border:1px solid rgba(74,222,128,0.22);border-radius:var(--r-lg);margin-bottom:14px;animation:winPop 0.45s var(--ease-spring) both;");
   c.appendChild(mk("p","🎉","font-size:44px;margin-bottom:8px;"));
