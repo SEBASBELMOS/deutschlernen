@@ -286,7 +286,12 @@ function buildPersonalizedPlan(){
   // 4. Shadowing of phrases saved from conversar/noentendi
   var shadowItems=saved.filter(function(p){return ["conversar","noentendi"].indexOf(p.source)>=0;}).slice(0,3);
   if(shadowItems.length) steps.push({type:"shadow", icon:"🎧", label:"Pronunciación", detail:shadowItems.length+" frase"+(shadowItems.length>1?"s":"")+" de tus charlas", items:shadowItems});
-  // 5. Have something but it's thin → pad with one random bonus (vocab pack / reading / tempus).
+  // 5. Reading comprehension on weak grammar topic — AI generates a passage + questions
+  if(weak.length && steps.length>=1 && steps.length<4){
+    var rt=GRAMMAR_TOPICS.filter(function(x){return x.key===weak[0];})[0];
+    steps.push({type:"reading", icon:"📖", label:"Comprensión lectora", topic:weak[0], detail:rt?"Lectura sobre "+rt.label:"Texto con preguntas"});
+  }
+  // 6. Have something but it's thin → pad with one random bonus (vocab pack / reading / tempus).
   //    Zero real steps falls through to an empty plan → "all caught up" screen.
   if(steps.length>=1 && steps.length<2){
     var bonus=[{tab:"conectores",icon:"🔗",detail:"Practicá conectores"},{tab:"lectura",icon:"📖",detail:"Leé un texto corto"},{tab:"tempus",icon:"⏳",detail:"Drill de antes/después"}];
@@ -300,7 +305,7 @@ function startPersonalizedReview(){
   var steps=buildPersonalizedPlan();
   if(!steps.length){ showAllCaughtUp(); return; }
   state.app._reviewPlan={steps:steps, currentStep:0, started:false, done:false, personalized:true,
-    results:{cardsReviewed:0, errorsReviewed:0, shadowDone:0, grammarDone:0, stepsCompleted:0}};
+    results:{cardsReviewed:0, errorsReviewed:0, shadowDone:0, grammarDone:0, readingDone:0, stepsCompleted:0}};
   renderReviewPlanPreview();
 }
 
@@ -369,6 +374,7 @@ function runPersonalizedStep(idx){
   else if(step.type==="shadow") renderReviewShadowStep(host, step);
   else if(step.type==="grammar") renderReviewGrammarStep(host, step);
   else if(step.type==="explore") renderReviewExploreStep(host, step);
+  else if(step.type==="reading") renderReviewReadingStep(host, step);
   // Per-step cancel
   var skip=mk("button","Saltar este paso →","width:100%;background:transparent;border:1px dashed var(--border);color:var(--muted);border-radius:12px;padding:10px;font-size:12px;font-weight:600;cursor:pointer;margin-top:14px;");
   skip.onclick=function(){ step.skipped=true; runPersonalizedStep(plan.currentStep+1); };
@@ -495,6 +501,74 @@ function renderReviewExploreStep(host, step){
   host.appendChild(go);
 }
 
+// ── Reading comprehension step — AI-generated passage + questions ──
+function renderReviewReadingStep(host, step){
+  if(step._done){ nextReviewStep(); return; }
+  if(step._data){ if(typeof step._qi!=="number") step._qi=0; if(typeof step._score!=="number") step._score=0; renderReadingQA(host, step); return; }
+  host.innerHTML="";
+  host.appendChild(mk("p","📖 Generando tu lectura personalizada...","text-align:center;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
+  for(var sk=0;sk<3;sk++) host.appendChild(skelCard(3));
+  var lvl=state.app.level||"B1";
+  var rt=GRAMMAR_TOPICS.filter(function(x){return x.key===step.topic;})[0];
+  var topicLabel=rt?rt.label:"German everyday life";
+  ai("You are a German teacher. Reply ONLY with valid JSON, no markdown.",
+    [{role:"user",content:'Generate a short German reading passage ('+lvl+' level) of 4-6 sentences about "'+topicLabel+'". Then 2 comprehension questions in German about the text. Format: {"title":"...","text":"...","questions":[{"q":"...","options":["...","...","..."],"correct":0},...]}. 3 options per question, correct is 0-indexed.'}],1500)
+    .then(function(raw){
+      var m=raw.match(/\{[\s\S]*\}/);
+      if(!m){ step._done=true; nextReviewStep(); return; }
+      try{
+        var data=JSON.parse(m[0]);
+        if(!data.text||!data.questions||!data.questions.length){ step._done=true; nextReviewStep(); return; }
+        step._data=data; step._qi=0; step._score=0; step._answers=[];
+        renderReviewReadingStep(host, step);
+      }catch(e){ step._done=true; nextReviewStep(); }
+    })
+    .catch(function(e){ step._done=true; nextReviewStep(); });
+}
+function renderReadingQA(host, step){
+  if(step._qi>=step._data.questions.length){
+    host.innerHTML="";
+    var pct=Math.round(step._score/step._data.questions.length*100);
+    var col=pct>=70?"var(--green-text)":(pct>=50?"var(--gold-text)":"var(--red-text)");
+    var result=mk("div","","text-align:center;padding:22px;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.18);border-radius:var(--r-lg);margin-bottom:12px;");
+    result.appendChild(mk("p","📖 Lectura completada","font-size:10px;color:"+col+";letter-spacing:2px;font-weight:700;margin-bottom:6px;"));
+    result.appendChild(mk("p",step._score+"/"+step._data.questions.length+" correcto"+(step._data.questions.length>1?"s":""),"font-size:18px;font-weight:800;color:"+col+";"));
+    host.appendChild(result);
+    var next=mk("button","Siguiente paso →","width:100%;padding:13px;border-radius:12px;border:none;background:rgba(78,205,196,0.12);color:var(--teal-text);font-weight:800;font-size:13px;cursor:pointer;");
+    next.onclick=function(){ step._done=true; if(!step._counted){ step._counted=true; state.app._reviewPlan.results.readingDone++; } logActivity("drillsDone",1); syncUp(); nextReviewStep(); };
+    host.appendChild(next);
+    return;
+  }
+  var data=step._data; var qi=step._qi; var q=data.questions[qi];
+  host.innerHTML="";
+  var passage=mk("div","","background:rgba(78,205,196,0.04);border:1px solid rgba(78,205,196,0.15);border-radius:var(--r-md);padding:16px;margin-bottom:14px;");
+  passage.appendChild(mk("p",data.title||"Lectura","font-size:14px;font-weight:800;color:var(--teal-text);margin-bottom:8px;"));
+  passage.appendChild(mk("p",data.text,"font-size:14px;color:var(--text);line-height:1.7;font-weight:500;margin-bottom:8px;"));
+  var tts=mk("button","▶ Escuchar","background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);color:var(--teal-text);border-radius:16px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;");
+  tts.onclick=function(){speak(data.text);};
+  passage.appendChild(tts); host.appendChild(passage);
+  var qCard=mk("div","","padding:14px;border:1px solid var(--border);border-radius:var(--r-md);");
+  qCard.appendChild(mk("p","Pregunta "+(qi+1)+"/"+data.questions.length,"font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;"));
+  qCard.appendChild(mk("p",q.q,"font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;line-height:1.5;"));
+  q.options.forEach(function(opt,i){
+    var b=mk("button",opt,"width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px;text-align:left;transition:background 0.12s;");
+    b.onmouseenter=function(){b.style.background="rgba(78,205,196,0.06)";};
+    b.onmouseleave=function(){b.style.background="var(--surface)";};
+    b.onclick=function(){
+      qCard.querySelectorAll("button").forEach(function(bt){bt.disabled=true;bt.style.cursor="default";});
+      if(i===q.correct){ b.style.background="rgba(74,222,128,0.15)";b.style.borderColor="rgba(74,222,128,0.5)";b.style.color="var(--green-text)";step._score++; }
+      else { b.style.background="rgba(248,113,113,0.1)";b.style.borderColor="rgba(248,113,113,0.4)";b.style.color="var(--red-text)";
+        qCard.querySelectorAll("button").forEach(function(bt,j){if(j===q.correct){bt.style.background="rgba(74,222,128,0.15)";bt.style.borderColor="rgba(74,222,128,0.5)";bt.style.color="var(--green-text)";}}); }
+      step._answers.push(i);
+      var nxt=mk("button",(qi+1<data.questions.length?"Siguiente pregunta →":"Ver resultado →"),"display:block;width:100%;padding:10px;border-radius:10px;border:none;background:var(--gold);color:#000;font-weight:800;font-size:12px;cursor:pointer;margin-top:8px;");
+      nxt.onclick=function(){ step._qi++; renderReadingQA(host,step); };
+      qCard.appendChild(nxt);
+    };
+    qCard.appendChild(b);
+  });
+  host.appendChild(qCard);
+}
+
 function showPersonalizedSummary(){
   var plan=state.app._reviewPlan; if(!plan){ renderToday(); return; }
   plan.done=true; removeReviewBackBtn();
@@ -509,6 +583,7 @@ function showPersonalizedSummary(){
   if(r.grammarDone) lines.push("📐 "+r.grammarDone+" tema"+(r.grammarDone>1?"s":"")+" de gramática");
   if(r.errorsReviewed) lines.push("✏️ "+r.errorsReviewed+" error"+(r.errorsReviewed>1?"es":"")+" corregido"+(r.errorsReviewed>1?"s":""));
   if(r.shadowDone) lines.push("🎧 "+r.shadowDone+" frase"+(r.shadowDone>1?"s":"")+" de pronunciación");
+  if(r.readingDone) lines.push("📖 "+r.readingDone+" lectura completada");
   var detail=mk("div","","display:flex;flex-direction:column;gap:4px;");
   if(lines.length) lines.forEach(function(l){detail.appendChild(mk("p",l,"font-size:13px;color:var(--text2);font-weight:600;"));});
   else detail.appendChild(mk("p","Saltaste los pasos — mañana va.","font-size:13px;color:var(--muted);font-weight:500;"));
