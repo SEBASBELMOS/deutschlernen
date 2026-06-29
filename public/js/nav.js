@@ -50,6 +50,16 @@ function hideNavSheet(){
 function renderTabs(){
   var nav=document.getElementById("bottom-nav"); nav.innerHTML="";
   var curGroup=getGroupForScreen(state.app.currentTab);
+  var curTab=TABS.filter(function(t){return t.id===state.app.currentTab;})[0];
+  var titleEl=document.getElementById("screen-title");
+  var subEl=document.getElementById("screen-subtitle");
+  if(titleEl) titleEl.textContent=curTab&&curTab.id==="hoy"?"Dashboard":(curTab?curTab.label:curGroup.label);
+  if(subEl) subEl.textContent=curGroup.label+" · "+lvlRange();
+  var brand=document.createElement("div"); brand.className="side-brand";
+  brand.appendChild(mk("h1","DeutschLernen",""));
+  brand.appendChild(mk("p","Premium Scholar",""));
+  nav.appendChild(brand);
+  var navList=document.createElement("div"); navList.className="side-nav-list";
   NAV_GROUPS.forEach(function(g){
     var btn=document.createElement("button"); btn.className="nav-item"+(g.id===curGroup.id?" active":"");
     var iconStyle=navStyleForGroup(g.id);
@@ -67,8 +77,27 @@ function renderTabs(){
         openNavSheet(g.id);
       }
     };
-    nav.appendChild(btn);
+    navList.appendChild(btn);
   });
+  nav.appendChild(navList);
+  var sideFoot=document.createElement("div"); sideFoot.className="side-footer";
+  var start=document.createElement("button"); start.className="side-start-btn"; start.textContent="Start Daily Lesson";
+  start.onclick=function(){
+    hideNavSheet();
+    state.app.currentTab="hoy";renderTabs();
+    if(typeof startPersonalizedReview==="function") startPersonalizedReview();
+    else showScreen("hoy");
+  };
+  sideFoot.appendChild(start);
+  var profile=document.createElement("div"); profile.className="side-profile";
+  var initial=(state.app.authUser||"S").trim().charAt(0).toUpperCase()||"S";
+  profile.appendChild(mk("span",initial,""));
+  var profileTxt=mk("div","","");
+  profileTxt.appendChild(mk("b",state.app.authUser||"Sebastian",""));
+  profileTxt.appendChild(mk("small",state.app.level+" Scholar",""));
+  profile.appendChild(profileTxt);
+  sideFoot.appendChild(profile);
+  nav.appendChild(sideFoot);
 }
 
 // Activate tab without re-rendering — used by inline review steps that manage their own DOM

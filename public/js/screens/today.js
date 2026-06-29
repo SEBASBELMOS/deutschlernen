@@ -10,14 +10,33 @@ function renderToday(){
   const todayTotal=(todayLog.minutes||0)+(todayLog.phrasesReviewed||0)+(todayLog.drillsDone||0);
   const allDone=due===0&&state.session.saved.length>0;
 
-  // ── Hero band: Tagesbahn (habit spine) + streak + fused due CTA ──
-  // Only celebrate when the streak GREW (not on every tab visit) — avoids animation fatigue
+  // ── Stitch hero: daily command center ──
   const streakGrew = streak > state.app._lastStreakSeen;
-  const hero=document.createElement("div");
-  hero.style.cssText="padding:var(--s-5) var(--s-4) var(--s-4);margin-bottom:var(--s-3);text-align:center;";
+  const hero=document.createElement("section");
+  hero.className="stitch-hero";
+  var heroGrid=mk("div","","display:grid;grid-template-columns:minmax(0,1fr);gap:24px;position:relative;z-index:1;");
+  var heroCopy=mk("div","","");
+  heroCopy.appendChild(mk("h2","Guten Morgen, Sebastian!","margin-bottom:16px;"));
+  var heroMsg=due>0
+    ? "Tenés "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s")+". Empezá por el repaso para proteger tu racha."
+    : allDone
+      ? "Por hoy terminaste el repaso. Podés sumar una lectura corta o volver mañana."
+      : "Elegí una sesión corta y mantené el hábito activo.";
+  heroCopy.appendChild(mk("p",heroMsg,"max-width:680px;"));
+  heroGrid.appendChild(heroCopy);
+  var metricRow=mk("div","","display:flex;gap:16px;align-items:stretch;flex-wrap:wrap;");
+  function metric(value,label,accent){
+    var box=mk("div","",""); box.className="stitch-metric";
+    box.appendChild(mk("strong",String(value),"color:"+accent+";"));
+    box.appendChild(mk("span",label,""));
+    return box;
+  }
+  metricRow.appendChild(metric(streak,"días","var(--secondary)"));
+  metricRow.appendChild(metric(due,"pendientes","var(--primary)"));
+  metricRow.appendChild(metric(todayTotal,"acciones","var(--teal-text)"));
+  heroGrid.appendChild(metricRow);
 
-  // Tagesbahn — the last 7 days as the habit's spine (signature element)
-  const bahn=mk("div","","display:flex;gap:var(--s-2);justify-content:center;align-items:center;margin-bottom:var(--s-4);");
+  const bahn=mk("div","","display:flex;gap:var(--s-2);align-items:center;");
   for(var bi=6;bi>=0;bi--){
     var dkey=addDays(t,-bi);
     var dlog=state.session.dailyLog[dkey];
@@ -36,34 +55,24 @@ function renderToday(){
     dot.setAttribute("aria-label",(isToday?"hoy":dkey)+": "+(dActive?"estudiado":"sin estudiar"));
     bahn.appendChild(dot);
   }
-  hero.appendChild(bahn);
-
-  // Streak line — the hero numeral
-  if(streak>0){
-    const streakLine=mk("div","","display:flex;align-items:baseline;justify-content:center;gap:var(--s-2);");
-    const streakNum=mk("span",String(streak),"font-size:var(--t-2xl);font-weight:900;color:var(--gold-text);letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums;");
-    if(streakGrew) streakNum.style.animation="counterPop 0.4s var(--ease-spring) 0.2s 1";
-    streakLine.appendChild(streakNum);
-    streakLine.appendChild(mk("span",(streak===1?"día de racha":"días de racha"),"font-size:var(--t-sm);font-weight:700;color:var(--text2);"));
-    hero.appendChild(streakLine);
-    hero.appendChild(mk("p","últimos 7 días","font-size:var(--t-xs);color:var(--muted);font-weight:600;margin-top:var(--s-1);letter-spacing:1px;font-family:var(--font-label);"));
-  } else {
-    hero.appendChild(mk("p","Empezá tu racha hoy","font-size:var(--t-md);font-weight:800;color:var(--text);"));
-    hero.appendChild(mk("p","1 minuto ya cuenta","font-size:var(--t-sm);color:var(--muted);font-weight:500;margin-top:var(--s-1);"));
-  }
+  var habit=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;");
+  habit.appendChild(mk("p","Últimos 7 días","font-size:12px;color:rgba(255,255,255,0.74);font-weight:800;letter-spacing:.08em;text-transform:uppercase;"));
+  habit.appendChild(bahn);
+  heroGrid.appendChild(habit);
+  if(streakGrew) hero.style.animation="celebratePop 0.45s var(--ease-spring) 0.1s 1";
 
   // Fused due CTA / win state — the single call to action
   if(allDone){
-    const win=mk("div","","margin-top:var(--s-4);padding:var(--s-4);border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(var(--green-rgb),0.12),rgba(var(--green-rgb),0.03));border:1px solid rgba(var(--green-rgb),0.2);animation:winPop 0.45s var(--ease-spring) both;");
+    const win=mk("div","","padding:var(--s-4);border-radius:var(--r-lg);background:rgba(14,14,14,0.22);border:1px solid rgba(255,255,255,0.12);animation:winPop 0.45s var(--ease-spring) both;");
     win.appendChild(mk("p","🎉 Por hoy terminaste","font-size:var(--t-md);font-weight:800;color:var(--green-text);"));
     const sumToday=todayLog.phrasesReviewed||0;
-    win.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:var(--t-sm);color:var(--muted);font-weight:600;margin-top:var(--s-1);"));
-    hero.appendChild(win);
+    win.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:var(--t-sm);color:rgba(255,255,255,0.74);font-weight:600;margin-top:var(--s-1);"));
+    heroGrid.appendChild(win);
   } else if(due>0){
     const cta=document.createElement("div"); cta.className="hover-lift";
     cta.setAttribute("role","button"); cta.setAttribute("tabindex","0");
     cta.setAttribute("aria-label","Repasar "+due+" tarjetas pendientes");
-    cta.style.cssText="margin-top:var(--s-4);padding:var(--s-3) var(--s-4);border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(var(--gold-rgb),0.14),rgba(var(--gold-rgb),0.04));border:1px solid rgba(var(--gold-rgb),0.28);cursor:pointer;display:flex;align-items:center;gap:var(--s-3);text-align:left;transition:transform var(--d-fast) var(--ease-out),box-shadow var(--d-base);";
+    cta.style.cssText="padding:var(--s-3) var(--s-4);border-radius:var(--r-lg);background:rgba(14,14,14,0.24);border:1px solid rgba(255,255,255,0.12);cursor:pointer;display:flex;align-items:center;gap:var(--s-3);text-align:left;transition:transform var(--d-fast) var(--ease-out),box-shadow var(--d-base);";
     cta.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
     cta.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();this.click();}};
     cta.appendChild(mk("span",String(due),"font-size:var(--t-3xl);font-weight:900;color:var(--gold-text);line-height:1;font-variant-numeric:tabular-nums;flex-shrink:0;"));
@@ -72,9 +81,10 @@ function renderToday(){
     const riskMsg=streak>0?"tu racha de "+streak+" está en juego":"repasá para empezar tu racha";
     dueTxt.appendChild(mk("p",riskMsg,"font-size:var(--t-xs);color:"+(streak>0?"var(--red-text)":"var(--muted)")+";font-weight:600;margin-top:2px;"));
     cta.appendChild(dueTxt);
-    cta.appendChild(mk("span","Repasar →","font-size:var(--t-sm);font-weight:800;color:#000;background:var(--gold);padding:var(--s-2) var(--s-3);border-radius:var(--r-md);flex-shrink:0;white-space:nowrap;"));
-    hero.appendChild(cta);
+    cta.appendChild(mk("span","Repasar →","font-size:var(--t-sm);font-weight:900;color:var(--on-primary);background:var(--primary);padding:var(--s-2) var(--s-3);border-radius:var(--r-md);flex-shrink:0;white-space:nowrap;"));
+    heroGrid.appendChild(cta);
   }
+  hero.appendChild(heroGrid);
   el.appendChild(hero);
 
   // ── Level progress ──

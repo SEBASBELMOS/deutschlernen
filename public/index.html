@@ -6,7 +6,7 @@
 <title>DeutschLernen</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Geist:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -44,12 +44,16 @@
 <div id="app-header" style="display:none;">
 
   <!-- HEADER -->
-  <div style="padding:20px 18px 0;display:flex;align-items:center;gap:10px;">
-    <div>
+  <div class="app-topbar" style="padding:20px 18px 0;display:flex;align-items:center;gap:10px;">
+    <div class="brand-block">
       <h1 id="app-logo" style="font-size:22px;font-weight:900;letter-spacing:-0.03em;line-height:1;">
         Deutsch<span style="color:var(--gold-text);">Lernen</span>
       </h1>
       <p id="app-tagline" style="font-size:9px;color:var(--dim);letter-spacing:3px;font-family:var(--font-label);margin-top:2px;font-weight:600;">GERMAN WITH AI</p>
+    </div>
+    <div class="topbar-title" aria-live="polite">
+      <h2 id="screen-title">Dashboard</h2>
+      <p id="screen-subtitle">Premium Scholar</p>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
       <span id="sync-status" style="display:none;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;"></span>

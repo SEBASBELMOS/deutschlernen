@@ -25,8 +25,22 @@ function renderFlashcards() {
     return;
   }
 
-  const modeRow=mk("div","","display:flex;gap:8px;margin-bottom:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:4px;");
   const dueN=reviewDueCount();
+  var hdr=document.createElement("section"); hdr.className="flash-srm-head";
+  var headText=mk("div","","");
+  headText.appendChild(mk("h2","Tägliche Wiederholung","font-size:30px;line-height:1.15;font-weight:900;color:var(--text);letter-spacing:-0.02em;margin-bottom:4px;"));
+  headText.appendChild(mk("p",(state.flashcards.flashReviewMode?dueN+" tarjetas pendientes":state.session.saved.length+" tarjetas guardadas")+" · SRM Algorithmus v4.2","font-size:15px;color:var(--text2);font-weight:500;"));
+  hdr.appendChild(headText);
+  var pct=state.session.saved.length?Math.round((state.session.saved.length-dueN)/state.session.saved.length*100):0;
+  var headProg=mk("div","","min-width:240px;flex:1;max-width:520px;");
+  headProg.appendChild(mk("p",pct+"% abgeschlossen","text-align:right;font-size:14px;color:var(--primary);font-weight:800;margin-bottom:10px;font-variant-numeric:tabular-nums;"));
+  var pbar=mk("div","",""); pbar.className="stitch-progress";
+  pbar.appendChild(mk("span","","width:"+pct+"%;"));
+  headProg.appendChild(pbar);
+  hdr.appendChild(headProg);
+  el.appendChild(hdr);
+
+  const modeRow=mk("div","","display:flex;gap:8px;margin-bottom:22px;background:var(--surface);border:1px solid rgba(69,70,82,0.72);border-radius:14px;padding:4px;");
   [{k:true,lbl:"🎯 Pendientes ("+dueN+")"},{k:false,lbl:"📚 Todas ("+state.session.saved.length+")"}].forEach(function(o){
     const b=document.createElement("button");
     b.style.cssText="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,color 0.2s,box-shadow 0.2s;";
@@ -81,7 +95,7 @@ function renderFlashcards() {
     renderFlashcards();
   }
 
-  const counter=mk("p",(state.flashcards.flashIdx+1)+" de "+workingSet.length+(state.flashcards.flashReviewMode?" pendientes":"")+"  ·  Caja "+ph.box+"/5","color:var(--muted);font-size:12px;text-align:center;margin-bottom:14px;font-weight:600;letter-spacing:0.02em;");
+  const counter=mk("p",(state.flashcards.flashIdx+1)+" de "+workingSet.length+(state.flashcards.flashReviewMode?" pendientes":"")+"  ·  Caja "+ph.box+"/5","color:var(--muted);font-size:12px;text-align:center;margin-bottom:18px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;");
   el.appendChild(counter);
 
   const card=document.createElement("div"); card.className="flashcard";
@@ -93,7 +107,7 @@ function renderFlashcards() {
   var deMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(var(--gold-rgb),0.75);");
   deMark.appendChild(langBadge("DE","rgba(var(--gold-rgb),0.75)"));
   front.appendChild(deMark);
-  front.appendChild(mk("p",ph.de,"font-size:22px;font-weight:900;color:var(--text);line-height:1.4;margin-bottom:16px;letter-spacing:-0.02em;"));
+  front.appendChild(mk("p",ph.de,"font-size:clamp(30px,5vw,58px);font-weight:900;color:var(--text);line-height:1.08;margin-bottom:22px;letter-spacing:-0.04em;text-shadow:0 1px 0 rgba(255,255,255,0.12);"));
   const playF=document.createElement("button");
   playF.style.cssText="background:rgba(var(--gold-rgb),0.12);border:1px solid rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:700;transition:background 0.2s,transform 0.12s;";
   playF.textContent="▶ Escuchar";
@@ -104,7 +118,7 @@ function renderFlashcards() {
   var esMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(var(--teal-rgb),0.75);");
   esMark.appendChild(langBadge("ES","rgba(var(--teal-rgb),0.75)"));
   back.appendChild(esMark);
-  back.appendChild(mk("p",ph.es,"font-size:20px;color:var(--text);line-height:1.45;margin-bottom:10px;font-weight:600;"));
+  back.appendChild(mk("p",ph.es,"font-size:clamp(24px,4vw,42px);color:var(--text);line-height:1.18;margin-bottom:16px;font-weight:800;letter-spacing:-0.03em;"));
   if(ph.tip) back.appendChild(mk("p","💡 "+ph.tip,"font-size:13px;color:var(--muted);font-style:italic;font-weight:500;"));
   inner.appendChild(back);
 
@@ -127,7 +141,8 @@ function renderFlashcards() {
   el.appendChild(mk("p","Toca para ver la traducción y calificar","color:var(--dim);font-size:12px;text-align:center;margin-bottom:14px;font-weight:500;"));
 
   const gradeRow=document.createElement("div");
-  gradeRow.style.cssText="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;opacity:0.3;pointer-events:none;filter:blur(2px);transition:opacity 0.25s cubic-bezier(.16,1,.3,1),filter 0.25s";
+  gradeRow.className="srm-grade-row";
+  gradeRow.style.cssText="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 auto 14px;opacity:0.3;pointer-events:none;filter:blur(2px);transition:opacity 0.25s cubic-bezier(.16,1,.3,1),filter 0.25s";
   const grades=[
     {k:"fail",  lbl:"Fallé",   col:"#ffb4ab", txt:"var(--red-text)", days:"hoy"},
     {k:"hard",  lbl:"Dificil", col:"#fbbf24", days:BOX_INTERVALS[ph.box]+"d"},
