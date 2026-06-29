@@ -1,18 +1,30 @@
 // ── Conversation ──────────────────────────────────────────────────────────────
+// Stitch "Conversar AI Chat" redesign — avatar bubbles, scenario pills, typing dots
 
 function renderConversation() {
   if(state.chat.chatScenario) return;
   const el=document.getElementById("s-conversar"); el.innerHTML="";
-  const hdr=mk("div","","margin-bottom:16px;");
+
+  // Header
+  const hdr=mk("div","","margin-bottom:14px;");
   hdr.appendChild(mk("p","ELIGE UN ROL","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Conversar","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
+
+  // Horizontal scrollable scenario pills
+  const pillRow=mk("div","","scrollbar-width:none;-ms-overflow-style:none;overflow-x:auto;white-space:nowrap;padding:2px 0 8px;display:flex;gap:10px;");
+  pillRow.style.maskImage="linear-gradient(to right,transparent 0%,black 4%,black 96%,transparent 100%)";
+  pillRow.style.webkitMaskImage="linear-gradient(to right,transparent 0%,black 4%,black 96%,transparent 100%)";
   SCENARIOS.forEach(function(s){
-    const btn=document.createElement("button"); btn.className="scenario-btn";
-    btn.innerHTML='<span class="scenario-icon">'+s.icon+'</span><span>'+s.label+'</span>';
-    btn.onclick=function(){startChat(s.label);};
-    el.appendChild(btn);
+    const pill=document.createElement("button");
+    pill.style.cssText="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:var(--r-pill,999px);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.18s;white-space:nowrap;flex-shrink:0;font-family:var(--font-label);";
+    pill.innerHTML='<span style="font-size:17px;">'+s.icon+'</span><span>'+s.label+'</span>';
+    pill.onmouseenter=function(){pill.style.background="rgba(var(--primary-rgb,186,195,255),0.08)";pill.style.borderColor="rgba(var(--primary-rgb,186,195,255),0.25)";};
+    pill.onmouseleave=function(){pill.style.background="rgba(255,255,255,0.04)";pill.style.borderColor="var(--border)";};
+    pill.onclick=function(){startChat(s.label);};
+    pillRow.appendChild(pill);
   });
+  el.appendChild(pillRow);
 }
 
 function saveChatLog() {
@@ -29,17 +41,26 @@ function startChat(scenario) {
   state.chat.chatScenario=scenario; state.chat.chatHistory=[];
   const el=document.getElementById("s-conversar"); el.innerHTML="";
 
-  const top=mk("div","","display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;");
+  // Top bar: back + scenario name + save
+  const top=mk("div","","display:flex;gap:8px;align-items:center;margin-bottom:14px;");
+  const changeBtn=document.createElement("button");
+  changeBtn.style.cssText="background:none;border:1px solid var(--border);color:var(--text2);border-radius:var(--r-md,12px);padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:background 0.2s;";
+  changeBtn.textContent="← Cambiar";
+  top.appendChild(changeBtn);
+  top.appendChild(mk("span",scenario,"font-size:13px;color:var(--text);font-weight:700;flex:1;text-align:center;"));
   const saveBtn=document.createElement("button");
-  saveBtn.style.cssText="background:rgba(var(--teal-rgb),0.1);border:1px solid rgba(var(--teal-rgb),0.25);color:var(--teal-text);border-radius:10px;padding:6px 13px;font-size:12px;font-weight:700;transition:background 0.2s,transform 0.12s;";
+  saveBtn.style.cssText="background:rgba(var(--gold-rgb),0.1);border:1px solid rgba(var(--gold-rgb),0.25);color:var(--gold-text);border-radius:var(--r-pill,999px);padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:background 0.2s;";
   saveBtn.textContent="Guardar";
   saveBtn.onclick=function(){saveChatLog();runPostChatAnalysis();saveBtn.textContent="✓ Guardado";setTimeout(function(){saveBtn.textContent="Guardar";},1500);};
-  const changeBtn=document.createElement("button"); changeBtn.className="btn-back"; changeBtn.textContent="← Cambiar";
-  top.appendChild(changeBtn); top.appendChild(saveBtn);
-  top.appendChild(mk("span",scenario,"font-size:12px;color:var(--muted);flex:1;font-weight:500;"));
+  top.appendChild(saveBtn);
   el.appendChild(top);
 
-  const win=document.createElement("div"); win.className="chat-win"; win.id="chat-win"; el.appendChild(win);
+  // Chat window
+  const win=document.createElement("div"); win.className="chat-win"; win.id="chat-win";
+  win.style.cssText="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r-lg,16px) var(--r-lg,16px) 0 0;padding:14px 12px;height:max(200px,40vh);max-height:55vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent;";
+  el.appendChild(win);
+
+  // Welcome message
   addBubble("Hallo! Scenario: "+scenario+"\n(Ready! Write in German or Spanish.)","bot");
 
   startMinTimer();
@@ -50,34 +71,58 @@ function startChat(scenario) {
     state.chat.chatScenario=null; state.chat.chatHistory=[]; renderConversation();
   };
 
-  const bar=document.createElement("div"); bar.className="chat-bar";
-  const inp=document.createElement("input"); inp.className="chat-input"; inp.placeholder="Schreib auf Deutsch...";
-  const sendBtn=document.createElement("button"); sendBtn.className="send-btn"; sendBtn.textContent="→";
+  // Input bar — rounded pill design
+  const bar=document.createElement("div");
+  bar.style.cssText="display:flex;gap:8px;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-top:none;border-radius:0 0 var(--r-lg,16px) var(--r-lg,16px);padding:10px;";
+  const inp=document.createElement("input"); inp.className="chat-input";
+  inp.style.cssText="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(var(--teal-rgb),0.2);border-radius:var(--r-pill,999px);padding:10px 16px;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;font-family:inherit;";
+  inp.placeholder="Schreib auf Deutsch...";
+  inp.onfocus=function(){inp.style.borderColor="rgba(var(--teal-rgb),0.5)";};
+  inp.onblur=function(){inp.style.borderColor="rgba(var(--teal-rgb),0.2)";};
+  const sendBtn=document.createElement("button"); sendBtn.className="send-btn";
+  sendBtn.style.cssText="background:var(--teal);color:#000;border:none;border-radius:var(--r-pill,999px);padding:10px 18px;font-size:15px;font-weight:800;cursor:pointer;transition:background 0.2s,transform 0.12s;";
+  sendBtn.textContent="→";
+  sendBtn.onmouseenter=function(){sendBtn.style.background="#5dd8cf";};
+  sendBtn.onmouseleave=function(){sendBtn.style.background="var(--teal)";};
+  sendBtn.onmousedown=function(){sendBtn.style.transform="scale(0.93)";};
+  sendBtn.onmouseup=function(){sendBtn.style.transform="scale(1)";};
   const micBtn=makeMicBtn("#5dd9d0",function(text){inp.value=text;doSend(inp,sendBtn);});
   inp.onkeydown=function(e){if(e.key==="Enter"&&!inp.disabled)doSend(inp,sendBtn);};
   sendBtn.onclick=function(){doSend(inp,sendBtn);};
-  bar.appendChild(inp); bar.appendChild(micBtn); bar.appendChild(sendBtn);
+  bar.appendChild(micBtn); bar.appendChild(inp); bar.appendChild(sendBtn);
   el.appendChild(bar);
 }
 
 function addBubble(text, role) {
   const win=document.getElementById("chat-win"); if(!win) return;
-  const row=document.createElement("div"); row.className="bubble-row "+role;
-  const wrapper=document.createElement("div");
-  wrapper.style.cssText="display:flex;flex-direction:column;align-items:"+(role==="user"?"flex-end":"flex-start")+";gap:4px;max-width:86%;animation:fadeUp 0.2s ease;";
-  const bub=document.createElement("div");
-  bub.className=role==="user"?"bubble-user bubble-base":"bubble-bot bubble-base";
-  bub.style.borderRadius=role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px";
+  const isUser=role==="user";
+
+  // Message row
+  const row=mk("div","","display:flex;align-items:end;gap:8px;animation:fadeUp 0.22s ease;"+(isUser?"flex-direction:row-reverse;":"flex-direction:row;"));
+
+  // Avatar circle
+  const avatar=mk("div","","width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;"+(isUser?"background:rgba(var(--primary-rgb,186,195,255),0.15);border:1px solid rgba(var(--primary-rgb,186,195,255),0.3);":"background:rgba(var(--teal-rgb),0.12);border:1px solid rgba(var(--teal-rgb),0.25);"));
+  avatar.textContent=isUser?"👤":"🤖";
+
+  // Content wrapper (bubble + action buttons)
+  const wrapper=mk("div","","display:flex;flex-direction:column;gap:4px;max-width:82%;");
+
+  // Bubble
+  const bub=mk("div","","padding:11px 15px;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word;border-radius:"+(isUser?"var(--r-xl,20px) var(--r-xl,20px) 6px var(--r-xl,20px)":"var(--r-xl,20px) var(--r-xl,20px) var(--r-xl,20px) 6px")+";"+"color:var(--text);font-weight:500;"+(isUser?"background:rgba(var(--primary-rgb,186,195,255),0.13);border:1px solid rgba(var(--primary-rgb,186,195,255),0.2);":"background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);"));
   bub.textContent=text;
+  wrapper.appendChild(bub);
+
+  // Listen button
   const playBtn=document.createElement("button");
-  playBtn.className="bubble-play-btn";
+  playBtn.style.cssText="background:none;border:none;font-size:11px;color:var(--muted);padding:2px 0 0 4px;cursor:pointer;font-weight:600;text-align:left;transition:color 0.15s;";
   playBtn.textContent="▶ escuchar";
   playBtn.onclick=function(){speakGerman(text);};
-  wrapper.appendChild(bub); wrapper.appendChild(playBtn);
+  wrapper.appendChild(playBtn);
+
+  // Save button for corrections
   if(role==="bot"&&(/better:/i.test(text)||text.includes("En alemán se dice")||text.includes("→"))){
     var saveBtn=document.createElement("button");
-    saveBtn.className="bubble-save-btn";
-    saveBtn.style.display="inline-flex"; saveBtn.style.alignItems="center"; saveBtn.style.gap="4px";
+    saveBtn.style.cssText="background:none;border:none;font-size:11px;color:var(--gold-text);padding:0 0 0 4px;cursor:pointer;font-weight:600;text-align:left;transition:color 0.15s;";
     setSaveIcon(saveBtn,false,"Guardar");
     saveBtn.onclick=function(){
       var de=text;
@@ -89,21 +134,32 @@ function addBubble(text, role) {
     };
     wrapper.appendChild(saveBtn);
   }
-  row.appendChild(wrapper); win.appendChild(row);
+
+  row.appendChild(avatar);
+  row.appendChild(wrapper);
+  win.appendChild(row);
   win.scrollTop=win.scrollHeight;
 }
 
 async function doSend(inp, sendBtn) {
   const msg=inp.value.trim(); if(!msg) return;
   inp.value=""; inp.disabled=true; sendBtn.disabled=true;
+  sendBtn.style.background="rgba(255,255,255,0.07)"; sendBtn.style.color="rgba(255,255,255,0.2)";
   addBubble(msg,"user"); state.chat.chatHistory.push({role:"user",content:msg});
   const win=document.getElementById("chat-win");
-  const typingRow=document.createElement("div"); typingRow.className="bubble-row bot";
-  const typingBub=document.createElement("div");
-  typingBub.className="bubble-bot";
-  typingBub.style.cssText="border-radius:16px 16px 16px 4px;padding:12px 16px;";
-  typingBub.appendChild(skelLine("70%","13px")); typingBub.appendChild(skelLine("45%","13px")); typingRow.appendChild(typingBub);
+
+  // Typing indicator — avatar + bouncing dots
+  const typingRow=mk("div","","display:flex;align-items:end;gap:8px;animation:fadeUp 0.2s ease;");
+  const typingAvatar=mk("div","","width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(var(--teal-rgb),0.12);border:1px solid rgba(var(--teal-rgb),0.25);animation:pulse 1.5s ease-in-out infinite;");
+  typingAvatar.textContent="🤖";
+  const dotsBub=mk("div","","padding:12px 16px;border-radius:var(--r-xl,20px) var(--r-xl,20px) var(--r-xl,20px) 6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);display:flex;gap:6px;align-items:center;");
+  [0,0.15,0.3].forEach(function(d){
+    const dot=mk("div","","width:7px;height:7px;border-radius:50%;background:var(--muted);animation:bounce 1.2s "+d+"s infinite;");
+    dotsBub.appendChild(dot);
+  });
+  typingRow.appendChild(typingAvatar); typingRow.appendChild(dotsBub);
   if(win){win.appendChild(typingRow);win.scrollTop=win.scrollHeight;}
+
   try {
     var duePhrases="";
     if(state.session.saved.length){
@@ -127,6 +183,7 @@ async function doSend(inp, sendBtn) {
     addBubble("Error al enviar mensaje. Intenta de nuevo.","bot");
   }
   inp.disabled=false; sendBtn.disabled=false;
+  sendBtn.style.background="var(--teal)"; sendBtn.style.color="#000";
 }
 
 // ── POST-CHAT ANALYSIS ────────────────────────────────────────────────────────

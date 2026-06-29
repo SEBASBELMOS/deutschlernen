@@ -2,26 +2,87 @@
 
 function renderPhrases() {
   const el=document.getElementById("s-frases"); el.innerHTML="";
-  const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","Elige un tema","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","Frases de hoy","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  el.appendChild(hdr);
 
-  // Phrase of the day
-  const potd=document.createElement("div");
-  potd.style.cssText="background:linear-gradient(135deg,rgba(var(--gold-rgb),0.09),rgba(var(--teal-rgb),0.05));border:1px solid rgba(var(--gold-rgb),0.2);border-radius:16px;padding:16px;margin-bottom:16px;";
-  potd.id="potd-card";
-  el.appendChild(potd);
-  renderPotd(potd);
+  // ── Hero Daily Phrase Card ──
+  const potdWrapper=document.createElement("div");
+  potdWrapper.style.cssText="position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(var(--purple-rgb),0.28),rgba(var(--purple-rgb),0.04));border:1px solid rgba(var(--purple-rgb),0.22);border-radius:var(--r-lg,16px);margin-bottom:22px;min-height:190px;";
+  // Blur orbs — decorative
+  const orb1=document.createElement("div");
+  orb1.style.cssText="position:absolute;top:-40px;right:-30px;width:150px;height:150px;background:rgba(var(--purple-rgb),0.32);border-radius:50%;filter:blur(52px);pointer-events:none;";
+  potdWrapper.appendChild(orb1);
+  const orb2=document.createElement("div");
+  orb2.style.cssText="position:absolute;bottom:-25px;left:-25px;width:100px;height:100px;background:rgba(var(--teal-rgb),0.18);border-radius:50%;filter:blur(36px);pointer-events:none;";
+  potdWrapper.appendChild(orb2);
+  // Inner content div — cleared by renderPotd
+  const potdInner=document.createElement("div");
+  potdInner.style.cssText="position:relative;z-index:1;padding:18px;display:flex;flex-direction:column;justify-content:center;min-height:190px;";
+  potdInner.id="potd-card";
+  potdWrapper.appendChild(potdInner);
+  el.appendChild(potdWrapper);
+  renderPotd(potdInner);
 
-  const grid=document.createElement("div"); grid.className="grid2";
-  SITS.forEach(function(s){
-    const btn=document.createElement("button"); btn.className="sit-btn";
-    const icon=mk("span",s.icon,"font-size:24px;line-height:1;");
-    const lbl=mk("span",s.label,"font-size:12px;font-weight:600;color:var(--text);");
-    btn.appendChild(icon); btn.appendChild(lbl);
-    btn.onclick=function(){loadPhrases(s.label);};
-    grid.appendChild(btn);
+  // ── Section Header ──
+  const sectionHdr=mk("div","","display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;");
+  sectionHdr.appendChild(mk("h3","Temas de Vocabulario","font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.01em;"));
+  const verTodo=mk("button","Ver todas →","background:none;border:none;color:var(--purple-text);font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background 0.15s;");
+  verTodo.onmouseenter=function(){this.style.background="rgba(var(--purple-rgb),0.08)";};
+  verTodo.onmouseleave=function(){this.style.background="none";};
+  verTodo.onclick=function(){
+    var existing=el.querySelector(".vocab-expanded-list");
+    if(existing){existing.remove();verTodo.textContent="Ver todas →";return;}
+    verTodo.textContent="Ocultar ↑";
+    var list=document.createElement("div"); list.className="vocab-expanded-list";
+    list.style.cssText="margin-top:10px;display:flex;flex-direction:column;gap:6px;";
+    SITS.forEach(function(s){
+      var row=document.createElement("button");
+      row.style.cssText="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r-md,12px);padding:12px 14px;text-align:left;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;width:100%;transition:background 0.15s,border-color 0.15s;";
+      var ico=mk("span",s.icon,"font-size:18px;flex-shrink:0;");
+      row.appendChild(ico);
+      row.appendChild(document.createTextNode(s.label));
+      row.onclick=function(){loadPhrases(s.label);};
+      list.appendChild(row);
+    });
+    el.appendChild(list);
+  };
+  sectionHdr.appendChild(verTodo);
+  el.appendChild(sectionHdr);
+
+  // ── Pack Tiles Grid ──
+  const tileColors=[
+    {color:"var(--gold-text)",bg:"rgba(var(--gold-rgb),0.13)"},
+    {color:"var(--teal-text)",bg:"rgba(var(--teal-rgb),0.13)"},
+    {color:"var(--purple-text)",bg:"rgba(var(--purple-rgb),0.13)"},
+    {color:"var(--green-text)",bg:"rgba(var(--green-rgb),0.13)"},
+    {color:"var(--red-text)",bg:"rgba(var(--red-rgb),0.10)"},
+    {color:"var(--gold-text)",bg:"rgba(var(--gold-rgb),0.13)"},
+    {color:"var(--teal-text)",bg:"rgba(var(--teal-rgb),0.13)"},
+    {color:"var(--purple-text)",bg:"rgba(var(--purple-rgb),0.13)"}
+  ];
+  const grid=document.createElement("div");
+  grid.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:11px;";
+  SITS.forEach(function(s,i){
+    var tc=tileColors[i%tileColors.length];
+    const tile=document.createElement("button");
+    tile.style.cssText="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:var(--r-lg,16px);padding:15px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:transform 0.15s,box-shadow 0.2s,border-color 0.2s;width:100%;";
+    tile.onmouseenter=function(_ev){this.style.borderColor="rgba(var(--purple-rgb),0.3)";this.style.transform="translateY(-2px)";this.style.boxShadow="0 8px 26px rgba(0,0,0,0.28)";};
+    tile.onmouseleave=function(_ev){this.style.borderColor="rgba(255,255,255,0.07)";this.style.transform="none";this.style.boxShadow="none";};
+    // Icon box
+    const iconBox=mk("span",s.icon,"width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:"+tc.bg+";color:"+tc.color+";flex-shrink:0;");
+    tile.appendChild(iconBox);
+    // Title
+    tile.appendChild(mk("span",s.label,"font-size:14px;font-weight:700;color:var(--text);line-height:1.25;"));
+    // Progress bar
+    var shown=(state.session.shownPhrases&&state.session.shownPhrases[s.label]||[]).length;
+    var pct=Math.min(100,Math.max(0,shown*5));
+    var barOuter=document.createElement("div");
+    barOuter.style.cssText="width:100%;height:4px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;margin-top:auto;";
+    var barInner=document.createElement("div");
+    barInner.style.cssText="height:100%;width:"+pct+"%;background:"+tc.color+";border-radius:999px;transition:width 0.4s;";
+    barOuter.appendChild(barInner);
+    tile.appendChild(barOuter);
+    tile.appendChild(mk("span",pct+"%","font-size:10px;color:var(--muted);text-align:right;font-weight:600;display:block;"));
+    tile.onclick=function(){loadPhrases(s.label);};
+    grid.appendChild(tile);
   });
   el.appendChild(grid);
 }

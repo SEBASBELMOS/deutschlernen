@@ -22,10 +22,13 @@ function genPickNouns(aiNouns){
 }
 function renderGender(){
   const el=document.getElementById("s-genero"); el.innerHTML="";
-  const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","\ud83c\udfaf der \u00b7 die \u00b7 das","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Adivina el art\u00edculo correcto. Azul=der \u00b7 Rojo=die \u00b7 Verde=das.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  // ── Header with accent bar ──
+  const hdr=mk("div","","margin-bottom:18px;position:relative;");
+  const accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--purple);margin-bottom:10px;");
+  hdr.appendChild(accent);
+  hdr.appendChild(mk("p","ENTRENADOR DE GÉNERO","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
+  hdr.appendChild(mk("h2","der · die · das","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.1;"));
+  hdr.appendChild(mk("p","Adivina el artículo. Azul=der · Rojo=die · Verde=das.","font-size:13px;color:var(--muted);margin-top:5px;font-weight:500;line-height:1.4;"));
   el.appendChild(hdr);
 
   if(_genDone){ renderGenResults(el); return; }
@@ -36,9 +39,7 @@ function renderGender(){
       var arr=genPickNouns(parseJSONArray(txt));
       if(!arr||!arr.length){ el.innerHTML="<p style='color:var(--red);text-align:center;padding:40px;'>Error generando sustantivos. Intenta de nuevo.</p>"; return; }
       _genNouns=arr; _genIdx=0; _genRight=0; _genWrong=0; _genMissed=[]; _genDone=false;
-      el.innerHTML="";
-      hdr.appendChild(mk("p","","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
-      renderGenCard(el, hdr);
+      el.innerHTML=""; renderGenCard(el, hdr);
     }).catch(function(){
       _genNouns=genPickNouns([]); _genIdx=0; _genRight=0; _genWrong=0; _genMissed=[]; _genDone=false;
       el.innerHTML=""; renderGenCard(el, hdr);
@@ -52,54 +53,84 @@ function renderGenCard(el, hdr){
   var n=_genNouns[_genIdx];
   el.innerHTML="";
   hdr.innerHTML="";
-  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","\ud83c\udfaf der \u00b7 die \u00b7 das","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p",(_genIdx+1)+"/"+_genNouns.length+" \u00b7 Aciertos: "+_genRight+" \u00b7 Fallos: "+_genWrong,"font-size:13px;color:var(--teal-text);margin-top:4px;font-weight:600;"));
+  var accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--purple);margin-bottom:10px;");
+  hdr.appendChild(accent);
+  hdr.appendChild(mk("p","ENTRENADOR DE GÉNERO","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
+  hdr.appendChild(mk("h2","der · die · das","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.1;"));
+  // Progress metrics
+  var prog=mk("div","","display:flex;gap:8px;margin-top:8px;");
+  [
+    {lbl:"Progreso",val:(_genIdx+1)+"/"+_genNouns.length,color:"var(--text2)"},
+    {lbl:"Aciertos",val:_genRight,color:"var(--green-text)"},
+    {lbl:"Fallos",val:_genWrong,color:"var(--red-text)"}
+  ].forEach(function(m){
+    var p=mk("div","","");
+    p.appendChild(mk("span",String(m.val),"font-size:15px;font-weight:900;color:"+m.color+";font-variant-numeric:tabular-nums;"));
+    p.appendChild(mk("span",m.lbl,"font-size:10px;color:var(--muted);font-weight:600;margin-left:6px;letter-spacing:1px;font-family:var(--font-label);"));
+    prog.appendChild(p);
+  });
+  hdr.appendChild(prog);
   el.appendChild(hdr);
-  var card=document.createElement("div"); card.className="card";
-  card.style.cssText="text-align:center;padding:32px 16px;margin-bottom:16px;border-radius:var(--r-xl,20px);background:linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));";
-  card.appendChild(mk("p","\u00bfQu\u00e9 art\u00edculo?","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-family:var(--font-label);font-weight:600;margin-bottom:12px;"));
-  var nounEl=mk("p",n.noun,"font-size:36px;font-weight:900;color:var(--text);letter-spacing:-0.02em;margin-bottom:8px;line-height:1.15;");
-  if(n.plural) nounEl.appendChild(mk("span"," ("+n.plural+")","font-size:14px;color:var(--muted);font-weight:500;"));
+
+  // ── Noun display card ──
+  var card=mk("div","","text-align:center;padding:36px 20px 28px;margin-bottom:18px;border-radius:var(--r-xl);background:linear-gradient(160deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.18);");
+  card.appendChild(mk("p","¿Qué artículo?","font-size:10px;color:var(--dim);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:14px;"));
+  var nounEl=mk("p",n.noun,"font-size:42px;font-weight:900;color:var(--text);letter-spacing:-0.03em;margin-bottom:8px;line-height:1.1;");
+  if(n.plural) nounEl.appendChild(mk("span"," ("+n.plural+")","font-size:15px;color:var(--muted);font-weight:500;"));
   card.appendChild(nounEl);
-  if(n.meaning) card.appendChild(mk("p",n.meaning,"font-size:14px;color:var(--dim);font-weight:500;margin-bottom:16px;"));
+  if(n.meaning) card.appendChild(mk("p",n.meaning,"font-size:14px;color:var(--dim);font-weight:600;margin-bottom:4px;"));
+  // Word type badge
+  var badgeEmoji=n.article==="der"?"🔵":n.article==="die"?"🔴":"🟢";
+  var badge=mk("span",badgeEmoji,"font-size:20px;margin-top:6px;display:inline-block;");
+  card.appendChild(badge);
   el.appendChild(card);
-  var row=mk("div","","display:flex;gap:10px;justify-content:center;margin-bottom:16px;");
+
+  // ── Article buttons ──
+  var row=mk("div","","display:flex;gap:12px;justify-content:center;margin-bottom:16px;");
   var articles=[
-    {art:"der", color:"#60a5fa", text:"var(--text2)", bg:"rgba(96,165,250,0.1)", border:"rgba(96,165,250,0.3)"},
-    {art:"die", color:"#ffb4ab", text:"var(--red-text)", bg:"rgba(var(--red-rgb),0.1)", border:"rgba(var(--red-rgb),0.3)"},
-    {art:"das", color:"#7bd89b", text:"var(--green-text)", bg:"rgba(var(--green-rgb),0.1)", border:"rgba(var(--green-rgb),0.3)"}
+    {art:"der", color:"#60a5fa", textColor:"var(--text)", bg:"rgba(96,165,250,0.08)", border:"rgba(96,165,250,0.25)", emoji:"🔵"},
+    {art:"die", color:"#ffb4ab", textColor:"var(--text)", bg:"rgba(var(--red-rgb),0.08)", border:"rgba(var(--red-rgb),0.25)", emoji:"🔴"},
+    {art:"das", color:"#7bd89b", textColor:"var(--text)", bg:"rgba(var(--green-rgb),0.08)", border:"rgba(var(--green-rgb),0.25)", emoji:"🟢"}
   ];
   articles.forEach(function(a){
-    var btn=mk("button",a.art,"padding:16px 36px;border-radius:var(--r-lg,16px);border:2px solid "+a.border+";background:"+a.bg+";color:"+a.text+";font-size:24px;font-weight:900;cursor:pointer;text-align:center;transition:transform 0.12s, box-shadow 0.12s;font-variant-numeric:tabular-nums;");
-    btn.style.textTransform="uppercase";
-    btn.onmouseenter=function(){this.style.transform="scale(1.05)";this.style.boxShadow="0 0 24px "+a.color+"44";};
-    btn.onmouseleave=function(){this.style.transform="";this.style.boxShadow="";};
+    var btn=mk("button","","flex:1;padding:20px 12px;border-radius:var(--r-lg);border:2px solid "+a.border+";background:"+a.bg+";color:"+a.textColor+";font-size:22px;font-weight:900;cursor:pointer;text-align:center;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:90px;");
+    var em=mk("span",a.emoji,"font-size:28px;line-height:1;");
+    btn.appendChild(em);
+    btn.appendChild(document.createTextNode(a.art));
+    btn.onmouseenter=function(){this.style.transform="translateY(-2px)";this.style.boxShadow="0 8px 24px "+a.color+"33";this.style.borderColor=a.color+"99";};
+    btn.onmouseleave=function(){this.style.transform="";this.style.boxShadow="";this.style.borderColor=a.border;};
     btn.onclick=function(){
       var correct=n.article===a.art;
       if(correct) _genRight++; else{ _genWrong++; _genMissed.push(n); }
-      var fb=document.createElement("div"); fb.className="card";
-      fb.style.cssText="text-align:center;padding:16px;margin-bottom:10px;border-radius:var(--r-lg,16px);background:"+(correct?"rgba(var(--green-rgb),0.08)":"rgba(var(--red-rgb),0.08)")+";border:1px solid "+(correct?"rgba(var(--green-rgb),0.2)":"rgba(var(--red-rgb),0.2)")+";animation:fadeUp 0.2s ease;";
-      fb.appendChild(mk("p",correct?"\u2713 Correcto!":"\u2717 Incorrecto","font-size:16px;font-weight:800;color:"+(correct?"var(--green-text)":"var(--red-text)")+";margin-bottom:4px;"));
-      fb.appendChild(mk("p","La respuesta correcta es: "+(n.article==="der"?"\ud83d\udd35":n.article==="die"?"\ud83d\udd34":"\ud83d\udfe2")+" "+n.article+" "+n.noun,"font-size:14px;color:var(--text);font-weight:500;"));
+      // Remove buttons, show feedback
       el.removeChild(row);
-      el.insertBefore(fb, el.firstChild.nextSibling.nextSibling);
-      var nextBtn=mk("button","Siguiente →","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(var(--purple-rgb),0.12);color:var(--purple-text);font-size:13px;font-weight:800;cursor:pointer;margin-top:6px;");
+      // Highlight the correct answer
+      var fb=mk("div","","text-align:center;padding:20px;margin-bottom:14px;border-radius:var(--r-lg);background:"+(correct?"rgba(var(--green-rgb),0.08)":"rgba(var(--red-rgb),0.08)")+";border:1px solid "+(correct?"rgba(var(--green-rgb),0.2)":"rgba(var(--red-rgb),0.2)")+";animation:fadeUp 0.2s ease;");
+      fb.appendChild(mk("p",correct?"✓ ¡Correcto!":"✗ Es "+n.article,"font-size:18px;font-weight:900;color:"+(correct?"var(--green-text)":"var(--red-text)")+";margin-bottom:6px;"));
+      fb.appendChild(mk("p","🔵".repeat(n.article==="der"?1:0)+"🔴".repeat(n.article==="die"?1:0)+"🟢".repeat(n.article==="das"?1:0)+" "+n.article+" "+n.noun+(n.meaning?" — "+n.meaning:""),"font-size:17px;color:var(--text);font-weight:700;line-height:1.4;"));
+      el.insertBefore(fb, el.querySelector("div").nextSibling.nextSibling);
+      var nextBtn=mk("button","Siguiente →","width:100%;padding:14px;border-radius:var(--r-md);border:none;background:var(--gold);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-top:8px;box-shadow:0 4px 16px rgba(var(--gold-rgb),0.3);");
       nextBtn.onclick=function(){_genIdx++;renderGenCard(el,hdr);};
-      el.insertBefore(nextBtn, el.lastChild.nextSibling);
+      el.insertBefore(nextBtn, fb.nextSibling);
     };
     row.appendChild(btn);
   });
   el.appendChild(row);
-  var skip=mk("button","Saltar \u2192","background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;display:block;margin:0 auto;");
+
+  // ── Skip button ──
+  var skip=mk("button","Saltar →","display:block;margin:0 auto;background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:var(--r-md);transition:all 0.12s;");
+  skip.onmouseenter=function(){this.style.background="rgba(255,255,255,0.04)";this.style.color="var(--text2)";};
+  skip.onmouseleave=function(){this.style.background="transparent";this.style.color="var(--muted)";};
   skip.onclick=function(){_genWrong++;_genMissed.push(n);_genIdx++;renderGenCard(el,hdr);};
   el.appendChild(skip);
 }
 function renderGenResults(el){
   el.innerHTML="";
-  var hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","\ud83c\udfaf Resultados","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
+  var hdr=mk("div","","margin-bottom:18px;");
+  var accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--purple);margin-bottom:10px;");
+  hdr.appendChild(accent);
+  hdr.appendChild(mk("p","ENTRENADOR DE GÉNERO","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
+  hdr.appendChild(mk("h2","Resultados","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.1;"));
   el.appendChild(hdr);
   if(_genMissed.length && !window._genLogged){
     window._genLogged=true;
@@ -107,33 +138,42 @@ function renderGenResults(el){
   }
   var total=_genRight+_genWrong, pct=total>0?Math.round(_genRight/total*100):0;
   var scoreColor=pct>=80?"var(--green-text)":pct>=50?"var(--gold-text)":"var(--red-text)";
-  var resultCard=document.createElement("div"); resultCard.className="card";
-  resultCard.style.cssText="text-align:center;padding:28px;margin-bottom:16px;";
-  resultCard.appendChild(mk("p",_genRight+"/"+total,"font-size:42px;font-weight:900;color:"+scoreColor+";line-height:1;font-variant-numeric:tabular-nums;"));
-  resultCard.appendChild(mk("p","Aciertos","font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;"));
-  resultCard.appendChild(mk("p",pct+"%","font-size:14px;font-weight:700;color:"+scoreColor+";margin-top:2px;"));
+  // ── Score circle ──
+  var resultCard=mk("div","","text-align:center;padding:32px;margin-bottom:18px;border-radius:var(--r-xl);background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.22);");
+  // Big score
+  var scoreWrap=mk("div","","display:inline-flex;align-items:center;justify-content:center;width:120px;height:120px;border-radius:50%;border:4px solid;margin-bottom:12px;");
+  scoreWrap.style.borderColor=scoreColor;
+  scoreWrap.style.background="rgba(255,255,255,0.03)";
+  var scoreNum=mk("span",_genRight+"/"+total,"font-size:28px;font-weight:900;color:"+scoreColor+";font-variant-numeric:tabular-nums;line-height:1;");
+  scoreWrap.appendChild(scoreNum);
+  resultCard.appendChild(scoreWrap);
+  resultCard.appendChild(mk("p",pct+"% acierto","font-size:15px;font-weight:700;color:"+scoreColor+";margin-top:4px;"));
+  resultCard.appendChild(mk("p","de "+total+" sustantivos","font-size:12px;color:var(--muted);font-weight:600;margin-top:2px;"));
   el.appendChild(resultCard);
+
   if(_genMissed.length){
-    var missCard=document.createElement("div"); missCard.className="card";
-    missCard.appendChild(mk("p","Para repasar","font-size:10px;color:var(--red-text);letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
+    var missCard=mk("div","","border-radius:var(--r-xl);padding:20px;margin-bottom:18px;background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.22);");
+    missCard.appendChild(mk("p","Para repasar","font-size:10px;color:var(--red-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:12px;"));
     _genMissed.forEach(function(n){
       var artColor=n.article==="der"?"var(--text2)":n.article==="die"?"var(--red-text)":"var(--green-text)";
-      var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;");
-      row.appendChild(mk("span",n.article+" "+n.noun+(n.plural?" ("+n.plural+")":""),"font-size:14px;font-weight:600;color:"+artColor+";"));
-      var save=document.createElement("button");
-      save.textContent="\u2B50 Guardar";
-      save.style.cssText="background:rgba(var(--gold-rgb),0.1);border:1px solid rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;";
+      var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);");
+      row.appendChild(mk("span",n.article+" "+n.noun+(n.plural?" ("+n.plural+")":""),"font-size:14px;font-weight:700;color:"+artColor+";"));
+      var save=mk("button","⭐","background:rgba(var(--gold-rgb),0.1);border:1px solid rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:var(--r-md);padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.12s;");
+      save.onmouseenter=function(){this.style.background="rgba(var(--gold-rgb),0.2)";};
+      save.onmouseleave=function(){this.style.background="rgba(var(--gold-rgb),0.1)";};
       save.onclick=function(){
         var ph=ensureSrsFields({de:n.article+" "+n.noun+(n.plural?" ("+n.plural+")":""),es:n.meaning||n.noun,tip:n.article,source:"genero"});
         if(!state.session.saved.some(function(x){return x.de===ph.de;})){state.session.saved.push(ph);updateBadge();syncUp();showToast("Guardada!","success");}
-        save.disabled=true; save.style.opacity="0.4"; save.textContent="\u2713";
+        save.disabled=true; save.style.opacity="0.4"; save.textContent="✓";
       };
       row.appendChild(save);
       missCard.appendChild(row);
     });
     el.appendChild(missCard);
   }
-  var restart=mk("button","\u2190 Otros 10 sustantivos","width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);border-radius:12px;padding:12px;font-size:13px;font-weight:600;margin-top:12px;cursor:pointer;");
+  var restart=mk("button","← Otros 10 sustantivos","width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);border-radius:var(--r-md);padding:14px;font-size:14px;font-weight:700;margin-top:4px;cursor:pointer;transition:all 0.12s;");
+  restart.onmouseenter=function(){this.style.background="rgba(255,255,255,0.08)";};
+  restart.onmouseleave=function(){this.style.background="rgba(255,255,255,0.04)";};
   restart.onclick=function(){_genNouns=null;_genDone=false;renderGender();};
   el.appendChild(restart);
 }
