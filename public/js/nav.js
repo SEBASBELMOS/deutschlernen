@@ -101,6 +101,11 @@ function showScreen(id) {
     else if(id==="resumen") renderSummary();
     else if(id==="config") renderSettings();
   };
-  if(!document.startViewTransition||matchMedia("(prefers-reduced-motion:reduce)").matches){apply();return;}
-  document.startViewTransition(apply);
+  if(!document.startViewTransition||matchMedia("(prefers-reduced-motion: reduce)").matches){apply();return;}
+  try {
+    document.startViewTransition(apply);
+  } catch (e) {
+    console.warn("ViewTransition failed, falling back:", e);
+    apply();
+  }
 }

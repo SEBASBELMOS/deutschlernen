@@ -133,7 +133,8 @@ body::before {
   pointer-events:none;
   z-index:0;
 }
-button,input,textarea { font-family:'Plus Jakarta Sans',system-ui,sans-serif; cursor:pointer; }
+button,input,textarea { font-family:'Plus Jakarta Sans',system-ui,sans-serif; cursor:pointer; transition:transform .1s; }
+button:active { transform:scale(.97); }
 #app {
   max-width:620px;
   margin:0 auto;
