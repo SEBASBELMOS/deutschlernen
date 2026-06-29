@@ -52,13 +52,13 @@ function renderSettings(){
 
   // Theme toggle
   const themeCard=document.createElement("div"); themeCard.className="card";
-  themeCard.appendChild(mk("p","🎨  Tema","font-size:10px;color:#5dd9d0;letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  themeCard.appendChild(mk("p","🎨  Tema","font-size:10px;color:var(--teal-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
   const isLight=document.documentElement.classList.contains("light-mode");
   const themeRow=mk("div","","display:flex;align-items:center;justify-content:space-between;");
   themeRow.appendChild(mk("span",isLight?"☀️ Claro":"🌙 Oscuro","font-size:14px;color:var(--text);font-weight:600;"));
   const toggleBtn=document.createElement("button");
   toggleBtn.textContent=isLight?"Modo oscuro":"Modo claro";
-  toggleBtn.style.cssText="padding:8px 16px;border-radius:10px;border:none;background:rgba(93,217,208,0.12);color:#5dd9d0;font-size:13px;font-weight:700;cursor:pointer;";
+  toggleBtn.style.cssText="padding:8px 16px;border-radius:10px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,transform 0.12s;";
   toggleBtn.onclick=function(){
     const html=document.documentElement;
     html.classList.toggle("light-mode");
@@ -78,9 +78,9 @@ function renderSettings(){
   const lvlRow=mk("div","","display:flex;gap:8px;");
   ["A2","B1","B2"].forEach(function(l){
     const btn=mk("button",l,"flex:1;padding:10px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.2s;");
-    btn.style.background=state.app.level===l?"rgba(74,222,128,0.15)":"rgba(255,255,255,0.04)";
-    btn.style.color=state.app.level===l?"#4ade80":"var(--muted)";
-    btn.style.border=state.app.level===l?"1px solid rgba(74,222,128,0.3)":"1px solid rgba(255,255,255,0.08)";
+    btn.style.background=state.app.level===l?"rgba(var(--green-rgb),0.15)":"rgba(255,255,255,0.04)";
+    btn.style.color=state.app.level===l?"var(--green-text)":"var(--muted)";
+    btn.style.border=state.app.level===l?"1px solid rgba(var(--green-rgb),0.3)":"1px solid rgba(255,255,255,0.08)";
     btn.onclick=function(){setLevel(l); renderSettings();};
     lvlRow.appendChild(btn);
   });
@@ -93,7 +93,7 @@ function renderSettings(){
   const exportBtn=document.createElement("button");
   exportBtn.textContent="📥 Export progreso completo (JSON)";
   exportBtn.setAttribute("aria-label","Exportar progreso completo en JSON");
-  exportBtn.style.cssText="width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(196,167,231,0.22);background:rgba(196,167,231,0.08);color:var(--purple-text);font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all 0.2s;";
+  exportBtn.style.cssText="width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(var(--purple-rgb),0.22);background:rgba(var(--purple-rgb),0.08);color:var(--purple-text);font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all 0.2s;";
   exportBtn.onclick=exportFullProgress;
   exportCard.appendChild(exportBtn);
   exportCard.appendChild(mk("p","dailyLog, racha, nivel, estadísticas de gramática, errores y más.","font-size:11px;color:var(--muted);margin-top:8px;font-weight:500;"));

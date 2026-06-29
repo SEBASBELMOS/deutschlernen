@@ -16,6 +16,9 @@
 - Icon system upgraded from Lucide-like outlines to chunky filled/duotone SVG shapes. Bottom nav, sheet buttons, and Vocabulario → Temas use rounded color chips with category colors.
 - Latest user QA feedback was added to `docs/checklist.md` before compaction: Hörverstehen audio cuts off, Casos needs failure tips, Género repeats nouns, Conectores has a `wenn` answer missing from options, and Flashcards needs a delete/stop-practicing action.
 - Latest QA backlog implemented in `public/index.html`: Hörverstehen chunked full TTS, Conectores option normalization, Género noun rotation, Flashcards delete/stop-practicing action, and Casos repeated-failure tips.
+- Personalized daily review (`today.js`): adaptive recommendations, grammar drill integration, review plan progress tracking, actionable tips based on user performance. +295/-69 lines. Shipped: GitHub `feature/v3-learning-ui` (commit `4ea3ace`) + HF `main` (commit `d336663`).
+- Personalized review ViewTransition bug fixed (2026-06-28): `showScreen("hoy")` used async `document.startViewTransition` whose callback fired `renderToday()` and wiped inline review content. Added `activateTab(id)` helper in `nav.js` that activates tab DOM without triggering re-render. Fixed 4 call sites: `renderReviewPlanPreview`, `runPersonalizedStep`, `showPersonalizedSummary`, `showAllCaughtUp`. GitHub `19264f6`, HF `9c5a711`.
+- AI reading comprehension step added to personalized review (2026-06-28): `renderReviewReadingStep()` generates a German passage via AI on the user's weakest grammar topic, shows text with TTS playback, and presents 2 MC comprehension questions with green/red feedback. Results tracked in `plan.results.readingDone` and shown in final summary. +77 lines in `today.js`. GitHub `527aca9`, HF `74e33f9`.
 - Gráfico de progreso histórico: inline SVG chart in Resumen showing level % curve from `levelLog` snapshots (last 30 days). Legacy `dailyLog.levelPct` is migrated into `levelLog` on sync load; `dailyLog` only tracks `minutes`, `phrasesReviewed`, `drillsDone`. Shadowing: new Practicar screen with 10-sentence pool, record/transcribe/score flow, and AI sentence generation.
 - Export progreso completo: JSON download in Settings with dailyLog, streak, level, grammarStats, errorJournal. Onboarding: 3-step card overlay for new users, skipped via localStorage.
 - README.md rewritten as recruiter-focused portfolio piece: professional English, no personal details, no public demo link, no roadmap. Positions app as a focused learning alternative with portfolio snapshot, technical highlights, architecture, security/privacy, verification, known limitations, and screenshot guidance.
@@ -80,6 +83,8 @@ Results:
 - QA fixes verification: JS parse check passed, `node -c server.js` passed, `git diff --check` passed, and diff search found no `dailyLog` changes.
 - README-only verification: `git diff --check -- README.md` passed.
 - Temporal audit verification (2026-06-26): `node -c server.js` passed; frontend `<script>` parsed via `new Function(...)`; UTF-8 `iconv` check passed; `TEMPUS_CURATED` has 24 valid items and every correct answer is in options; `rg --pcre2` found no non-activity `state.session.dailyLog[...]` property reads/writes; `git diff --check -- public/index.html docs/HANDOFF.md` passed; sandboxed server boot failed with `listen EPERM 0.0.0.0:3099`, rerun with approval returned HTTP 200 from `/`, then the server process was closed.
+- Personalized review verification (2026-06-28): `node --check server.js` + all JS files passed; server started and returned HTTP 200 from `/`; all 16 screens verified (TABS ids + `showScreen` routing + render function names match 1:1).
+- Reading comprehension verification (2026-06-28): `node --check server.js` + today.js `new Function()` parse passed; `speak()` exists for TTS; `ai()` signature `ai(system, messages, maxTokens)` confirmed; reading step integrated into plan builder (weakest grammar topic) + results tracking + summary.
 
 ## Pending final steps
 
@@ -90,7 +95,7 @@ Results:
   - `srs-review.png` — flashcard/SRS review with grading actions.
   - `grammar-drill.png` — grammar drill showing learning depth beyond chat.
 - Next recommended work: conversación voz continua, change-password, PWA, bulk edit, solo-audio.
-- HF Space commit/push after any code fixes.
+- HF Space push: done (2026-06-28) — ViewTransition fix + reading comprehension committed and pushed to HF `main`.
 
 ## Pending: server-side AI hardening for scale (NOT done — required before a public/live demo)
 

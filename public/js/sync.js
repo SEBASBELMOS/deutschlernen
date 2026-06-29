@@ -38,9 +38,9 @@ function syncPayload(){
 function setSyncChip(state){
   const el=document.getElementById("sync-status"); if(!el) return;
   el.dataset.syncState=state;
-  if(state==="saving"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true" style="display:inline-block;animation:spin 0.8s linear infinite;">⟳</span><span class="sr-only">Guardando</span>'; el.title="Guardando…"; el.style.color="#94a3b8"; el.style.background="rgba(255,255,255,0.06)"; }
-  else if(state==="done"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">✓</span><span class="sr-only">Guardado</span>'; el.title="Guardado"; el.style.color="#4ade80"; el.style.background="rgba(74,222,128,0.1)"; setTimeout(function(){ if(el.dataset.syncState==="done") el.style.display="none"; },2000); }
-  else if(state==="error"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">⚠</span><span class="sr-only">Error de conexión</span>'; el.title="Sin guardar"; el.style.color="#ffb4ab"; el.style.background="rgba(255,180,171,0.1)"; }
+  if(state==="saving"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true" style="display:inline-block;animation:spin 0.8s linear infinite;">⟳</span><span class="sr-only">Guardando</span>'; el.title="Guardando…"; el.style.color="var(--muted)"; el.style.background="rgba(255,255,255,0.06)"; }
+  else if(state==="done"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">✓</span><span class="sr-only">Guardado</span>'; el.title="Guardado"; el.style.color="var(--green-text)"; el.style.background="rgba(var(--green-rgb),0.1)"; setTimeout(function(){ if(el.dataset.syncState==="done") el.style.display="none"; },2000); }
+  else if(state==="error"){ el.style.display="inline-block"; el.innerHTML='<span aria-hidden="true">⚠</span><span class="sr-only">Error de conexión</span>'; el.title="Sin guardar"; el.style.color="var(--red-text)"; el.style.background="rgba(var(--red-rgb),0.1)"; }
 }
 // Debounced: batches bursts of changes into a single POST after a 1200ms pause.
 function syncUp() {

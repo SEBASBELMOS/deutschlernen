@@ -29,7 +29,7 @@ function renderHörverstehenFallback(container){
   container.innerHTML="";
   var fb=mk("div","","text-align:center;padding:30px 20px;");
   fb.appendChild(mk("p","No se pudo generar el ejercicio.","font-size:14px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
-  var retry=mk("button","🔄 Intentar de nuevo","padding:12px 24px;border-radius:12px;border:none;background:rgba(93,217,208,0.12);color:#5dd9d0;font-size:13px;font-weight:700;cursor:pointer;");
+  var retry=mk("button","🔄 Intentar de nuevo","padding:12px 24px;border-radius:12px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-size:13px;font-weight:700;cursor:pointer;");
   retry.onclick=function(){startHörverstehen(container);};
   fb.appendChild(retry);
   container.appendChild(fb);
@@ -41,14 +41,14 @@ function renderHörverstehenPlay(container){
   c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
   c.appendChild(mk("p","Escucha el diálogo y después responde.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:14px;"));
   var dialogDiv=document.createElement("div");
-  dialogDiv.style.cssText="background:rgba(93,217,208,0.04);border:1px solid rgba(93,217,208,0.12);border-radius:12px;padding:14px;margin-bottom:14px;display:none;";
+  dialogDiv.style.cssText="background:rgba(var(--teal-rgb),0.04);border:1px solid rgba(var(--teal-rgb),0.12);border-radius:12px;padding:14px;margin-bottom:14px;display:none;";
   _hvState.dialog.forEach(function(ex){
     var sp=mk("p","","font-size:13px;color:var(--text);font-weight:500;line-height:1.65;margin-bottom:4px;");
     sp.innerHTML="<b>"+ex.speaker+":</b> "+ex.text;
     dialogDiv.appendChild(sp);
   });
   c.appendChild(dialogDiv);
-  var playBtn=mk("button","▶ Reproducir diálogo","width:100%;padding:16px;border-radius:14px;border:none;background:rgba(93,217,208,0.12);color:var(--teal-text);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity 0.2s;");
+  var playBtn=mk("button","▶ Reproducir diálogo","width:100%;padding:16px;border-radius:14px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:opacity 0.2s;");
   playBtn.onclick=function(){
     playBtn.disabled=true;playBtn.style.opacity="0.5";playBtn.textContent="🔊 Reproduciendo...";
     var fullDialog=_hvState.dialog.map(function(ex){return ex.speaker+": "+ex.text;}).join(" ");
@@ -84,7 +84,7 @@ function renderHörverstehenQuestions(container){
       optBtn.onclick=function(){
         var btns=qDiv.querySelectorAll("button");
         btns.forEach(function(b){b.style.borderColor="rgba(255,255,255,0.06)";b.style.background="rgba(255,255,255,0.03)";});
-        optBtn.style.borderColor="#5dd9d0";optBtn.style.background="rgba(93,217,208,0.1)";
+        optBtn.style.borderColor="var(--teal)";optBtn.style.background="rgba(var(--teal-rgb),0.1)";
         _hvState.answers[qi]=oi;
         var allDone=_hvState.questions.every(function(_q,qj){return _hvState.answers[qj]!==undefined&&_hvState.answers[qj]!==null;});
         if(allDone) renderHörverstehenResults(container);
@@ -100,17 +100,18 @@ function renderHörverstehenResults(container){
   _hvState.step="done";
   _hvState.score=_hvState.questions.reduce(function(acc,q,qi){return acc+((_hvState.answers[qi]===q.correct)?1:0);},0);
   var total=_hvState.questions.length,pct=Math.round(_hvState.score/total*100);
-  var color=pct>=100?"#4ade80":pct>=50?"#ffb955":"#ffb4ab";
+  var color=pct>=100?"var(--green-text)":pct>=50?"var(--gold-text)":"var(--red-text)";
+  var fillColor=pct>=100?"var(--green)":pct>=50?"var(--gold)":"var(--red)";
   var c=mk("div","","text-align:center;padding:16px 0;");
   c.appendChild(mk("p",_hvState.score+"/"+total,"font-size:44px;font-weight:900;color:"+color+";line-height:1;font-variant-numeric:tabular-nums;margin-bottom:4px;"));
   c.appendChild(mk("p",pct>=100?"🎉 ¡Perfecto!":pct>=50?"👍 Bien, sigue practicando":"💪 Sigue intentando","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
   var pBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:6px;height:6px;overflow:hidden;margin:0 20px 14px;");
-  var pFill=mk("div","","background:"+color+";height:100%;width:"+pct+"%;transition:width 0.3s;border-radius:6px;");
+  var pFill=mk("div","","background:"+fillColor+";height:100%;width:"+pct+"%;transition:width 0.3s;border-radius:6px;");
   pBar.appendChild(pFill);c.appendChild(pBar);
   _hvState.questions.forEach(function(q,qi){
     var ans=_hvState.answers[qi];
     var correct=ans===q.correct;
-    var box=mk("div","","margin-bottom:10px;padding:12px;border-radius:10px;background:"+(correct?"rgba(74,222,128,0.06)":"rgba(255,180,171,0.06)")+";border:1px solid "+(correct?"rgba(74,222,128,0.15)":"rgba(255,180,171,0.15)")+";text-align:left;");
+    var box=mk("div","","margin-bottom:10px;padding:12px;border-radius:10px;background:"+(correct?"rgba(var(--green-rgb),0.06)":"rgba(var(--red-rgb),0.06)")+";border:1px solid "+(correct?"rgba(var(--green-rgb),0.15)":"rgba(var(--red-rgb),0.15)")+";text-align:left;");
     box.appendChild(mk("p",q.q,"font-size:12px;color:var(--text);font-weight:600;margin-bottom:4px;"));
     if(correct) box.appendChild(mk("p","✅ "+q.options[q.correct],"font-size:12px;color:var(--green-text);font-weight:600;"));
     else {
@@ -119,7 +120,7 @@ function renderHörverstehenResults(container){
     }
     c.appendChild(box);
   });
-  var retry=mk("button","🔄 Otro diálogo","width:100%;padding:14px;border-radius:12px;border:none;background:rgba(93,217,208,0.12);color:#5dd9d0;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;");
+  var retry=mk("button","🔄 Otro diálogo","width:100%;padding:14px;border-radius:12px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;");
   retry.onclick=function(){startHörverstehen(container);};
   c.appendChild(retry);
   container.appendChild(c);
@@ -224,27 +225,27 @@ function generateReading(topicId,host){
     ta.appendChild(newBtn);
   }).catch(function(e){
     ta.innerHTML="";
-    ta.appendChild(mk("p","Error al generar texto. Intenta de nuevo.","color:#ef4444;font-size:13px;text-align:center;margin-top:20px;font-weight:500;"));
-    var retry=mk("button","Reintentar","margin-top:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:12px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;");
+    ta.appendChild(mk("p","Error al generar texto. Intenta de nuevo.","color:var(--red-text);font-size:13px;text-align:center;margin-top:20px;font-weight:500;"));
+    var retry=mk("button","Reintentar","margin-top:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:var(--text2);border-radius:12px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;");
     retry.onclick=function(){generateReading(topicId,host);};
     ta.appendChild(retry);
   });
 }
 function showReadingTranslationManual(rawWord,host,contextSentence){
-  var popup=mk("div","","background:rgba(196,167,231,0.08);border:1px solid rgba(196,167,231,0.2);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:14px;");
+  var popup=mk("div","","background:rgba(var(--purple-rgb),0.08);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:14px;");
   popup.id="lectura-popup";
   popup.appendChild(mk("p","📖 "+rawWord,"font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;"));
   var askWrap=mk("div","","margin-bottom:10px;");
   askWrap.appendChild(mk("p","Escribe la traduccion:","font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;"));
   const inp=document.createElement("input"); inp.placeholder="Traduccion en español..."; inp.setAttribute("aria-label","Traducción al español");
-  inp.style.cssText="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(196,167,231,0.3);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;font-weight:500;";
-  inp.onfocus=function(){this.style.borderColor="rgba(196,167,231,0.6)";};
-  inp.onblur=function(){this.style.borderColor="rgba(196,167,231,0.3)";};
+  inp.style.cssText="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(var(--purple-rgb),0.3);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;font-weight:500;";
+  inp.onfocus=function(){this.style.borderColor="rgba(var(--purple-rgb),0.6)";};
+  inp.onblur=function(){this.style.borderColor="rgba(var(--purple-rgb),0.3)";};
   askWrap.appendChild(inp); popup.appendChild(askWrap);
   if(contextSentence) popup.appendChild(mk("p","📝 "+contextSentence,"font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;font-weight:500;"));
   var btnRow=mk("div","","display:flex;gap:8px;");
   var saveBtn=document.createElement("button");
-  saveBtn.style.cssText="flex:1;background:rgba(196,167,231,0.15);border:1px solid rgba(196,167,231,0.3);color:#c4a7e7;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;";
+  saveBtn.style.cssText="flex:1;background:rgba(var(--purple-rgb),0.15);border:1px solid rgba(var(--purple-rgb),0.3);color:var(--purple-text);border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;";
   setSaveIcon(saveBtn,false,"Guardar");
   var doSaveManual=function(){
     var es=inp.value.trim();
@@ -253,7 +254,7 @@ function showReadingTranslationManual(rawWord,host,contextSentence){
     var phrase=ensureSrsFields({de:rawWord,es:es,tip:tip,source:"lectura"});
     if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
       state.session.saved.push(phrase);updateBadge();syncUp();
-      saveBtn.textContent="✓ Guardada";saveBtn.style.color="#4ade80";saveBtn.style.borderColor="rgba(74,222,128,0.3)";saveBtn.disabled=true;
+      saveBtn.textContent="✓ Guardada";saveBtn.style.color="var(--green-text)";saveBtn.style.borderColor="rgba(var(--green-rgb),0.3)";saveBtn.disabled=true;
       showToast("Palabra guardada en flashcards");
     } else {saveBtn.textContent="Ya guardada";saveBtn.disabled=true;}
   };
@@ -279,7 +280,7 @@ function showReadingTranslation(rawWord,cleanWord,knownTranslation,host,contextS
     if(top<8){top=rect.bottom+10;}
     if(left+180>window.innerWidth) left=window.innerWidth-190;
     if(left<8) left=8;
-    tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:var(--tooltip-bg);border:1px solid rgba(196,167,231,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
+    tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:var(--tooltip-bg);border:1px solid rgba(var(--purple-rgb),0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
     var wordRow=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
     wordRow.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
     var spinner=mk("span","⏳","font-size:14px;color:var(--muted);animation:pulse 0.8s infinite;");
@@ -306,14 +307,14 @@ function showReadingTranslation(rawWord,cleanWord,knownTranslation,host,contextS
         row2.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
         var starBtn=document.createElement("button");
         starBtn.setAttribute("aria-label","Guardar");
-        starBtn.style.cssText="background:rgba(196,167,231,0.2);border:none;color:#c4a7e7;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;display:inline-flex;align-items:center;justify-content:center;";
+        starBtn.style.cssText="background:rgba(var(--purple-rgb),0.2);border:none;color:var(--purple-text);border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;display:inline-flex;align-items:center;justify-content:center;";
         setSaveIcon(starBtn,false);
         starBtn.title="Guardar en flashcards";
         var doSave=function(){
           var phrase=ensureSrsFields({de:base,es:es,tip:ctx||"lectura",source:"lectura"});
           if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
             state.session.saved.push(phrase);updateBadge();syncUp();
-            starBtn.textContent="✓";starBtn.style.color="#4ade80";starBtn.disabled=true;
+            starBtn.textContent="✓";starBtn.style.color="var(--green-text)";starBtn.disabled=true;
             showToast("Guardada: "+es,"success");
           } else {showToast("Ya estaba guardada","success");}
         };
@@ -334,20 +335,20 @@ function showReadingTranslation(rawWord,cleanWord,knownTranslation,host,contextS
   if(top<8){top=rect.bottom+10;}
   if(left+180>window.innerWidth) left=window.innerWidth-190;
   if(left<8) left=8;
-  tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:var(--tooltip-bg);border:1px solid rgba(196,167,231,0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
+  tt.style.cssText="position:fixed;left:"+left+"px;top:"+top+"px;background:var(--tooltip-bg);border:1px solid rgba(var(--purple-rgb),0.35);border-radius:12px;padding:8px 12px;z-index:100;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:fadeUp 0.15s ease;";
   var wordRow=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:10px;");
   wordRow.appendChild(mk("p",rawWord,"font-size:15px;font-weight:800;color:var(--text);"));
   var actions=mk("div","","display:flex;align-items:center;gap:6px;");
   var saveMini=document.createElement("button");
   saveMini.setAttribute("aria-label","Guardar");
-  saveMini.style.cssText="background:rgba(196,167,231,0.2);border:none;color:#c4a7e7;border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;display:inline-flex;align-items:center;justify-content:center;";
+  saveMini.style.cssText="background:rgba(var(--purple-rgb),0.2);border:none;color:var(--purple-text);border-radius:8px;padding:4px 8px;font-size:16px;cursor:pointer;transition:all 0.15s;line-height:1;display:inline-flex;align-items:center;justify-content:center;";
   setSaveIcon(saveMini,false);
   saveMini.title="Guardar en flashcards";
   var doSaveMini=function(){
     var phrase=ensureSrsFields({de:rawWord,es:knownTranslation,tip:contextSentence||"lectura",source:"lectura"});
     if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
       state.session.saved.push(phrase);updateBadge();syncUp();
-      saveMini.textContent="✓";saveMini.style.color="#4ade80";saveMini.disabled=true;
+      saveMini.textContent="✓";saveMini.style.color="var(--green-text)";saveMini.disabled=true;
       showToast("Guardada: "+knownTranslation,"success");
     } else {showToast("Ya estaba guardada","success");}
   };

@@ -140,10 +140,10 @@ const NAV_GROUPS=[
   {id:"mas",       label:"Más",        icon:"more", screens:["resumen","config"]}
 ];
 const NAV_ICON_STYLE={
-  hoy:{color:"var(--green-text)",rgb:"74,222,128"},
-  practicar:{color:"var(--teal-text)",rgb:"78,205,196"},
-  gramatica:{color:"var(--purple-text)",rgb:"167,139,250"},
-  vocabulario:{color:"var(--gold-text)",rgb:"245,166,35"},
+  hoy:{color:"var(--green-text)",rgb:"123,216,155"},
+  practicar:{color:"var(--teal-text)",rgb:"93,217,208"},
+  gramatica:{color:"var(--purple-text)",rgb:"196,167,231"},
+  vocabulario:{color:"var(--gold-text)",rgb:"255,185,85"},
   mas:{color:"var(--text2)",rgb:"148,163,184"}
 };
 

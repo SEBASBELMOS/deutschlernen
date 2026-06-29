@@ -93,6 +93,26 @@ async function transcribe(blob, mimeType) {
 // ── Mic ───────────────────────────────────────────────────────────────────────
 state.app.mr=null, state.app.chunks=[];
 
+function accentTextForColor(color) {
+  switch((color||"").toLowerCase()){
+    case "#ffb955": return "var(--gold-text)";
+    case "#5dd9d0": return "var(--teal-text)";
+    case "#c4a7e7": return "var(--purple-text)";
+    case "#4ade80":
+    case "#7bd89b": return "var(--green-text)";
+    case "#ffb4ab":
+    case "#ef4444": return "var(--red-text)";
+    default: return color||"var(--teal-text)";
+  }
+}
+
+function setMicAccent(btn, color) {
+  const c=color||"#5dd9d0";
+  btn.style.borderColor=c;
+  btn.style.color=accentTextForColor(c);
+  btn.style.background="rgba("+hexToRgb(c)+",0.08)";
+}
+
 // Pick the best audio format supported by this browser/device
 function getBestMimeType() {
   const types = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4","audio/aac",""];
@@ -105,9 +125,7 @@ function getBestMimeType() {
 function makeMicBtn(color, cb) {
   const btn = document.createElement("button");
   btn.className="mic-btn";
-  btn.style.borderColor=color||"#5dd9d0";
-  btn.style.color=color||"#5dd9d0";
-  btn.style.background="rgba("+hexToRgb(color||"#5dd9d0")+",0.08)";
+  setMicAccent(btn, color);
   btn.textContent="MIC";
   btn.onclick=async function(){
     if (state.app.mr&&state.app.mr.state==="recording") { state.app.mr.stop(); return; }
@@ -119,12 +137,12 @@ function makeMicBtn(color, cb) {
       state.app.mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) state.app.chunks.push(e.data); };
       state.app.mr.onstop=async function(){
         stream.getTracks().forEach(function(t){t.stop();});
-        btn.textContent="..."; btn.style.borderColor="#64748b"; btn.style.color="#64748b"; btn.style.animation="none";
+        btn.textContent="..."; btn.style.borderColor="var(--border)"; btn.style.color="var(--muted)"; btn.style.animation="none";
         const usedType = state.app.mr.mimeType || mimeType || "audio/webm";
         try {
           const blob = new Blob(state.app.chunks, {type:usedType});
           const text = await transcribe(blob, usedType);
-          btn.textContent="MIC"; btn.style.borderColor=color||"#5dd9d0"; btn.style.color=color||"#5dd9d0";
+          btn.textContent="MIC"; setMicAccent(btn, color);
           if (text && text.trim() && cb) cb(text.trim());
           else if (!text || !text.trim()) showMicError(btn, color, "No se detecto voz. Intenta de nuevo.");
         } catch(err) {
@@ -132,7 +150,7 @@ function makeMicBtn(color, cb) {
         }
       };
       state.app.mr.start(250); // 250ms timeslice to capture chunks continuously
-      btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
+      btn.textContent="STOP"; btn.style.borderColor="var(--red)"; btn.style.color="var(--red-text)"; btn.style.animation="ring 1.2s infinite";
     } catch(e){
       alert("Permite el acceso al microfono en tu browser.");
     }
@@ -145,8 +163,7 @@ function makeMicBtn(color, cb) {
 function makePronMicBtn(color, targetPhrase, host){
   const btn=document.createElement("button");
   btn.className="mic-btn";
-  btn.style.borderColor=color; btn.style.color=color;
-  btn.style.background="rgba("+hexToRgb(color)+",0.08)";
+  setMicAccent(btn, color);
   btn.style.minWidth="60px";
   btn.textContent="MIC";
   btn.onclick=async function(){
@@ -159,17 +176,17 @@ function makePronMicBtn(color, targetPhrase, host){
       state.app.mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) state.app.chunks.push(e.data); };
       state.app.mr.onstop=async function(){
         stream.getTracks().forEach(function(t){t.stop();});
-        btn.textContent="..."; btn.style.borderColor="#64748b"; btn.style.color="#64748b"; btn.style.animation="none";
+        btn.textContent="..."; btn.style.borderColor="var(--border)"; btn.style.color="var(--muted)"; btn.style.animation="none";
         const usedType=state.app.mr.mimeType||mimeType||"audio/webm";
         try {
           const blob=new Blob(state.app.chunks,{type:usedType});
           const transcript=await transcribe(blob, usedType);
-          btn.textContent="MIC"; btn.style.borderColor=color; btn.style.color=color;
+          btn.textContent="MIC"; setMicAccent(btn, color);
           renderPronScore(host, targetPhrase, transcript||"", color);
         } catch(err){ showMicError(btn, color, err.message); }
       };
       state.app.mr.start(250);
-      btn.textContent="STOP"; btn.style.borderColor="#ef4444"; btn.style.color="#ef4444"; btn.style.animation="ring 1.2s infinite";
+      btn.textContent="STOP"; btn.style.borderColor="var(--red)"; btn.style.color="var(--red-text)"; btn.style.animation="ring 1.2s infinite";
     } catch(e){ alert("Permite el acceso al microfono."); }
   };
   return btn;
@@ -194,13 +211,13 @@ function renderPronScore(host, target, transcript, color){
   box.style.cssText="margin-top:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;";
   const top=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
   top.appendChild(mk("span","Pronunciacion","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:700;"));
-  top.appendChild(mk("span",score+"%","font-size:20px;font-weight:900;color:"+(score>=80?"#4ade80":score>=50?"#fbbf24":"#ffb4ab")+";"));
+  top.appendChild(mk("span",score+"%","font-size:20px;font-weight:900;color:"+(score>=80?"var(--green-text)":score>=50?"var(--gold-text)":"var(--red-text)")+";"));
   box.appendChild(top);
   const p=mk("p","","font-size:14px;line-height:1.6;font-weight:600;");
   wordSpans.forEach(function(s){
     const sp=document.createElement("span");
     sp.textContent=(s.got||"_")+" ";
-    sp.style.color=s.ok?"#4ade80":"#ffb4ab";
+    sp.style.color=s.ok?"var(--green-text)":"var(--red-text)";
     sp.style.textDecoration=s.ok?"none":"underline";
     p.appendChild(sp);
   });
@@ -210,10 +227,10 @@ function renderPronScore(host, target, transcript, color){
 }
 
 function showMicError(btn, color, msg) {
-  btn.textContent="MIC"; btn.style.borderColor=color||"#5dd9d0"; btn.style.color=color||"#5dd9d0";
+  btn.textContent="MIC"; setMicAccent(btn, color);
   // Show the error visibly without interrupting the flow
   const errEl = document.createElement("div");
-  errEl.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e2e;border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:9999;max-width:300px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
+  errEl.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--modal-bg);border:1px solid rgba(var(--red-rgb),0.4);color:var(--red-text);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:9999;max-width:300px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);";
   errEl.textContent="🎤 "+msg;
   document.body.appendChild(errEl);
   setTimeout(function(){if(errEl.parentNode) errEl.parentNode.removeChild(errEl);}, 4000);

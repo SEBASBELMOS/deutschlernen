@@ -19,7 +19,7 @@ function renderFlashcards() {
     var emptyIcon=mk("div","","font-size:48px;margin-bottom:16px;color:var(--gold-text);display:flex;justify-content:center;");
     emptyIcon.appendChild(ico("cards",48));
     empty.appendChild(emptyIcon);
-    empty.appendChild(mk("p","Sin tarjetas aun","font-weight:700;font-size:15px;margin-bottom:8px;color:#94a3b8;"));
+    empty.appendChild(mk("p","Sin tarjetas aun","font-weight:700;font-size:15px;margin-bottom:8px;color:var(--text2);"));
     empty.appendChild(mk("p","Ve a Frases o No entendi y guarda algunas.","font-size:13px;font-weight:500;"));
     el.appendChild(empty);
     return;
@@ -31,8 +31,8 @@ function renderFlashcards() {
     const b=document.createElement("button");
     b.style.cssText="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,color 0.2s,box-shadow 0.2s;";
     b.textContent=o.lbl;
-    if(state.flashcards.flashReviewMode===o.k){ b.style.background="#ffb955"; b.style.color="#000"; b.style.boxShadow="0 2px 10px rgba(255,185,85,0.3)"; }
-    else { b.style.background="transparent"; b.style.color="#64748b"; }
+    if(state.flashcards.flashReviewMode===o.k){ b.style.background="var(--gold)"; b.style.color="#000"; b.style.boxShadow="0 2px 10px rgba(var(--gold-rgb),0.3)"; }
+    else { b.style.background="transparent"; b.style.color="var(--muted)"; }
     b.onclick=function(){ state.flashcards.flashReviewMode=o.k; state.flashcards.flashIdx=0; state.flashcards.reviewQueue=[]; state.flashcards._shuffledIdx=false; renderFlashcards(); };
     modeRow.appendChild(b);
   });
@@ -46,11 +46,11 @@ function renderFlashcards() {
       const winBox=document.createElement("div");
       winBox.style.cssText="text-align:center;padding:60px 0;color:var(--muted);animation:winPop 0.45s var(--ease-spring) both;";
       winBox.appendChild(mk("div","🎉","font-size:48px;margin-bottom:16px;"));
-      winBox.appendChild(mk("p","Por hoy terminaste","font-weight:700;font-size:15px;color:#94a3b8;margin-bottom:6px;"));
+      winBox.appendChild(mk("p","Por hoy terminaste","font-weight:700;font-size:15px;color:var(--text2);margin-bottom:6px;"));
       winBox.appendChild(mk("p","Vuelve mañana o cambia a Todas.","font-size:13px;font-weight:500;"));
       el.appendChild(winBox);
       if(state.app._reviewPlan&&!state.app._reviewPlan.done){
-        var cont=mk("button","✅  Siguiente →","width:calc(100% - 40px);margin:0 20px;padding:14px;border-radius:12px;border:none;background:rgba(93,217,208,0.12);color:#5dd9d0;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;");
+        var cont=mk("button","✅  Siguiente →","width:calc(100% - 40px);margin:0 20px;padding:14px;border-radius:12px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;transition:background 0.2s,transform 0.12s;");
         cont.onclick=function(){nextReviewStep();};
         el.appendChild(cont);
       }
@@ -90,19 +90,19 @@ function renderFlashcards() {
   card.appendChild(inner);
 
   const front=mk("div","",""); front.className="flashcard-face flashcard-front";
-  var deMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(255,185,85,0.75);");
-  deMark.appendChild(langBadge("DE","rgba(255,185,85,0.75)"));
+  var deMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(var(--gold-rgb),0.75);");
+  deMark.appendChild(langBadge("DE","rgba(var(--gold-rgb),0.75)"));
   front.appendChild(deMark);
   front.appendChild(mk("p",ph.de,"font-size:22px;font-weight:900;color:var(--text);line-height:1.4;margin-bottom:16px;letter-spacing:-0.02em;"));
   const playF=document.createElement("button");
-  playF.style.cssText="background:rgba(255,185,85,0.12);border:1px solid rgba(255,185,85,0.3);color:#ffb955;border-radius:20px;padding:7px 18px;font-size:13px;font-weight:700;transition:background 0.2s;";
+  playF.style.cssText="background:rgba(var(--gold-rgb),0.12);border:1px solid rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:20px;padding:7px 18px;font-size:13px;font-weight:700;transition:background 0.2s,transform 0.12s;";
   playF.textContent="▶ Escuchar";
   playF.onclick=function(e){e.stopPropagation();speak(ph.de);};
   front.appendChild(playF); inner.appendChild(front);
 
   const back=mk("div","",""); back.className="flashcard-face flashcard-back";
-  var esMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(93,217,208,0.75);");
-  esMark.appendChild(langBadge("ES","rgba(93,217,208,0.75)"));
+  var esMark=mk("div","","display:flex;justify-content:center;margin-bottom:20px;color:rgba(var(--teal-rgb),0.75);");
+  esMark.appendChild(langBadge("ES","rgba(var(--teal-rgb),0.75)"));
   back.appendChild(esMark);
   back.appendChild(mk("p",ph.es,"font-size:20px;color:var(--text);line-height:1.45;margin-bottom:10px;font-weight:600;"));
   if(ph.tip) back.appendChild(mk("p","💡 "+ph.tip,"font-size:13px;color:var(--muted);font-style:italic;font-weight:500;"));
@@ -111,8 +111,8 @@ function renderFlashcards() {
   card.onclick=function(){
     flipped=!flipped;
     card.classList.toggle("flipped",flipped);
-    card.style.borderColor=flipped?"rgba(93,217,208,0.35)":"rgba(255,185,85,0.2)";
-    card.style.background=flipped?"linear-gradient(135deg,rgba(93,217,208,0.07),rgba(93,217,208,0.02))":"linear-gradient(135deg,rgba(255,185,85,0.09),rgba(255,185,85,0.03))";
+    card.style.borderColor=flipped?"rgba(var(--teal-rgb),0.35)":"rgba(var(--gold-rgb),0.2)";
+    card.style.background=flipped?"linear-gradient(135deg,rgba(var(--teal-rgb),0.07),rgba(var(--teal-rgb),0.02))":"linear-gradient(135deg,rgba(var(--gold-rgb),0.09),rgba(var(--gold-rgb),0.03))";
     if(flipped){
       gradeRow.style.opacity="1";
       gradeRow.style.pointerEvents="auto";
@@ -129,10 +129,10 @@ function renderFlashcards() {
   const gradeRow=document.createElement("div");
   gradeRow.style.cssText="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;opacity:0.3;pointer-events:none;filter:blur(2px);transition:opacity 0.25s cubic-bezier(.16,1,.3,1),filter 0.25s";
   const grades=[
-    {k:"fail",  lbl:"Fallé",   col:"#ffb4ab", days:"hoy"},
+    {k:"fail",  lbl:"Fallé",   col:"#ffb4ab", txt:"var(--red-text)", days:"hoy"},
     {k:"hard",  lbl:"Dificil", col:"#fbbf24", days:BOX_INTERVALS[ph.box]+"d"},
-    {k:"good",  lbl:"Bien",    col:"#4ade80", days:BOX_INTERVALS[Math.min(5,ph.box+1)]+"d"},
-    {k:"easy",  lbl:"Fácil",   col:"#5dd9d0", days:BOX_INTERVALS[Math.min(5,ph.box+2)]+"d"}
+    {k:"good",  lbl:"Bien",    col:"#7bd89b", txt:"var(--green-text)", days:BOX_INTERVALS[Math.min(5,ph.box+1)]+"d"},
+    {k:"easy",  lbl:"Fácil",   col:"#5dd9d0", txt:"var(--teal-text)", days:BOX_INTERVALS[Math.min(5,ph.box+2)]+"d"}
   ];
   state.flashcards._gradeBtns=[];
   grades.forEach(function(g){
@@ -142,7 +142,7 @@ function renderFlashcards() {
     b.style.setProperty("--grade-color",g.col);
     b.style.background="rgba("+hexToRgb(g.col)+",0.1)";
     b.style.borderColor=g.col+"55";
-    b.style.color=g.col;
+    b.style.color=g.txt||"var(--gold-text)";
     b.innerHTML=g.lbl+"<span style='font-size:10px;font-weight:600;opacity:0.7;'>"+g.days+"</span>";
     b.onclick=function(){
       if(g.k==="easy"||g.k==="good") celebrate(card,"celebratePop","0.35s");
@@ -164,13 +164,13 @@ function renderFlashcards() {
   el.appendChild(gradeRow);
 
   const nav=mk("div","","display:flex;gap:10px;margin-top:6px;");
-  const skip=mk("button","Saltar →","flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;padding:10px;font-size:13px;font-weight:700;");
+  const skip=mk("button","Saltar →","flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text2);border-radius:12px;padding:10px;font-size:13px;font-weight:700;transition:background 0.2s,transform 0.12s;");
   skip.onclick=function(){
     if(state.flashcards.flashReviewMode){ state.flashcards.reviewQueue.push(state.flashcards.reviewQueue.shift()); }
     else { state.flashcards.flashIdx=(state.flashcards.flashIdx+1)%state.session.saved.length; }
     renderFlashcards();
   };
-  const remove=mk("button","Borrar / Ya no practicar","flex:1;background:rgba(255,180,171,0.08);border:1px solid rgba(255,180,171,0.22);color:#ffb4ab;border-radius:12px;padding:10px;font-size:13px;font-weight:800;");
+  const remove=mk("button","Borrar / Ya no practicar","flex:1;background:rgba(var(--red-rgb),0.08);border:1px solid rgba(var(--red-rgb),0.22);color:var(--red-text);border-radius:12px;padding:10px;font-size:13px;font-weight:800;transition:background 0.2s,transform 0.12s;");
   remove.title="Borrar esta tarjeta de guardadas";
   remove.setAttribute("aria-label","Borrar esta tarjeta y dejar de practicarla");
   remove.onclick=stopPracticingCurrent;

@@ -243,7 +243,7 @@ function casesRenderQ(mount){
     +'<p style="font-size:18px;line-height:1.5;margin-bottom:4px;color:var(--text);">'+sentence+'</p>'
     +(q.hint?'<p style="font-size:12px;color:var(--muted);margin-bottom:14px;">'+q.hint+'</p>':'<div style="margin-bottom:14px;"></div>')
     +'<div class="cs-opts" id="cs-opts"></div>'
-    +'<div id="cs-hint" style="margin-top:8px;display:none;padding:10px 12px;border-radius:10px;background:rgba(255,185,85,0.08);border:1px solid rgba(255,185,85,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;"></div>'
+    +'<div id="cs-hint" style="margin-top:8px;display:none;padding:10px 12px;border-radius:10px;background:rgba(var(--gold-rgb),0.08);border:1px solid rgba(var(--gold-rgb),0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;"></div>'
     +'<div id="cs-fb" style="margin-top:14px;display:none;"></div>'
     +'<div id="cs-next" style="margin-top:14px;display:none;justify-content:flex-end;">'
     +'<button id="cs-nextbtn" style="font-size:14px;font-weight:700;padding:10px 18px;border-radius:11px;border:0;background:var(--gold);color:#000;">Siguiente →</button></div>'
@@ -254,7 +254,7 @@ function casesRenderQ(mount){
     b.onclick=function(){casesChoose(q,o,opts,b);};
     opts.appendChild(b);
   });
-  var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(255,185,85,0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
+  var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
   hintBtn.setAttribute("aria-expanded","false");
   hintBtn.onclick=function(){
     var h=document.getElementById("cs-hint");
@@ -283,11 +283,11 @@ function casesChoose(q,o,opts,btn){
   const caseNames={nom:'Nominativ',akk:'Akkusativ',dat:'Dativ',gen:'Genitiv'};
   const tag=q.caso?'<span class="cs-tag '+q.caso+'">'+caseNames[q.caso]+'</span> ':'';
   fb.style.display="block";
-  fb.style.cssText="margin-top:14px;display:block;border-radius:12px;padding:13px;font-size:14px;background:"+(correct?"var(--akk-bg)":"rgba(255,180,171,0.08)")+";border:1px solid "+(correct?"var(--akk-line)":"rgba(255,180,171,0.25)")+";";
+  fb.style.cssText="margin-top:14px;display:block;border-radius:12px;padding:13px;font-size:14px;background:"+(correct?"var(--akk-bg)":"rgba(var(--red-rgb),0.08)")+";border:1px solid "+(correct?"var(--akk-line)":"rgba(var(--red-rgb),0.25)")+";";
   var tip=correct?"":casesFailureTip(q);
-  fb.innerHTML='<div style="font-weight:800;color:'+(correct?"#4ade80":"#ffb4ab")+';margin-bottom:5px;">'+(correct?'✓ Correcto':'✗ Casi · la respuesta es '+q.ok)+'</div>'
+  fb.innerHTML='<div style="font-weight:800;color:'+(correct?"var(--green-text)":"var(--red-text)")+';margin-bottom:5px;">'+(correct?'✓ Correcto':'✗ Casi · la respuesta es '+q.ok)+'</div>'
     +'<div style="color:var(--text2);line-height:1.5;">'+tag+q.why+'</div>'
-    +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(255,185,85,0.10);border:1px solid rgba(255,185,85,0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'');
+    +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(var(--gold-rgb),0.10);border:1px solid rgba(var(--gold-rgb),0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'');
   document.getElementById("cs-next").style.display="flex";
 }
 
@@ -303,7 +303,7 @@ function casesRenderTrad(q,mount){
   var card=mk("div","","border:1px solid var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,0.03);");
   card.appendChild(mk("div","Ordena las palabras","font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;"));
   card.appendChild(mk("p",q.es,"font-size:18px;line-height:1.5;margin-bottom:14px;color:var(--text);"));
-  var answer=mk("div","","min-height:48px;border:1px dashed rgba(196,167,231,0.35);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;background:rgba(196,167,231,0.05);");
+  var answer=mk("div","","min-height:48px;border:1px dashed rgba(var(--purple-rgb),0.35);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;background:rgba(var(--purple-rgb),0.05);");
   var bankEl=mk("div","","display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;");
   var fb=mk("div","","display:none;margin-top:12px;padding:13px;border-radius:12px;font-size:14px;");
   var row=mk("div","","display:flex;gap:8px;margin-top:12px;");
@@ -329,19 +329,19 @@ function casesRenderTrad(q,mount){
     state.cases.casesTotal++; if(correct){state.cases.casesHits++;state.cases.casesStreak++;state.cases.casesWrongStreak=0;} else {state.cases.casesStreak=0;state.cases.casesWrongStreak=(state.cases.casesWrongStreak||0)+1; var missCase=casesCaseForQuestion(q); if(missCase) state.cases.casesCaseMisses[missCase]=(state.cases.casesCaseMisses[missCase]||0)+1;}
     logActivity("drillsDone",1); syncUp(); casesUpdateScore();
     fb.style.display="block";
-    fb.style.background=correct?"var(--akk-bg)":"rgba(255,180,171,0.08)";
-    fb.style.border="1px solid "+(correct?"var(--akk-line)":"rgba(255,180,171,0.25)");
+    fb.style.background=correct?"var(--akk-bg)":"rgba(var(--red-rgb),0.08)";
+    fb.style.border="1px solid "+(correct?"var(--akk-line)":"rgba(var(--red-rgb),0.25)");
     var tip=correct?"":casesFailureTip(q);
-    fb.innerHTML='<div style="font-weight:900;color:'+(correct?'#4ade80':'#ffb4ab')+';margin-bottom:6px;">'+(correct?'✓ Correcto':'✗ Casi')+'</div>'
+    fb.innerHTML='<div style="font-weight:900;color:'+(correct?'var(--green-text)':'var(--red-text)')+';margin-bottom:6px;">'+(correct?'✓ Correcto':'✗ Casi')+'</div>'
       +'<div style="font-size:16px;font-weight:700;color:var(--text);line-height:1.5;">'+q.de+'</div>'
       +'<div style="margin-top:6px;font-size:13px;color:var(--text2);line-height:1.5;">'+q.why+'</div>'
-      +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(255,185,85,0.10);border:1px solid rgba(255,185,85,0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'')
+      +(tip?'<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(var(--gold-rgb),0.10);border:1px solid rgba(var(--gold-rgb),0.24);color:var(--text);font-size:13px;line-height:1.45;font-weight:600;">💡 '+tip+'</div>':'')
       +'<button id="cs-nexttrad" style="margin-top:12px;width:100%;font-size:14px;font-weight:800;padding:10px 16px;border-radius:11px;border:0;background:var(--gold);color:#000;">Siguiente →</button>';
     document.getElementById("cs-nexttrad").onclick=function(){state.cases.casesIdx++;casesNextQ();};
   };
   clear.onclick=function(){ if(state.cases.casesAnswered) return; chosen=[]; render(); };
-  var hintBox=mk("div","","display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,185,85,0.08);border:1px solid rgba(255,185,85,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;");
-  var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(255,185,85,0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
+  var hintBox=mk("div","","display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(var(--gold-rgb),0.08);border:1px solid rgba(var(--gold-rgb),0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;animation:fadeUp 0.15s ease;");
+  var hintBtn=mk("button","💡 Pista","margin-top:8px;background:transparent;border:1px dashed rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
   hintBtn.setAttribute("aria-expanded","false");
   hintBtn.onclick=function(){
     if(hintBox.style.display==="block"){hintBox.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}

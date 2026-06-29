@@ -13,7 +13,7 @@ function showToast(text, type, duration) {
   if(undoFn){
     var undoBtn=document.createElement("button");
     undoBtn.textContent="↩ Deshacer";
-    undoBtn.style.cssText="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;margin-left:10px;cursor:pointer;white-space:nowrap;";
+    undoBtn.style.cssText="background:rgba(255,255,255,0.18);border:1px solid rgba(0,0,0,0.18);color:#071016;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;margin-left:10px;cursor:pointer;white-space:nowrap;";
     undoBtn.onclick=function(){undoFn();clearTimeout(timer);if(el.parentNode)el.parentNode.removeChild(el);};
     el.appendChild(undoBtn);
   }
@@ -95,7 +95,7 @@ function showOnboarding(){
 
   // Card
   var card=document.createElement("div");
-  card.style.cssText="background:var(--modal-bg);border:1px solid rgba(255,185,85,0.22);border-radius:20px;padding:32px 28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5);";
+  card.style.cssText="background:var(--modal-bg);border:1px solid rgba(var(--gold-rgb),0.22);border-radius:20px;padding:32px 28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5);";
   card.setAttribute("role","dialog"); card.setAttribute("aria-modal","true"); card.setAttribute("aria-label","Tour de bienvenida");
   if(state.app._motionOK) card.style.animation="scaleIn 0.3s var(--ease-spring)";
 

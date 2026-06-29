@@ -8,10 +8,10 @@ function renderSummary() {
 
   const streak=computeStreak();
   const streakBox=document.createElement("div");
-  streakBox.style.cssText="background:linear-gradient(135deg,rgba(255,185,85,0.12),rgba(255,180,171,0.06));border:1px solid rgba(255,185,85,0.25);border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;";
+  streakBox.style.cssText="background:linear-gradient(135deg,rgba(var(--gold-rgb),0.12),rgba(var(--red-rgb),0.06));border:1px solid rgba(var(--gold-rgb),0.25);border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;";
   streakBox.appendChild(mk("span","🔥","font-size:32px;flex-shrink:0;"));
   const sCol=mk("div","","flex:1;");
-  sCol.appendChild(mk("p","RACHA","font-size:10px;color:#ffb955;letter-spacing:2.5px;font-weight:700;"));
+  sCol.appendChild(mk("p","RACHA","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;"));
   sCol.appendChild(mk("p",streak+(streak===1?" dia":" dias")+" seguidos","font-size:20px;font-weight:900;color:var(--text);letter-spacing:-0.02em;margin-top:2px;"));
   if(streak===0) sCol.appendChild(mk("p","Practica hoy para empezar","font-size:12px;color:var(--muted);margin-top:2px;font-weight:500;"));
   streakBox.appendChild(sCol);
@@ -20,10 +20,10 @@ function renderSummary() {
   var lvlPct=computeLevelProgress();
   var lvlLabel=state.app.level==="A2"?"A2→B1":state.app.level==="B1"?"B1→B2":"B2+";
   var lvlBox=document.createElement("div");
-  lvlBox.style.cssText="background:rgba(196,167,231,0.06);border:1px solid rgba(196,167,231,0.2);border-radius:16px;padding:16px 18px;margin-bottom:10px;";
+  lvlBox.style.cssText="background:rgba(var(--purple-rgb),0.06);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:16px;padding:16px 18px;margin-bottom:10px;";
   var lvlTop=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;");
-  lvlTop.appendChild(mk("p","📈 "+lvlLabel,"font-size:10px;color:#c4a7e7;letter-spacing:2.5px;font-weight:700;"));
-  lvlTop.appendChild(mk("p",lvlPct+"%","font-size:22px;font-weight:900;color:#c4a7e7;font-variant-numeric:tabular-nums;"));
+  lvlTop.appendChild(mk("p","📈 "+lvlLabel,"font-size:10px;color:var(--purple-text);letter-spacing:2.5px;font-weight:700;"));
+  lvlTop.appendChild(mk("p",lvlPct+"%","font-size:22px;font-weight:900;color:var(--purple-text);font-variant-numeric:tabular-nums;"));
   lvlBox.appendChild(lvlTop);
   var lvlBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:8px;height:8px;overflow:hidden;");
   var lvlFill=mk("div","","background:linear-gradient(90deg,#c4a7e7,#c4b5fd);height:100%;width:"+lvlPct+"%;transition:width 0.5s var(--ease-out);border-radius:8px;");
@@ -65,7 +65,7 @@ function renderSummary() {
       +_yLbls.map(function(v){return'<text x="'+(_pL-8)+'" y="'+_yS(v)+'" text-anchor="end" font-size="10" style="fill:var(--muted)" dominant-baseline="middle">'+v+'%</text>';}).join("")
       +'<polygon points="'+_arPts+'" fill="url(#'+_sId+')" opacity="0.12"/>'
       +'<polyline points="'+_lnPts+'" fill="none" stroke="url(#lgGrad'+_sId+')" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
-      +_pts.map(function(p,i){return'<circle cx="'+_xS(i)+'" cy="'+_yS(p.pct)+'" r="3" fill="rgba(255,185,85,0.5)" stroke="rgba(255,185,85,0.85)" stroke-width="1"/>';}).join("")
+      +_pts.map(function(p,i){return'<circle cx="'+_xS(i)+'" cy="'+_yS(p.pct)+'" r="3" fill="rgba(var(--gold-rgb),0.5)" stroke="rgba(var(--gold-rgb),0.85)" stroke-width="1"/>';}).join("")
       +_xLbls.map(function(p){return'<text x="'+_xS(_pts.indexOf(p))+'" y="'+(_pT+_chH+18)+'" text-anchor="middle" font-size="9" style="fill:var(--muted)">'+p.date.slice(5)+'</text>';}).join("")
       +'<defs>'
       +'<linearGradient id="lgGrad'+_sId+'" x1="0" y1="0" x2="1" y2="0">'
@@ -86,13 +86,13 @@ function renderSummary() {
   const wk=weeklyMinutes();
   const pct=state.session.weeklyGoal>0?Math.min(100, Math.round((wk/state.session.weeklyGoal)*100)):0;
   const goalBox=document.createElement("div");
-  goalBox.style.cssText="background:rgba(93,217,208,0.06);border:1px solid rgba(93,217,208,0.2);border-radius:16px;padding:16px 18px;margin-bottom:14px;";
+  goalBox.style.cssText="background:rgba(var(--teal-rgb),0.06);border:1px solid rgba(var(--teal-rgb),0.2);border-radius:16px;padding:16px 18px;margin-bottom:14px;";
   const gTop=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;");
   const gL=mk("div","","");
-  gL.appendChild(mk("p","🎯 META SEMANAL","font-size:10px;color:#5dd9d0;letter-spacing:2.5px;font-weight:700;"));
+  gL.appendChild(mk("p","🎯 META SEMANAL","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;"));
   gL.appendChild(mk("p",wk+" / "+state.session.weeklyGoal+" min","font-size:18px;font-weight:800;color:var(--text);margin-top:2px;letter-spacing:-0.01em;"));
   gTop.appendChild(gL);
-  gTop.appendChild(mk("span",pct+"%","font-size:22px;font-weight:900;color:#5dd9d0;"));
+  gTop.appendChild(mk("span",pct+"%","font-size:22px;font-weight:900;color:var(--teal-text);"));
   goalBox.appendChild(gTop);
   const bar=mk("div","","background:rgba(255,255,255,0.06);border-radius:8px;height:8px;overflow:hidden;");
   const fill=mk("div","","background:linear-gradient(90deg,#5dd9d0,#4ade80);height:100%;width:"+pct+"%;transition:width 0.4s;border-radius:8px;");
@@ -100,11 +100,11 @@ function renderSummary() {
   el.appendChild(goalBox);
 
   [
-    {label:"Frases exploradas", value:state.session.sessionPhrases, color:"#ffb955", icon:"📖"},
-    {label:"Frases guardadas",  value:state.session.saved.length,   color:"#ffb4ab", icon:"⭐"},
-    {label:"Pendientes hoy",    value:reviewDueCount(), color:"#fbbf24", icon:"🎯"},
-    {label:"Minutos practicados",value:state.session.sessionMinutes, color:"#5dd9d0", icon:"⏱️"},
-    {label:"Chats guardados",   value:state.session.chatLogs.length, color:"#c4a7e7", icon:"💬"}
+    {label:"Frases exploradas", value:state.session.sessionPhrases, color:"#ffb955", textColor:"var(--gold-text)", icon:"📖"},
+    {label:"Frases guardadas",  value:state.session.saved.length,   color:"#ffb4ab", textColor:"var(--red-text)", icon:"⭐"},
+    {label:"Pendientes hoy",    value:reviewDueCount(), color:"#fbbf24", textColor:"var(--gold-text)", icon:"🎯"},
+    {label:"Minutos practicados",value:state.session.sessionMinutes, color:"#5dd9d0", textColor:"var(--teal-text)", icon:"⏱️"},
+    {label:"Chats guardados",   value:state.session.chatLogs.length, color:"#c4a7e7", textColor:"var(--purple-text)", icon:"💬"}
   ].forEach(function(s,i){
     const row=document.createElement("div"); row.className="stat-row";
     row.style.borderColor=s.color+"22";
@@ -112,7 +112,7 @@ function renderSummary() {
     const left=mk("div","","display:flex;align-items:center;gap:10px;");
     left.appendChild(mk("span",s.icon,"font-size:20px;"));
     left.appendChild(mk("span",s.label,"font-size:14px;color:var(--text2);font-weight:600;"));
-    const val=mk("span",String(s.value),"font-size:30px;font-weight:900;color:"+s.color+";letter-spacing:-0.03em;font-variant-numeric:tabular-nums;");
+    const val=mk("span",String(s.value),"font-size:30px;font-weight:900;color:"+s.textColor+";letter-spacing:-0.03em;font-variant-numeric:tabular-nums;");
     row.appendChild(left); row.appendChild(val);
     el.appendChild(row);
   });
@@ -131,8 +131,8 @@ function renderSummary() {
     const col=mk("div","","display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;");
     const val=mk("p",total?total+" pts":"0","font-size:10px;color:var(--muted);font-weight:700;min-height:14px;");
     val.title="Minutos: "+(e.minutes||0)+" · Flashcards: "+(e.phrasesReviewed||0)+" · Drills: "+(e.drillsDone||0);
-    const barEl=mk("div","","border-radius:4px 4px 0 0;height:"+h+"px;width:100%;transition:height 0.3s;background:"+(total>0?"linear-gradient(180deg,#ffb955,rgba(255,185,85,0.4))":"rgba(255,255,255,0.04)")+";");
-    const lbl=mk("p",d.label,"font-size:10px;color:"+(d.key===todayKey()?"#ffb955":"var(--muted)")+";font-weight:"+(d.key===todayKey()?"800":"600")+";");
+    const barEl=mk("div","","border-radius:4px 4px 0 0;height:"+h+"px;width:100%;transition:height 0.3s;background:"+(total>0?"linear-gradient(180deg,#ffb955,rgba(var(--gold-rgb),0.4))":"rgba(255,255,255,0.04)")+";");
+    const lbl=mk("p",d.label,"font-size:10px;color:"+(d.key===todayKey()?"var(--gold-text)":"var(--muted)")+";font-weight:"+(d.key===todayKey()?"800":"600")+";");
     col.appendChild(val); col.appendChild(barEl); col.appendChild(lbl);
     chartRow.appendChild(col);
   });
@@ -189,7 +189,7 @@ function renderSummary() {
   if(allLapsed.length){
     renderLapsedList();
     if(allLapsed.length>5){
-      var toggleLapses=mk("button","Ver todas ("+allLapsed.length+")","width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1px solid rgba(255,180,171,0.22);background:rgba(255,180,171,0.06);color:var(--red-text);font-size:13px;font-weight:800;cursor:pointer;");
+      var toggleLapses=mk("button","Ver todas ("+allLapsed.length+")","width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1px solid rgba(var(--red-rgb),0.22);background:rgba(var(--red-rgb),0.06);color:var(--red-text);font-size:13px;font-weight:800;cursor:pointer;");
       toggleLapses.onclick=function(){showAllLapsed=!showAllLapsed;this.textContent=showAllLapsed?"Ver solo top 5":"Ver todas ("+allLapsed.length+")";renderLapsedList();};
       lapsCard.appendChild(toggleLapses);
     }
@@ -201,9 +201,9 @@ function renderSummary() {
   const msg=state.session.sessionPhrases+state.session.saved.length+state.session.sessionMinutes===0
     ?"Empieza a practicar y aqui veras tu progreso!"
     :"Gut gemacht! La consistencia es la clave. Sigue adelante!";
-  const tip=mk("div","","background:rgba(93,217,208,0.06);border:1px solid rgba(93,217,208,0.18);border-radius:16px;padding:18px;margin-top:4px;display:flex;gap:12px;align-items:flex-start;");
+  const tip=mk("div","","background:rgba(var(--teal-rgb),0.06);border:1px solid rgba(var(--teal-rgb),0.18);border-radius:16px;padding:18px;margin-top:4px;display:flex;gap:12px;align-items:flex-start;");
   tip.appendChild(mk("span","💡","font-size:20px;flex-shrink:0;margin-top:1px;"));
-  tip.appendChild(mk("p",msg,"font-size:14px;color:#5dd9d0;font-weight:600;line-height:1.55;"));
+  tip.appendChild(mk("p",msg,"font-size:14px;color:var(--teal-text);font-weight:600;line-height:1.55;"));
   el.appendChild(tip);
 
   var _insightShown=false;
@@ -230,7 +230,7 @@ function renderSummary() {
 
   if(state.session.errorJournal.length){
     var fjCard=document.createElement("div"); fjCard.className="card";
-    fjCard.style.cssText="margin-top:10px;border:1px solid rgba(255,180,171,0.15);";
+    fjCard.style.cssText="margin-top:10px;border:1px solid rgba(var(--red-rgb),0.15);";
     var fjHdr=document.createElement("div");
     fjHdr.style.cssText="display:flex;justify-content:space-between;align-items:center;cursor:pointer;";
     fjHdr.setAttribute("role","button"); fjHdr.setAttribute("tabindex","0"); fjHdr.setAttribute("aria-expanded","false");
