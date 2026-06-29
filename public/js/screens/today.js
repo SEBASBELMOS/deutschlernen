@@ -10,81 +10,91 @@ function renderToday(){
   const todayTotal=(todayLog.minutes||0)+(todayLog.phrasesReviewed||0)+(todayLog.drillsDone||0);
   const allDone=due===0&&state.session.saved.length>0;
 
-  // ── Stitch hero: daily command center ──
+  // ── Stitch hero: bento grid ──
   const streakGrew = streak > state.app._lastStreakSeen;
-  const hero=document.createElement("section");
-  hero.className="stitch-hero";
-  var heroGrid=mk("div","","display:grid;grid-template-columns:minmax(0,1fr);gap:24px;position:relative;z-index:1;");
-  var heroCopy=mk("div","","");
-  heroCopy.appendChild(mk("h2","Guten Morgen, Sebastian!","margin-bottom:16px;"));
-  var heroMsg=due>0
-    ? "Tenés "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s")+". Empezá por el repaso para proteger tu racha."
-    : allDone
-      ? "Por hoy terminaste el repaso. Podés sumar una lectura corta o volver mañana."
-      : "Elegí una sesión corta y mantené el hábito activo.";
-  heroCopy.appendChild(mk("p",heroMsg,"max-width:680px;"));
-  heroGrid.appendChild(heroCopy);
-  var metricRow=mk("div","","display:flex;gap:16px;align-items:stretch;flex-wrap:wrap;");
-  function metric(value,label,accent){
-    var box=mk("div","",""); box.className="stitch-metric";
-    box.appendChild(mk("strong",String(value),"color:"+accent+";"));
-    box.appendChild(mk("span",label,""));
+  var hero=document.createElement("section");
+  hero.style.cssText="margin-bottom:20px;";
+  // Summary card — main hero block
+  var summary=mk("div","","position:relative;overflow:hidden;padding:24px;border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(var(--gold-rgb),0.12),rgba(var(--gold-rgb),0.03));border:1px solid rgba(var(--gold-rgb),0.15);margin-bottom:14px;");
+  // Decorative blur orb
+  var orb=mk("div","","position:absolute;right:-30px;bottom:-30px;width:100px;height:100px;background:rgba(var(--gold-rgb),0.15);border-radius:50%;filter:blur(30px);pointer-events:none;");
+  summary.appendChild(orb);
+  // Content
+  var summaryInner=mk("div","","position:relative;z-index:1;");
+  var topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
+  topRow.appendChild(mk("h2","👋 Hallo, Sebastian!","font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.02em;font-family:var(--font-heading);"));
+  // Streak pill
+  var strPill=mk("div","","display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:var(--r-pill);background:rgba(var(--gold-rgb),0.15);border:1px solid rgba(var(--gold-rgb),0.25);");
+  strPill.appendChild(mk("span","🔥","font-size:14px;"));
+  strPill.appendChild(mk("span",streak+" día"+(streak!==1?"s":""),"font-size:13px;font-weight:800;color:var(--gold-text);"));
+  topRow.appendChild(strPill);
+  summaryInner.appendChild(topRow);
+  // Subtitle based on state
+  var subMsg=due>0?"Tenés "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s")+". Empezá por el repaso para proteger tu racha.":allDone?"🎉 Por hoy terminaste el repaso.":"Elegí una sesión corta y mantené el hábito activo.";
+  summaryInner.appendChild(mk("p",subMsg,"font-size:13px;color:var(--muted);font-weight:500;line-height:1.5;max-width:90%;margin-bottom:14px;"));
+  // Pending cards pill (if due>0)
+  if(due>0){
+    var duePill=mk("div","","display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);");
+    duePill.appendChild(mk("span","🃏","font-size:16px;"));
+    duePill.appendChild(mk("span",due+" tarjeta"+(due===1?"":"s")+" para repasar","font-size:13px;font-weight:700;color:var(--text);"));
+    summaryInner.appendChild(duePill);
+  } else if(allDone){
+    var donePill=mk("div","","display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;background:rgba(var(--green-rgb),0.08);border:1px solid rgba(var(--green-rgb),0.15);");
+    donePill.appendChild(mk("span","✅","font-size:16px;"));
+    donePill.appendChild(mk("span","Todo al día","font-size:13px;font-weight:700;color:var(--green-text);"));
+    summaryInner.appendChild(donePill);
+  }
+  summary.appendChild(summaryInner);
+  hero.appendChild(summary);
+
+  // ── Metrics row ──
+  var metricRow=mk("div","","display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;");
+  function metric(value,label,accent,icon){
+    var box=mk("div","","padding:16px 12px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);text-align:center;");
+    box.appendChild(mk("span",icon,"font-size:18px;"));
+    box.appendChild(mk("p",String(value),"font-size:22px;font-weight:900;color:"+accent+";line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums;"));
+    box.appendChild(mk("p",label,"font-size:10px;color:var(--muted);font-weight:600;margin-top:3px;font-family:var(--font-label);"));
     return box;
   }
-  metricRow.appendChild(metric(streak,"días","var(--secondary)"));
-  metricRow.appendChild(metric(due,"pendientes","var(--primary)"));
-  metricRow.appendChild(metric(todayTotal,"acciones","var(--teal-text)"));
-  heroGrid.appendChild(metricRow);
+  metricRow.appendChild(metric(streak,"Racha","var(--gold-text)","🔥"));
+  metricRow.appendChild(metric(due,"Pendientes","var(--teal-text)","🃏"));
+  metricRow.appendChild(metric(todayTotal,"Hoy","var(--purple-text)","⚡"));
+  hero.appendChild(metricRow);
 
-  const bahn=mk("div","","display:flex;gap:var(--s-2);align-items:center;");
+  // ── Primary CTA button ──
+  if(due>0){
+    var cta=mk("button","⚡ Repasar "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s"),"width:100%;padding:16px;border-radius:14px;border:none;background:var(--gold);color:#000;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;transition:transform .1s,box-shadow .2s;");
+    cta.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
+    hero.appendChild(cta);
+  } else if(!allDone){
+    var cta=mk("button","⚡ Sesión personalizada","width:100%;padding:16px;border-radius:14px;border:none;background:var(--gold);color:#000;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;transition:transform .1s,box-shadow .2s;");
+    cta.onclick=function(){startPersonalizedReview();};
+    hero.appendChild(cta);
+  }
+
+  // ── Habit dots ──
+  var habit=mk("div","","display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:0;");
+  var bahn=mk("div","","display:flex;gap:6px;align-items:center;");
   for(var bi=6;bi>=0;bi--){
     var dkey=addDays(t,-bi);
     var dlog=state.session.dailyLog[dkey];
     var dActive=!!(dlog&&((dlog.minutes||0)>0||(dlog.phrasesReviewed||0)>0||(dlog.drillsDone||0)>0));
     var isToday=bi===0;
-    var dot=mk("span","","border-radius:var(--r-pill);flex-shrink:0;transition:transform var(--d-base) var(--ease-out);");
+    var dot=mk("span","","border-radius:50%;flex-shrink:0;transition:transform .2s;");
     if(dActive){
-      dot.style.width="11px"; dot.style.height="11px"; dot.style.background="var(--gold)";
-      if(isToday) dot.style.boxShadow="0 0 10px rgba(var(--gold-rgb),0.6)";
-    } else if(isToday){
-      dot.style.width="13px"; dot.style.height="13px"; dot.style.background="transparent";
-      dot.style.border="2px solid var(--gold)"; dot.style.boxShadow="0 0 8px rgba(var(--gold-rgb),0.35)";
-    } else {
-      dot.style.width="11px"; dot.style.height="11px"; dot.style.background="var(--dim)"; dot.style.opacity="0.55";
+      dot.style.width="10px";dot.style.height="10px";dot.style.background="var(--gold)";
+      if(isToday)dot.style.boxShadow="0 0 8px rgba(var(--gold-rgb),0.5)";
+    }else if(isToday){
+      dot.style.width="12px";dot.style.height="12px";dot.style.background="transparent";dot.style.border="2px solid var(--gold)";
+    }else{
+      dot.style.width="10px";dot.style.height="10px";dot.style.background="var(--dim)";dot.style.opacity="0.45";
     }
-    dot.setAttribute("aria-label",(isToday?"hoy":dkey)+": "+(dActive?"estudiado":"sin estudiar"));
     bahn.appendChild(dot);
   }
-  var habit=mk("div","","display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;");
-  habit.appendChild(mk("p","Últimos 7 días","font-size:12px;color:rgba(255,255,255,0.74);font-weight:800;letter-spacing:.08em;text-transform:uppercase;"));
   habit.appendChild(bahn);
-  heroGrid.appendChild(habit);
-  if(streakGrew) hero.style.animation="celebratePop 0.45s var(--ease-spring) 0.1s 1";
+  hero.appendChild(habit);
 
-  // Fused due CTA / win state — the single call to action
-  if(allDone){
-    const win=mk("div","","padding:var(--s-4);border-radius:var(--r-lg);background:rgba(14,14,14,0.22);border:1px solid rgba(255,255,255,0.12);animation:winPop 0.45s var(--ease-spring) both;");
-    win.appendChild(mk("p","🎉 Por hoy terminaste","font-size:var(--t-md);font-weight:800;color:var(--green-text);"));
-    const sumToday=todayLog.phrasesReviewed||0;
-    win.appendChild(mk("p",sumToday+" repasada"+(sumToday===1?"":"s")+" · racha "+streak,"font-size:var(--t-sm);color:rgba(255,255,255,0.74);font-weight:600;margin-top:var(--s-1);"));
-    heroGrid.appendChild(win);
-  } else if(due>0){
-    const cta=document.createElement("div"); cta.className="hover-lift";
-    cta.setAttribute("role","button"); cta.setAttribute("tabindex","0");
-    cta.setAttribute("aria-label","Repasar "+due+" tarjetas pendientes");
-    cta.style.cssText="padding:var(--s-3) var(--s-4);border-radius:var(--r-lg);background:rgba(14,14,14,0.24);border:1px solid rgba(255,255,255,0.12);cursor:pointer;display:flex;align-items:center;gap:var(--s-3);text-align:left;transition:transform var(--d-fast) var(--ease-out),box-shadow var(--d-base);";
-    cta.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
-    cta.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();this.click();}};
-    cta.appendChild(mk("span",String(due),"font-size:var(--t-3xl);font-weight:900;color:var(--gold-text);line-height:1;font-variant-numeric:tabular-nums;flex-shrink:0;"));
-    const dueTxt=mk("div","","flex:1;min-width:0;");
-    dueTxt.appendChild(mk("p",due===1?"tarjeta pendiente":"tarjetas pendientes","font-size:var(--t-sm);color:var(--gold-text);font-weight:700;"));
-    const riskMsg=streak>0?"tu racha de "+streak+" está en juego":"repasá para empezar tu racha";
-    dueTxt.appendChild(mk("p",riskMsg,"font-size:var(--t-xs);color:"+(streak>0?"var(--red-text)":"var(--muted)")+";font-weight:600;margin-top:2px;"));
-    cta.appendChild(dueTxt);
-    cta.appendChild(mk("span","Repasar →","font-size:var(--t-sm);font-weight:900;color:var(--on-primary);background:var(--primary);padding:var(--s-2) var(--s-3);border-radius:var(--r-md);flex-shrink:0;white-space:nowrap;"));
-    heroGrid.appendChild(cta);
-  }
-  hero.appendChild(heroGrid);
+  if(streakGrew) hero.style.animation="celebratePop 0.45s var(--ease-spring) 0.1s 1";
   el.appendChild(hero);
 
   // ── Level progress ──
@@ -244,19 +254,27 @@ function renderToday(){
     el.appendChild(reviewCard);
   }
 
-  // ── Hörverstehen card ──
+  // ── Hörverstehen card with audio wave ──
   var hvCard=document.createElement("div"); hvCard.className="card hover-lift";
-  hvCard.style.cssText="background:linear-gradient(135deg,rgba(var(--teal-rgb),0.08),rgba(var(--teal-rgb),0.02));border:1px solid rgba(var(--teal-rgb),0.2);border-radius:var(--r-lg,16px);padding:18px;cursor:pointer;margin-bottom:10px;";
-  hvCard.onclick=function(){
-    hvCard.style.display="none";
-    var hvContainer=document.createElement("div"); hvContainer.id="hv-container";
-    hvContainer.style.cssText="margin-bottom:10px;";
-    el.insertBefore(hvContainer,el.lastChild);
-    startHörverstehen(hvContainer);
-  };
-  hvCard.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
-  hvCard.appendChild(mk("p","Comprensión auditiva","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
-  hvCard.appendChild(mk("p","Escucha un diálogo y responde preguntas","font-size:11px;color:var(--muted);font-weight:500;"));
+  hvCard.style.cssText="display:flex;align-items:center;gap:16px;padding:18px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);cursor:pointer;margin-bottom:10px;position:relative;overflow:hidden;";
+  hvCard.onclick=function(){state.app.currentTab="lectura";renderTabs();showScreen("lectura");};
+  var hvText=mk("div","","flex:1;min-width:0;");
+  hvText.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
+  hvText.appendChild(mk("p","Comprensión auditiva","font-size:14px;color:var(--text);font-weight:700;margin-bottom:2px;"));
+  hvText.appendChild(mk("p","Escuchá un diálogo y respondé preguntas","font-size:11px;color:var(--muted);font-weight:500;"));
+  hvCard.appendChild(hvText);
+  // Play button
+  var playBtn=mk("button","▶","width:44px;height:44px;border-radius:50%;border:none;background:rgba(var(--teal-rgb),0.15);color:var(--teal-text);font-size:16px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s;");
+  playBtn.onclick=function(e){e.stopPropagation();state.app.currentTab="lectura";renderTabs();showScreen("lectura");};
+  hvCard.appendChild(playBtn);
+  // Audio wave bars
+  var waves=mk("div","","display:flex;align-items:end;gap:2px;height:28px;position:absolute;right:60px;top:50%;transform:translateY(-50%);opacity:0.25;pointer-events:none;");
+  for(var wi=0;wi<7;wi++){
+    var bar=mk("span","","width:3px;background:var(--teal);border-radius:2px;animation:wave 1s ease-in-out infinite;animation-delay:"+(wi*0.12)+"s;");
+    bar.style.height=(8+Math.sin(wi*1.2)*6)+"px";
+    waves.appendChild(bar);
+  }
+  hvCard.appendChild(waves);
   el.appendChild(hvCard);
 
   state.app._lastStreakSeen=streak;
