@@ -10,31 +10,34 @@ function renderToday(){
   const todayTotal=(todayLog.minutes||0)+(todayLog.phrasesReviewed||0)+(todayLog.drillsDone||0);
   const allDone=due===0&&state.session.saved.length>0;
 
-  // ── Stitch hero: bento grid ──
+  // ── Stitch hero: dashboard command center ──
   const streakGrew = streak > state.app._lastStreakSeen;
   var hero=document.createElement("section");
-  hero.style.cssText="margin-bottom:20px;";
-  // Summary card — main hero block
-  var summary=mk("div","","position:relative;overflow:hidden;padding:24px;border-radius:var(--r-lg);background:linear-gradient(135deg,rgba(var(--gold-rgb),0.12),rgba(var(--gold-rgb),0.03));border:1px solid rgba(var(--gold-rgb),0.15);margin-bottom:14px;");
-  // Decorative blur orb
-  var orb=mk("div","","position:absolute;right:-30px;bottom:-30px;width:100px;height:100px;background:rgba(var(--gold-rgb),0.15);border-radius:50%;filter:blur(30px);pointer-events:none;");
-  summary.appendChild(orb);
+  hero.className="stitch-hero";
   // Content
   var summaryInner=mk("div","","position:relative;z-index:1;");
-  var topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
-  topRow.appendChild(mk("h2","👋 Hallo, Sebastian!","font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.02em;font-family:var(--font-heading);"));
+  var topRow=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:16px;flex-wrap:wrap;");
+  var heroText=mk("div","","min-width:260px;flex:1;");
+  heroText.appendChild(mk("h2","Guten Morgen, Sebastian!","margin-bottom:14px;"));
   // Streak pill
-  var strPill=mk("div","","display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:var(--r-pill);background:rgba(var(--gold-rgb),0.15);border:1px solid rgba(var(--gold-rgb),0.25);");
-  strPill.appendChild(mk("span","🔥","font-size:14px;"));
-  strPill.appendChild(mk("span",streak+" día"+(streak!==1?"s":""),"font-size:13px;font-weight:800;color:var(--gold-text);"));
-  topRow.appendChild(strPill);
-  summaryInner.appendChild(topRow);
   // Subtitle based on state
   var subMsg=due>0?"Tenés "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s")+". Empezá por el repaso para proteger tu racha.":allDone?"🎉 Por hoy terminaste el repaso.":"Elegí una sesión corta y mantené el hábito activo.";
-  summaryInner.appendChild(mk("p",subMsg,"font-size:13px;color:var(--muted);font-weight:500;line-height:1.5;max-width:90%;margin-bottom:14px;"));
+  heroText.appendChild(mk("p",subMsg,"max-width:720px;"));
+  topRow.appendChild(heroText);
+  var heroMetrics=mk("div","","display:flex;gap:16px;flex-wrap:wrap;");
+  function heroMetric(value,label,accent){
+    var box=mk("div","",""); box.className="stitch-metric";
+    box.appendChild(mk("strong",String(value),"color:"+accent+";"));
+    box.appendChild(mk("span",label,""));
+    return box;
+  }
+  heroMetrics.appendChild(heroMetric(streak,"días","var(--secondary)"));
+  heroMetrics.appendChild(heroMetric(due,"tarjetas","var(--primary)"));
+  topRow.appendChild(heroMetrics);
+  summaryInner.appendChild(topRow);
   // Pending cards pill (if due>0)
   if(due>0){
-    var duePill=mk("div","","display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);");
+    var duePill=mk("div","","display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;background:rgba(14,14,14,0.22);border:1px solid rgba(255,255,255,0.12);");
     duePill.appendChild(mk("span","🃏","font-size:16px;"));
     duePill.appendChild(mk("span",due+" tarjeta"+(due===1?"":"s")+" para repasar","font-size:13px;font-weight:700;color:var(--text);"));
     summaryInner.appendChild(duePill);
@@ -44,32 +47,18 @@ function renderToday(){
     donePill.appendChild(mk("span","Todo al día","font-size:13px;font-weight:700;color:var(--green-text);"));
     summaryInner.appendChild(donePill);
   }
-  summary.appendChild(summaryInner);
-  hero.appendChild(summary);
-
-  // ── Metrics row ──
-  var metricRow=mk("div","","display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;");
-  function metric(value,label,accent,icon){
-    var box=mk("div","","padding:16px 12px;border-radius:var(--r-md);background:var(--surface);border:1px solid var(--border);text-align:center;");
-    box.appendChild(mk("span",icon,"font-size:18px;"));
-    box.appendChild(mk("p",String(value),"font-size:22px;font-weight:900;color:"+accent+";line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums;"));
-    box.appendChild(mk("p",label,"font-size:10px;color:var(--muted);font-weight:600;margin-top:3px;font-family:var(--font-label);"));
-    return box;
-  }
-  metricRow.appendChild(metric(streak,"Racha","var(--gold-text)","🔥"));
-  metricRow.appendChild(metric(due,"Pendientes","var(--teal-text)","🃏"));
-  metricRow.appendChild(metric(todayTotal,"Hoy","var(--purple-text)","⚡"));
-  hero.appendChild(metricRow);
+  hero.appendChild(summaryInner);
+  el.appendChild(hero);
 
   // ── Primary CTA button ──
   if(due>0){
-    var cta=mk("button","⚡ Repasar "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s"),"width:100%;padding:16px;border-radius:14px;border:none;background:var(--gold);color:#000;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;transition:transform .1s,box-shadow .2s;");
+    var cta=mk("button","⚡ Repasar "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s"),"width:100%;padding:16px;border-radius:14px;border:none;background:var(--primary);color:var(--on-primary);font-size:15px;font-weight:900;cursor:pointer;margin-top:16px;transition:transform .1s,box-shadow .2s;");
     cta.onclick=function(){state.app.currentTab="flashcards";renderTabs();showScreen("flashcards");};
-    hero.appendChild(cta);
+    summaryInner.appendChild(cta);
   } else if(!allDone){
-    var cta=mk("button","⚡ Sesión personalizada","width:100%;padding:16px;border-radius:14px;border:none;background:var(--gold);color:#000;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;transition:transform .1s,box-shadow .2s;");
+    var cta=mk("button","⚡ Sesión personalizada","width:100%;padding:16px;border-radius:14px;border:none;background:var(--primary);color:var(--on-primary);font-size:15px;font-weight:900;cursor:pointer;margin-top:16px;transition:transform .1s,box-shadow .2s;");
     cta.onclick=function(){startPersonalizedReview();};
-    hero.appendChild(cta);
+    summaryInner.appendChild(cta);
   }
 
   // ── Habit dots ──
@@ -92,10 +81,10 @@ function renderToday(){
     bahn.appendChild(dot);
   }
   habit.appendChild(bahn);
-  hero.appendChild(habit);
+  habit.style.marginTop="16px";
+  summaryInner.appendChild(habit);
 
   if(streakGrew) hero.style.animation="celebratePop 0.45s var(--ease-spring) 0.1s 1";
-  el.appendChild(hero);
 
   // ── Level progress ──
   var lvlPct=computeLevelProgress();
@@ -107,7 +96,7 @@ function renderToday(){
   lvlTop.appendChild(mk("p",lvlPct+"%","font-size:16px;font-weight:900;color:var(--purple-text);font-variant-numeric:tabular-nums;"));
   lvlCard.appendChild(lvlTop);
   var lvlBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:6px;height:6px;overflow:hidden;");
-  var lvlFill=mk("div","","background:linear-gradient(90deg,#c4a7e7,#c4b5fd);height:100%;width:"+lvlPct+"%;transition:width 0.5s var(--ease-out);border-radius:6px;");
+  var lvlFill=mk("div","","background:linear-gradient(90deg,var(--purple),var(--primary));height:100%;width:"+lvlPct+"%;transition:width 0.5s var(--ease-out);border-radius:6px;");
   lvlBar.appendChild(lvlFill); lvlCard.appendChild(lvlBar);
   var eff=state.session.saved.filter(function(p){return (p.box||0)>=2;}).length;
   var avgBx=state.session.saved.length?state.session.saved.reduce(function(s,p){return s+(p.box||0);},0)/state.session.saved.length:0;
@@ -205,18 +194,18 @@ function renderToday(){
   const actions=document.createElement("div"); actions.className="card";
   actions.appendChild(mk("p","ACCION RAPIDA","font-size:10px;color:var(--muted);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:10px;"));
   const actBtns=[
-    {label:"💬 Conversar", tab:"conversar", color:"#5dd9d0"},
-    {label:"✏️ Corrigeme", tab:"corrigeme", color:"#ffb4ab"},
-    {label:"🎧 Shadowing", tab:"shadowing", color:"#ffb955"},
-    {label:"📐 Gramática", tab:"gramatica", color:"#c4a7e7"}
+    {label:"💬 Conversar", tab:"conversar", color:"var(--teal)", rgb:"var(--teal-rgb)"},
+    {label:"✏️ Corrigeme", tab:"corrigeme", color:"var(--red)", rgb:"var(--red-rgb)"},
+    {label:"🎧 Shadowing", tab:"shadowing", color:"var(--gold)", rgb:"var(--gold-rgb)"},
+    {label:"📐 Gramática", tab:"gramatica", color:"var(--purple)", rgb:"var(--purple-rgb)"}
   ];
   const actGrid=mk("div","","display:grid;grid-template-columns:1fr 1fr;gap:8px;");
   actBtns.forEach(function(a){
     const btn=mk("button",a.label,"padding:14px;border-radius:var(--r-md,12px);border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:var(--text,#e2e8f0);font-size:14px;font-weight:700;cursor:pointer;text-align:center;");
     btn.className="hover-glow";
-    btn.style.setProperty("--btn-color","rgba("+hexToRgb(a.color)+",0.25)");
-    btn.style.setProperty("--btn-bg","rgba("+hexToRgb(a.color)+",0.06)");
-    btn.style.setProperty("--btn-border",a.color+"33");
+    btn.style.setProperty("--btn-color","rgba("+a.rgb+",0.25)");
+    btn.style.setProperty("--btn-bg","rgba("+a.rgb+",0.06)");
+    btn.style.setProperty("--btn-border","rgba("+a.rgb+",0.25)");
     btn.onmousedown=function(){this.style.transform="scale(0.97)";};
     btn.onmouseup=function(){this.style.transform="";};
     btn.onclick=function(){state.app.currentTab=a.tab;renderTabs();showScreen(a.tab);};
@@ -345,7 +334,7 @@ function renderReviewPlanPreview(){
   var el=document.getElementById("s-hoy"); el.innerHTML="";
   var hdr=mk("div","","margin-bottom:14px;");
   hdr.appendChild(mk("p","REPASO PERSONALIZADO","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","Hoy te recomiendo","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
+  hdr.appendChild(mk("h2","Hoy te recomiendo","font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","Armado con tus datos. Tocá un paso para sacarlo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
   plan.steps.forEach(function(step){

@@ -93,7 +93,7 @@ function renderSaved() {
     var packs=[
       {icon:"file",name:"Trámites",desc:"Documentos, citas y burocracia",list:ERRANDS_VOCAB,cat:"Trámites",color:"#ffb955",textColor:"var(--gold-text)",rgb:"255,185,85"},
       {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#5dd9d0",textColor:"var(--teal-text)",rgb:"93,217,208"},
-      {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:TRAVEL_VOCAB,cat:"Viaje",color:"#4ade80",textColor:"var(--green-text)",rgb:"123,216,155"},
+      {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:TRAVEL_VOCAB,cat:"Viaje",color:"#7bd89b",textColor:"var(--green-text)",rgb:"123,216,155"},
       {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:FOOD_VOCAB,cat:"Comida",color:"#ffb4ab",textColor:"var(--red-text)",rgb:"255,180,171"},
       {icon:"link",name:"Conectores",desc:"weil, obwohl, deshalb, wenn...",list:CONNECTORS_VOCAB,cat:"Conectores",color:"#c4a7e7",textColor:"var(--purple-text)",rgb:"196,167,231"}
     ];

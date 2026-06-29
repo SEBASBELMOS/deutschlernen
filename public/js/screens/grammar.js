@@ -16,7 +16,7 @@ function renderGrammar() {
 
   // ── Header ──
   const hdr=mk("div","","margin-bottom:18px;");
-  hdr.appendChild(mk("h2","Gram\u00e1tica","font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:4px;"));
+  hdr.appendChild(mk("h2","Gram\u00e1tica","font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:4px;"));
   hdr.appendChild(mk("p","Drills cortos con feedback inmediato para dominar los pilares del alem\u00e1n.","font-size:13px;color:var(--text2);font-weight:500;line-height:1.5;"));
   el.appendChild(hdr);
 

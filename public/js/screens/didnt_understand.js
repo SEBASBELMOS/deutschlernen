@@ -5,7 +5,7 @@ function renderDidntUnderstand() {
   // ── Header ──
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","TRADUCTOR CONTEXTUAL","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","No entendí","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
+  hdr.appendChild(mk("h2","No entendí","font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","¿Escuchaste algo en alemán? Escribilo o grabalo acá.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
 

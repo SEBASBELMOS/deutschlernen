@@ -3,7 +3,7 @@ function renderSettings(){
   const el=document.getElementById("s-config"); el.innerHTML="";
 
   // ── Header ──
-  var settingsTitle=mk("h2","","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:20px;");
+  var settingsTitle=mk("h2","","font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.02em;margin-bottom:20px;");
   settingsTitle.appendChild(iconLabel("gear","Ajustes",22));
   el.appendChild(settingsTitle);
 

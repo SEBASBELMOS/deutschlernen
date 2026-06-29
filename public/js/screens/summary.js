@@ -10,28 +10,34 @@ function renderSummary() {
   const totalPhrases=state.session.sessionPhrases;
   const totalXP=Math.round((state.session.sessionMinutes||0)*2.5 + (state.session.saved.length||0)*5 + (Object.keys(state.grammar.grammarStats||{}).length)*10);
 
-  var greeting=mk("div","","padding:22px 18px 10px;");
-  greeting.appendChild(mk("h2","¡Hola de nuevo!","font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.01em;margin-bottom:6px;"));
+  var greeting=document.createElement("section"); greeting.className="stitch-page-head";
+  var greetCopy=mk("div","","");
+  greetCopy.appendChild(mk("h2","Resumen de Progreso",""));
   var subMsg=streak>0
-    ?"Tu alemán va por buen camino. ¡"+streak+" día"+(streak===1?"":"s")+" seguido"+(streak===1?"":"s")+"!"
-    :"Tu alemán va por buen camino. ¡Hoy es buen día para arrancar tu racha!";
-  greeting.appendChild(mk("p",subMsg,"font-size:16px;color:var(--muted);line-height:1.5;"));
+    ?"Has completado parte de tu meta semanal. "+streak+" día"+(streak===1?"":"s")+" de racha."
+    :"Tu alemán va por buen camino. Hoy es buen día para arrancar tu racha.";
+  greetCopy.appendChild(mk("p",subMsg,""));
+  greeting.appendChild(greetCopy);
+  var greetActions=mk("div","",""); greetActions.className="stitch-page-actions";
+  greetActions.appendChild(mk("span","Últimos 30 días","min-height:44px;display:inline-flex;align-items:center;padding:0 16px;border-radius:var(--r-pill);border:1px solid var(--border);color:var(--text2);font-size:14px;font-weight:800;"));
+  greetActions.appendChild(mk("span",totalXP.toLocaleString()+" XP","min-height:44px;display:inline-flex;align-items:center;padding:0 16px;border-radius:var(--r-md);background:var(--primary-container);color:var(--on-primary-container);font-size:14px;font-weight:900;"));
+  greeting.appendChild(greetActions);
   el.appendChild(greeting);
 
   // ── 2. STAT CARDS (2-column grid) ──
-  var statGrid=mk("div","","display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 18px 14px;");
+  var statGrid=mk("div","","display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px;");
   var cards=[
     {icon:"🔥",label:"Racha",val:streak,sub:streak===1?"día seguido":"días seguidos",borderClr:"rgba(var(--gold-rgb),0.25)",txtClr:"var(--gold-text)",bg:"rgba(var(--gold-rgb),0.06)"},
     {icon:"⭐",label:"Total XP",val:totalXP,sub:"puntos logrados",borderClr:"rgba(var(--teal-rgb),0.25)",txtClr:"var(--teal-text)",bg:"rgba(var(--teal-rgb),0.06)"}
   ];
   cards.forEach(function(c){
-    var card=mk("div","","background:"+c.bg+";border:1px solid "+c.borderClr+";border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px;");
+    var card=mk("div","","background:"+c.bg+";border:1px solid "+c.borderClr+";border-radius:20px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;min-height:150px;");
     var top=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;");
     top.appendChild(mk("span",c.icon,"font-size:22px;"));
     top.appendChild(mk("span",c.label,"font-size:11px;color:var(--muted);font-weight:500;letter-spacing:1px;font-family:var(--font-label);"));
     card.appendChild(top);
     var val=mk("div","","");
-    val.appendChild(mk("p",typeof c.val==="number"?c.val.toLocaleString():String(c.val),"font-size:28px;font-weight:900;color:"+c.txtClr+";letter-spacing:-0.03em;"));
+    val.appendChild(mk("p",typeof c.val==="number"?c.val.toLocaleString():String(c.val),"font-size:48px;font-weight:900;color:"+c.txtClr+";letter-spacing:-0.04em;line-height:1;font-variant-numeric:tabular-nums;"));
     val.appendChild(mk("p",c.sub,"font-size:13px;color:var(--muted);font-weight:500;margin-top:2px;"));
     card.appendChild(val);
     statGrid.appendChild(card);
@@ -39,7 +45,7 @@ function renderSummary() {
   el.appendChild(statGrid);
 
   // ── Mini stats row (compact) ──
-  var miniStats=mk("div","","display:flex;gap:8px;padding:6px 18px 16px;flex-wrap:wrap;");
+  var miniStats=mk("div","","display:flex;gap:8px;margin:0 0 18px;flex-wrap:wrap;");
   var miniItems=[
     {label:"Vocabulario",val:state.session.saved.length,color:"var(--purple-text)"},
     {label:"Pendientes",val:dueN,color:"var(--red-text)"},
@@ -55,7 +61,7 @@ function renderSummary() {
   el.appendChild(miniStats);
 
   // ── 3. WEEKLY ACTIVITY CHART ──
-  var chartCard=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin:0 18px 14px;");
+  var chartCard=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin:0 0 18px;min-height:300px;");
   var chartHdr=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;");
   chartHdr.appendChild(mk("p","Actividad Semanal","font-size:14px;color:var(--text);font-weight:700;letter-spacing:-0.01em;"));
   chartCard.appendChild(chartHdr);
@@ -71,7 +77,7 @@ function renderSummary() {
   });
   maxAct=Math.max(maxAct,1);
 
-  var chartRow=mk("div","","display:flex;align-items:flex-end;justify-content:space-between;gap:4px;height:120px;padding-bottom:18px;");
+  var chartRow=mk("div","","display:flex;align-items:flex-end;justify-content:space-between;gap:10px;height:190px;padding-bottom:18px;");
   days.forEach(function(d){
     var e=state.session.dailyLog[d.key]||{};
     var total=(e.minutes||0)+(e.phrasesReviewed||0)+(e.drillsDone||0);
@@ -94,26 +100,26 @@ function renderSummary() {
   el.appendChild(chartCard);
 
   // ── Level progress compact ──
-  var lvlCard=mk("div","","background:rgba(var(--purple-rgb),0.06);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:var(--r-lg);padding:16px 18px;margin:0 18px 14px;");
+  var lvlCard=mk("div","","background:rgba(var(--purple-rgb),0.06);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:20px;padding:20px 24px;margin:0 0 18px;");
   var lvlTop=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;");
   var lvlLabel=state.app.level==="A2"?"A2→B1":state.app.level==="B1"?"B1→B2":"B2+";
   lvlTop.appendChild(mk("p","📈 Nivel "+lvlLabel,"font-size:14px;color:var(--text);font-weight:700;"));
   lvlTop.appendChild(mk("p",lvlPct+"%","font-size:20px;font-weight:900;color:var(--purple-text);"));
   lvlCard.appendChild(lvlTop);
   var lvlBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:8px;height:8px;overflow:hidden;");
-  var lvlFill=mk("div","","background:linear-gradient(90deg,#c4a7e7,#c4b5fd);height:100%;width:"+lvlPct+"%;transition:width 0.5s var(--ease-out);border-radius:8px;");
+  var lvlFill=mk("div","","background:linear-gradient(90deg,var(--purple),var(--primary));height:100%;width:"+lvlPct+"%;transition:width 0.5s var(--ease-out);border-radius:8px;");
   lvlBar.appendChild(lvlFill); lvlCard.appendChild(lvlBar);
   el.appendChild(lvlCard);
 
   // ── 4. GRAMMAR PROGRESS GRID ──
-  var gramCard=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin:0 18px 14px;");
-  gramCard.appendChild(mk("p","Dominio de Gramática","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;letter-spacing:-0.01em;"));
+  var gramCard=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin:0 0 18px;");
+  gramCard.appendChild(mk("p","Dominio de Gramática","font-size:26px;color:var(--text);font-weight:900;margin-bottom:18px;letter-spacing:-0.03em;"));
 
   var gs=state.grammar.grammarStats||{};
   var gramKeys=Object.keys(gs);
   GRAMMAR_TOPICS.forEach(function(t){
     var stat=gs[t.key];
-    var pct=stat&&typeof stat.pct==="number"?Math.round(stat.pct):0;
+    var pct=stat&&((stat.right||0)+(stat.wrong||0))?Math.round((stat.right||0)/((stat.right||0)+(stat.wrong||0))*100):0;
     var row=mk("div","","margin-bottom:10px;");
     var rowTop=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;");
     var label=mk("div","","display:flex;align-items:center;gap:6px;");
@@ -131,9 +137,9 @@ function renderSummary() {
   el.appendChild(gramCard);
 
   // ── SRS distribution (compact) ──
-  var srsCard=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin:0 18px 14px;");
+  var srsCard=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin:0 0 18px;");
   srsCard.appendChild(mk("p","📦 Distribución SRS","font-size:14px;color:var(--text);font-weight:700;margin-bottom:12px;letter-spacing:-0.01em;"));
-  var boxColors=["#ffb4ab","#ffb955","#fbbf24","#5dd9d0","#4ade80","#22c55e"];
+  var boxColors=["var(--red)","var(--gold)","var(--secondary)","var(--teal)","var(--green)","var(--green-text)"];
   var totalCards=state.session.saved.length||1;
   for(var b=0;b<=5;b++){
     var count=state.session.saved.filter(function(p){return p.box===b;}).length;
@@ -152,7 +158,21 @@ function renderSummary() {
   var msg=state.session.sessionPhrases+state.session.saved.length+state.session.sessionMinutes===0
     ?"Empezá a practicar y acá verás tu progreso."
     :"Gut gemacht! La consistencia es la clave. ¡Seguí adelante!";
-  var tip=mk("div","","background:rgba(var(--teal-rgb),0.06);border:1px solid rgba(var(--teal-rgb),0.18);border-radius:var(--r-lg);padding:14px 18px;margin:0 18px 14px;display:flex;gap:10px;align-items:flex-start;");
+  var achievement=mk("div","","background:var(--surface);border:1px solid rgba(var(--gold-rgb),0.22);border-radius:20px;padding:24px;margin:0 0 18px;text-align:center;");
+  achievement.appendChild(mk("p","PRÓXIMO LOGRO","font-size:12px;color:var(--text2);letter-spacing:.14em;font-weight:900;margin-bottom:18px;"));
+  achievement.appendChild(mk("p","🏅","font-size:50px;margin-bottom:10px;"));
+  achievement.appendChild(mk("p","Políglota Pro","font-size:22px;color:var(--text);font-weight:900;margin-bottom:6px;"));
+  achievement.appendChild(mk("p","Completa 50 lecciones sin errores.","font-size:14px;color:var(--text2);line-height:1.5;margin-bottom:14px;"));
+  achievement.appendChild(mk("span",Math.min(50,totalPhrases)+" / 50 completadas","display:inline-flex;padding:6px 16px;border-radius:var(--r-pill);background:rgba(var(--gold-rgb),0.16);color:var(--gold-text);font-size:12px;font-weight:900;text-transform:uppercase;"));
+  el.appendChild(achievement);
+
+  var challenge=mk("div","","background:var(--primary-container);border:1px solid rgba(var(--primary-rgb),0.28);border-radius:20px;padding:24px;margin:0 0 18px;color:var(--on-primary-container);");
+  challenge.appendChild(mk("p","DESAFÍO DIARIO","font-size:12px;letter-spacing:.1em;font-weight:900;margin-bottom:10px;color:var(--on-primary-container);"));
+  challenge.appendChild(mk("p","Repaso Flash","font-size:22px;font-weight:900;margin-bottom:4px;color:var(--on-primary-container);"));
+  challenge.appendChild(mk("p","Ganá 2x XP repasando vocabulario hoy.","font-size:14px;font-weight:700;color:var(--on-primary-container);opacity:0.82;"));
+  el.appendChild(challenge);
+
+  var tip=mk("div","","background:rgba(var(--teal-rgb),0.06);border:1px solid rgba(var(--teal-rgb),0.18);border-radius:var(--r-lg);padding:14px 18px;margin:0 0 14px;display:flex;gap:10px;align-items:flex-start;");
   tip.appendChild(mk("span","💡","font-size:18px;flex-shrink:0;margin-top:1px;"));
   tip.appendChild(mk("p",msg,"font-size:14px;color:var(--teal-text);font-weight:600;line-height:1.5;"));
   el.appendChild(tip);
@@ -160,7 +180,7 @@ function renderSummary() {
   // ── 5. EXPORT BUTTON ──
   var exportBtn=document.createElement("button");
   exportBtn.textContent="📥 Exportar Progreso (JSON)";
-  exportBtn.style.cssText="display:block;width:calc(100% - 36px);margin:6px 18px 22px;padding:14px;border-radius:var(--r-md);border:1px solid rgba(var(--gold-rgb),0.25);background:rgba(var(--gold-rgb),0.08);color:var(--gold-text);font-size:14px;font-weight:700;cursor:pointer;transition:background 0.2s,transform 0.12s;";
+  exportBtn.style.cssText="display:block;width:100%;margin:6px 0 22px;padding:14px;border-radius:var(--r-md);border:1px solid rgba(var(--gold-rgb),0.25);background:rgba(var(--gold-rgb),0.08);color:var(--gold-text);font-size:14px;font-weight:700;cursor:pointer;transition:background 0.2s,transform 0.12s;";
   exportBtn.onclick=function(){
     var _t=todayKey();
     var str=computeStreak();
@@ -210,7 +230,7 @@ function renderSummary() {
   // ── Collapsible: Lapsed phrases ──
   var allLapsed=[].concat(state.session.saved).filter(function(p){return p.lapses>0;}).sort(function(a,b){return b.lapses-a.lapses;});
   if(allLapsed.length){
-    var lapsCard=mk("div","","margin:0 18px 18px;border:1px solid rgba(var(--red-rgb),0.18);border-radius:var(--r-lg);overflow:hidden;");
+    var lapsCard=mk("div","","margin:0 0 18px;border:1px solid rgba(var(--red-rgb),0.18);border-radius:var(--r-lg);overflow:hidden;");
     var lapsHdr=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:rgba(var(--red-rgb),0.05);cursor:pointer;");
     lapsHdr.setAttribute("role","button"); lapsHdr.setAttribute("tabindex","0");
     lapsHdr.appendChild(mk("p","⚠️ Más Falladas ("+allLapsed.length+")","font-size:12px;color:var(--red-text);font-weight:700;letter-spacing:1px;font-family:var(--font-label);"));

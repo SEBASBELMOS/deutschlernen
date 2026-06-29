@@ -135,7 +135,7 @@ function renderTempusCard(el,hdr){
   var accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--gold);margin-bottom:10px;");
   hdr.appendChild(accent);
   hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
-  hdr.appendChild(mk("h2","Antes / Después","font-size:20px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.15;"));
+  hdr.appendChild(mk("h2","Antes / Después","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.15;"));
   // Progress
   var prog=mk("div","","display:flex;gap:8px;margin-top:8px;");
   [

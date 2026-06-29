@@ -5,10 +5,16 @@ function renderShadowing(){
   const el=document.getElementById("s-shadowing"); el.innerHTML="";
 
   // Header
-  const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","SOMBRA — PRONUNCIACIÓN","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","Shadowing","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Escucha en alemán, graba tu voz y compará la pronunciación.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
+  const hdr=document.createElement("section"); hdr.className="stitch-page-head";
+  var headCopy=mk("div","","");
+  headCopy.appendChild(mk("p","SPEAKING EXERCISE","display:inline-flex;padding:6px 14px;border-radius:var(--r-pill);background:var(--primary-container);color:var(--on-primary-container);font-size:12px;letter-spacing:.14em;font-family:var(--font-label);font-weight:900;margin-bottom:12px;"));
+  headCopy.appendChild(mk("h2","Shadowing Mastery",""));
+  headCopy.appendChild(mk("p","Escuchá el audio nativo, repetí la frase y compará tu pronunciación en tiempo real.",""));
+  hdr.appendChild(headCopy);
+  var headStats=mk("div","","display:flex;gap:22px;align-items:center;");
+  headStats.appendChild(mk("div","🔥 "+computeStreak()+" días","font-size:16px;color:var(--primary);font-weight:900;white-space:nowrap;"));
+  headStats.appendChild(mk("div","★ "+state.app.level+" level","font-size:16px;color:var(--secondary);font-weight:900;white-space:nowrap;"));
+  hdr.appendChild(headStats);
   el.appendChild(hdr);
 
   // Init pool
@@ -21,25 +27,29 @@ function renderShadowing(){
 
   var sentence=state.shadowing.pool[state.shadowing.idx];
 
-  // ── Phrase Card ──
-  var card=mk("div","","background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-xl,20px);padding:24px;margin-bottom:16px;box-shadow:0 4px 20px rgba(63,81,181,0.06);");
+  var practiceGrid=document.createElement("div"); practiceGrid.className="shadow-practice-grid";
+
+  // ── Native Audio Card ──
+  var card=mk("div","","background:var(--surface);border:1px solid rgba(69,70,82,0.72);border-radius:var(--r-xl,20px);padding:28px;box-shadow:0 8px 28px rgba(0,0,0,0.18);");
 
   // Top row: label + level badge
   var topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;");
-  topRow.appendChild(mk("span","Originalsatz","font-size:10px;color:var(--teal-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;text-transform:uppercase;"));
+  topRow.appendChild(mk("span","Native Audio","font-size:24px;color:var(--primary);font-weight:900;letter-spacing:-0.03em;"));
   var levelBadge=mk("span","B1 Level","font-size:10px;color:var(--text2);background:rgba(var(--teal-rgb),0.08);border:1px solid rgba(var(--teal-rgb),0.18);border-radius:var(--r-pill,999px);padding:3px 10px;font-weight:700;");
   topRow.appendChild(levelBadge);
   card.appendChild(topRow);
 
-  // German phrase — large
-  card.appendChild(mk("p","„"+sentence.de+"”","font-size:20px;font-weight:800;color:var(--text);line-height:1.5;margin-bottom:6px;letter-spacing:-0.01em;"));
-
-  // Spanish below
-  card.appendChild(mk("p",sentence.es,"font-size:13px;color:var(--muted);font-weight:500;margin-bottom:16px;"));
+  card.appendChild(mk("p","Listen and mimic the pronunciation","font-size:15px;color:var(--text2);font-weight:500;margin-bottom:12px;"));
+  var waveLarge=mk("div","",""); waveLarge.className="shadow-wave-large";
+  for(var wli=0;wli<48;wli++){
+    var wb=mk("span","","height:"+(26+Math.round(Math.abs(Math.sin(wli*0.73))*86))+"px;animation-delay:"+(wli*0.025)+"s;");
+    waveLarge.appendChild(wb);
+  }
+  card.appendChild(waveLarge);
 
   // Play button row
   var playRow=mk("div","","display:flex;align-items:center;gap:12px;");
-  var playBtn=mk("button","","width:48px;height:48px;border-radius:50%;border:none;background:var(--teal);color:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(var(--teal-rgb),0.35);transition:background 0.2s,transform 0.12s;flex-shrink:0;");
+  var playBtn=mk("button","","width:48px;height:48px;border-radius:50%;border:none;background:var(--teal);color:var(--on-primary);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(var(--teal-rgb),0.35);transition:filter 0.2s,transform 0.12s;flex-shrink:0;");
   playBtn.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>';
   playBtn.onclick=function(){speakGerman(sentence.de);};
   playRow.appendChild(playBtn);
@@ -49,10 +59,31 @@ function renderShadowing(){
   durWrap.appendChild(mk("p","~4 segundos","font-size:11px;color:var(--muted);font-weight:500;"));
   playRow.appendChild(durWrap);
   card.appendChild(playRow);
-  el.appendChild(card);
+  practiceGrid.appendChild(card);
+
+  var tips=mk("aside","",""); tips.className="shadow-tip-panel";
+  tips.appendChild(mk("h3","Tips for Shadowing","font-size:22px;color:var(--text);font-weight:800;letter-spacing:-0.02em;margin-bottom:18px;"));
+  ["Escuchá la frase completa dos veces antes de grabar.","Enfocate en el ritmo, no solo palabra por palabra.","Hablá claro y cerca del micrófono."].forEach(function(tip,i){
+    var row=mk("div","","display:flex;gap:12px;margin-bottom:16px;align-items:flex-start;");
+    row.appendChild(mk("span",String(i+1),"width:24px;height:24px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;"));
+    row.appendChild(mk("p",tip,"font-size:14px;color:var(--text2);line-height:1.45;font-weight:500;"));
+    tips.appendChild(row);
+  });
+  tips.appendChild(mk("div","","height:1px;background:var(--border);margin:18px 0;"));
+  tips.appendChild(mk("p","Microphone Quality","font-size:16px;color:var(--text);font-weight:700;margin-bottom:8px;"));
+  var micQ=mk("div","",""); micQ.className="stitch-progress"; micQ.appendChild(mk("span","","width:92%;background:var(--green);"));
+  tips.appendChild(micQ);
+  practiceGrid.appendChild(tips);
+  el.appendChild(practiceGrid);
+
+  var targetCard=mk("section","",""); targetCard.className="shadow-target-card";
+  targetCard.appendChild(mk("p","TARGET SENTENCE","font-size:13px;color:var(--text2);letter-spacing:.08em;font-weight:800;margin-bottom:14px;"));
+  targetCard.appendChild(mk("p","„"+sentence.de+"”","font-size:clamp(30px,4.5vw,50px);font-weight:900;color:var(--primary);line-height:1.12;letter-spacing:-0.04em;margin-bottom:14px;"));
+  targetCard.appendChild(mk("p","("+sentence.es+")","font-size:16px;color:var(--text2);font-style:italic;line-height:1.5;margin-bottom:24px;"));
+  el.appendChild(targetCard);
 
   // ── Recording Visualization Area ──
-  var visBox=mk("div","","min-height:120px;background:rgba(255,255,255,0.02);border:2px dashed rgba(255,255,255,0.08);border-radius:var(--r-xl,20px);padding:20px;margin-bottom:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:border-color 0.3s;");
+  var visBox=mk("div","","min-height:150px;background:rgba(255,255,255,0.02);border:2px dashed rgba(255,255,255,0.08);border-radius:var(--r-xl,20px);padding:20px;margin:18px 0 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:border-color 0.3s;");
 
   // Idle state
   var idleState=mk("div","","display:flex;flex-direction:column;align-items:center;gap:8px;");
@@ -116,7 +147,7 @@ function renderShadowing(){
   var pulseRing=mk("div","","display:none;position:absolute;inset:-10px;border-radius:50%;background:rgba(var(--red-rgb),0.12);animation:pulseRing 2s cubic-bezier(0.4,0,0.6,1) infinite;");
   pulseWrap.appendChild(pulseRing);
 
-  var micBtn=makeMicBtn("#5dd9d0",function(transcript){
+  var micBtn=makeMicBtn("var(--teal)",function(transcript){
     // Restore visual state
     idleState.style.display="none";
     recState.style.display="none";
@@ -128,7 +159,7 @@ function renderShadowing(){
     micBtn.style.background="rgba(var(--teal-rgb),0.08)";
 
     // Compute and render score
-    renderPronScore(scoreHost, sentence.de, transcript, "#5dd9d0");
+    renderPronScore(scoreHost, sentence.de, transcript, "var(--teal)");
     // Update visual elements from score
     updateVisualScore(sentence.de, transcript);
 

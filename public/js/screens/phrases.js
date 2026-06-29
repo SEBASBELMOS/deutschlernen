@@ -6,13 +6,12 @@ function renderPhrases() {
   // ── Hero Daily Phrase Card ──
   const potdWrapper=document.createElement("div");
   potdWrapper.style.cssText="position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(var(--purple-rgb),0.28),rgba(var(--purple-rgb),0.04));border:1px solid rgba(var(--purple-rgb),0.22);border-radius:var(--r-lg,16px);margin-bottom:22px;min-height:190px;";
-  // Blur orbs — decorative
-  const orb1=document.createElement("div");
-  orb1.style.cssText="position:absolute;top:-40px;right:-30px;width:150px;height:150px;background:rgba(var(--purple-rgb),0.32);border-radius:50%;filter:blur(52px);pointer-events:none;";
-  potdWrapper.appendChild(orb1);
-  const orb2=document.createElement("div");
-  orb2.style.cssText="position:absolute;bottom:-25px;left:-25px;width:100px;height:100px;background:rgba(var(--teal-rgb),0.18);border-radius:50%;filter:blur(36px);pointer-events:none;";
-  potdWrapper.appendChild(orb2);
+  const accentLine=document.createElement("div");
+  accentLine.style.cssText="position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--purple),var(--teal));pointer-events:none;";
+  potdWrapper.appendChild(accentLine);
+  const accentBand=document.createElement("div");
+  accentBand.style.cssText="position:absolute;right:-36px;bottom:-34px;width:170px;height:92px;background:rgba(var(--teal-rgb),0.10);border:1px solid rgba(var(--teal-rgb),0.18);border-radius:28px;transform:rotate(-12deg);pointer-events:none;";
+  potdWrapper.appendChild(accentBand);
   // Inner content div — cleared by renderPotd
   const potdInner=document.createElement("div");
   potdInner.style.cssText="position:relative;z-index:1;padding:18px;display:flex;flex-direction:column;justify-content:center;min-height:190px;";

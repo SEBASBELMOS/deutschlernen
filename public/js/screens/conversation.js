@@ -6,9 +6,12 @@ function renderConversation() {
   const el=document.getElementById("s-conversar"); el.innerHTML="";
 
   // Header
-  const hdr=mk("div","","margin-bottom:14px;");
-  hdr.appendChild(mk("p","ELIGE UN ROL","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","Conversar","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
+  const hdr=document.createElement("section"); hdr.className="stitch-page-head";
+  var copy=mk("div","","");
+  copy.appendChild(mk("p","AI CHAT","font-size:11px;color:var(--primary);letter-spacing:2px;font-family:var(--font-label);font-weight:900;margin-bottom:6px;text-transform:uppercase;"));
+  copy.appendChild(mk("h2","Conversar",""));
+  copy.appendChild(mk("p","Elegí un escenario y practicá respuestas reales con feedback en alemán.",""));
+  hdr.appendChild(copy);
   el.appendChild(hdr);
 
   // Horizontal scrollable scenario pills
@@ -55,13 +58,35 @@ function startChat(scenario) {
   top.appendChild(saveBtn);
   el.appendChild(top);
 
+  var workspace=document.createElement("div"); workspace.className="chat-workspace";
+  var chatMain=document.createElement("div"); chatMain.className="chat-main-panel";
+  var insights=document.createElement("aside"); insights.className="chat-insights";
+  insights.appendChild(mk("h3","Insights","font-size:26px;font-weight:900;color:var(--text);letter-spacing:-0.03em;margin-bottom:22px;"));
+  var progressCard=mk("div","",""); progressCard.className="insight-card";
+  progressCard.appendChild(mk("p","SCENARIO PROGRESS","font-size:10px;color:var(--muted);letter-spacing:.08em;font-weight:800;margin-bottom:10px;"));
+  progressCard.appendChild(mk("p","65%","font-size:32px;font-weight:900;color:var(--text);line-height:1;margin-bottom:10px;font-variant-numeric:tabular-nums;"));
+  var prog=mk("div","",""); prog.className="stitch-progress"; prog.appendChild(mk("span","","width:65%;"));
+  progressCard.appendChild(prog);
+  insights.appendChild(progressCard);
+  var vocabCard=mk("div","",""); vocabCard.className="insight-card";
+  vocabCard.appendChild(mk("h4","Key Vocabulary","font-size:18px;margin-bottom:12px;"));
+  ["der Termin","die Antwort","sonst noch etwas?"].forEach(function(w){
+    var row=mk("div","","padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);");
+    row.appendChild(mk("p",w,"font-size:15px;color:var(--primary);font-weight:900;"));
+    row.appendChild(mk("p","Úsalo si encaja en la conversación.","font-size:12px;color:var(--text2);margin-top:2px;"));
+    vocabCard.appendChild(row);
+  });
+  insights.appendChild(vocabCard);
+  var grammarCard=mk("div","",""); grammarCard.className="insight-card";
+  grammarCard.style.borderColor="rgba(var(--purple-rgb),0.35)";
+  grammarCard.appendChild(mk("h4","Grammar Focus","font-size:18px;margin-bottom:10px;color:var(--purple-text);"));
+  grammarCard.appendChild(mk("p","Peticiones corteses con Konjunktiv II: Ich möchte bitte...","font-size:14px;color:var(--text2);line-height:1.55;"));
+  insights.appendChild(grammarCard);
+
   // Chat window
   const win=document.createElement("div"); win.className="chat-win"; win.id="chat-win";
-  win.style.cssText="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r-lg,16px) var(--r-lg,16px) 0 0;padding:14px 12px;height:max(200px,40vh);max-height:55vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent;";
-  el.appendChild(win);
-
-  // Welcome message
-  addBubble("Hallo! Scenario: "+scenario+"\n(Ready! Write in German or Spanish.)","bot");
+  win.style.cssText="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r-lg,16px) var(--r-lg,16px) 0 0;padding:22px;height:max(360px,62vh);max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:18px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent;";
+  chatMain.appendChild(win);
 
   startMinTimer();
   changeBtn.onclick=function(){
@@ -80,17 +105,21 @@ function startChat(scenario) {
   inp.onfocus=function(){inp.style.borderColor="rgba(var(--teal-rgb),0.5)";};
   inp.onblur=function(){inp.style.borderColor="rgba(var(--teal-rgb),0.2)";};
   const sendBtn=document.createElement("button"); sendBtn.className="send-btn";
-  sendBtn.style.cssText="background:var(--teal);color:#000;border:none;border-radius:var(--r-pill,999px);padding:10px 18px;font-size:15px;font-weight:800;cursor:pointer;transition:background 0.2s,transform 0.12s;";
+  sendBtn.style.cssText="background:var(--teal);color:var(--on-primary);border:none;border-radius:var(--r-pill,999px);padding:10px 18px;font-size:15px;font-weight:800;cursor:pointer;transition:filter 0.2s,transform 0.12s;";
   sendBtn.textContent="→";
-  sendBtn.onmouseenter=function(){sendBtn.style.background="#5dd8cf";};
-  sendBtn.onmouseleave=function(){sendBtn.style.background="var(--teal)";};
+  sendBtn.onmouseenter=function(){sendBtn.style.filter="brightness(1.05)";};
+  sendBtn.onmouseleave=function(){sendBtn.style.filter="none";};
   sendBtn.onmousedown=function(){sendBtn.style.transform="scale(0.93)";};
   sendBtn.onmouseup=function(){sendBtn.style.transform="scale(1)";};
-  const micBtn=makeMicBtn("#5dd9d0",function(text){inp.value=text;doSend(inp,sendBtn);});
+  const micBtn=makeMicBtn("var(--teal)",function(text){inp.value=text;doSend(inp,sendBtn);});
   inp.onkeydown=function(e){if(e.key==="Enter"&&!inp.disabled)doSend(inp,sendBtn);};
   sendBtn.onclick=function(){doSend(inp,sendBtn);};
   bar.appendChild(micBtn); bar.appendChild(inp); bar.appendChild(sendBtn);
-  el.appendChild(bar);
+  chatMain.appendChild(bar);
+  workspace.appendChild(chatMain);
+  workspace.appendChild(insights);
+  el.appendChild(workspace);
+  addBubble("Hallo! Scenario: "+scenario+"\n(Ready! Write in German or Spanish.)","bot");
 }
 
 function addBubble(text, role) {
@@ -183,7 +212,7 @@ async function doSend(inp, sendBtn) {
     addBubble("Error al enviar mensaje. Intenta de nuevo.","bot");
   }
   inp.disabled=false; sendBtn.disabled=false;
-  sendBtn.style.background="var(--teal)"; sendBtn.style.color="#000";
+  sendBtn.style.background="var(--teal)"; sendBtn.style.color="var(--on-primary)";
 }
 
 // ── POST-CHAT ANALYSIS ────────────────────────────────────────────────────────
@@ -278,7 +307,7 @@ async function runPostChatAnalysis(){
     if(!(r.errors||[]).length && !(r.vocab||[]).length && !(r.suggestedPhrases||[]).length){
       box.appendChild(mk("p","🎉 Sin observaciones. Sigue asi.","color:var(--green-text);font-size:14px;text-align:center;padding:20px 0;font-weight:600;"));
     }
-    const ok=mk("button","Cerrar","width:100%;background:var(--gold);color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;margin-top:8px;");
+    const ok=mk("button","Cerrar","width:100%;background:var(--gold);color:var(--on-primary);border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;margin-top:8px;");
     ok.onclick=closeModal; box.appendChild(ok);
   } catch(e){
     loading.remove();

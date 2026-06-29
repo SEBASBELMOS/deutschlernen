@@ -49,9 +49,9 @@ function renderHörverstehenPlay(container){
   // Dialog card — hidden until playback
   var dialogDiv=document.createElement("div");
   dialogDiv.style.cssText="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:16px;display:none;position:relative;overflow:hidden;";
-  var dialogGlow=document.createElement("div");
-  dialogGlow.style.cssText="position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(var(--teal-rgb),0.1);border-radius:50%;filter:blur(30px);pointer-events:none;";
-  dialogDiv.appendChild(dialogGlow);
+  var dialogAccent=document.createElement("div");
+  dialogAccent.style.cssText="position:absolute;top:0;right:0;width:84px;height:4px;background:var(--teal);border-radius:0 0 0 var(--r-pill);opacity:0.85;pointer-events:none;";
+  dialogDiv.appendChild(dialogAccent);
   var dialogInner=mk("div","","position:relative;z-index:1;");
   _hvState.dialog.forEach(function(ex){
     var bubble=mk("div","","display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;");
@@ -176,7 +176,7 @@ function renderReading(){
   // ── Header ──
   const hdr=mk("div","","margin-bottom:16px;");
   hdr.appendChild(mk("p","LECTURA INTERACTIVA","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","Leer y aprender","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
+  hdr.appendChild(mk("h2","Leer y aprender","font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","Eleg\u00ed un tema para generar un texto en alem\u00e1n. Toc\u00e1 cualquier palabra para ver su traducci\u00f3n.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
 
@@ -207,10 +207,9 @@ function renderReading(){
   const textArea=document.createElement("div");
   textArea.id="lectura-text";
   textArea.style.cssText="position:relative;overflow:hidden;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r-lg,16px);min-height:140px;display:flex;align-items:center;justify-content:center;";
-  // Decorative glow
-  var glow=document.createElement("div");
-  glow.style.cssText="position:absolute;top:-30px;right:-20px;width:100px;height:100px;background:rgba(var(--purple-rgb),0.12);border-radius:50%;filter:blur(40px);pointer-events:none;";
-  textArea.appendChild(glow);
+  var accent=document.createElement("div");
+  accent.style.cssText="position:absolute;top:0;right:0;width:110px;height:4px;background:linear-gradient(90deg,var(--purple),var(--primary));border-radius:0 0 0 var(--r-pill);opacity:0.85;pointer-events:none;";
+  textArea.appendChild(accent);
   var placeholder=mk("div","","text-align:center;padding:36px 20px;position:relative;z-index:1;");
   placeholder.appendChild(mk("span","📖","display:block;font-size:36px;margin-bottom:8px;opacity:0.55;"));
   placeholder.appendChild(mk("p","Eleg\u00ed un tema arriba para empezar","font-size:14px;color:var(--muted);font-weight:500;"));
