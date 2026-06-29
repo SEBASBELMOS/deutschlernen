@@ -200,7 +200,7 @@ function openCreateModal(){
   box.setAttribute("aria-label","Crear flashcard");
   box.appendChild(mk("p","➕  Crear flashcard","font-size:14px;font-weight:800;color:var(--gold-text);margin-bottom:16px;"));
 
-  const deLbl=mk("p","Aleman","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
+  const deLbl=mk("p","Aleman","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;font-family:var(--font-label);");
   const deInp=document.createElement("input");
   deInp.placeholder="z.B. Danke schön";
   deInp.className="input-field";
@@ -208,7 +208,7 @@ function openCreateModal(){
   deInp.style.fontWeight="600";
   box.appendChild(deLbl); box.appendChild(deInp);
 
-  const esLbl=mk("p","Espanol","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
+  const esLbl=mk("p","Espanol","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;font-family:var(--font-label);");
   const esInp=document.createElement("textarea");
   esInp.placeholder="Gracias / Muchas gracias";
   esInp.rows=2;
@@ -218,7 +218,7 @@ function openCreateModal(){
   esInp.style.resize="vertical";
   box.appendChild(esLbl); box.appendChild(esInp);
 
-  const tipLbl=mk("p","Tip (opcional)","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
+  const tipLbl=mk("p","Tip (opcional)","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;font-family:var(--font-label);");
   const tipInp=document.createElement("input");
   tipInp.placeholder="z.B. informal";
   tipInp.className="input-field";
@@ -226,7 +226,7 @@ function openCreateModal(){
   tipInp.style.fontWeight="500";
   box.appendChild(tipLbl); box.appendChild(tipInp);
 
-  const catLbl=mk("p","Categoria","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
+  const catLbl=mk("p","Categoria","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;font-family:var(--font-label);");
   const catSel=document.createElement("select");
   catSel.className="input-field";
   catSel.style.fontSize="13px";

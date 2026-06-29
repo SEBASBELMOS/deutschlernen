@@ -2,7 +2,7 @@
 function renderSummary() {
   const el=document.getElementById("s-resumen"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","TU PROGRESO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","TU PROGRESO","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Resumen","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
 
@@ -11,7 +11,7 @@ function renderSummary() {
   streakBox.style.cssText="background:linear-gradient(135deg,rgba(var(--gold-rgb),0.12),rgba(var(--red-rgb),0.06));border:1px solid rgba(var(--gold-rgb),0.25);border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;";
   streakBox.appendChild(mk("span","🔥","font-size:32px;flex-shrink:0;"));
   const sCol=mk("div","","flex:1;");
-  sCol.appendChild(mk("p","RACHA","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;"));
+  sCol.appendChild(mk("p","RACHA","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;"));
   sCol.appendChild(mk("p",streak+(streak===1?" dia":" dias")+" seguidos","font-size:20px;font-weight:900;color:var(--text);letter-spacing:-0.02em;margin-top:2px;"));
   if(streak===0) sCol.appendChild(mk("p","Practica hoy para empezar","font-size:12px;color:var(--muted);margin-top:2px;font-weight:500;"));
   streakBox.appendChild(sCol);
@@ -22,7 +22,7 @@ function renderSummary() {
   var lvlBox=document.createElement("div");
   lvlBox.style.cssText="background:rgba(var(--purple-rgb),0.06);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:16px;padding:16px 18px;margin-bottom:10px;";
   var lvlTop=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;");
-  lvlTop.appendChild(mk("p","📈 "+lvlLabel,"font-size:10px;color:var(--purple-text);letter-spacing:2.5px;font-weight:700;"));
+  lvlTop.appendChild(mk("p","📈 "+lvlLabel,"font-size:10px;color:var(--purple-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;"));
   lvlTop.appendChild(mk("p",lvlPct+"%","font-size:22px;font-weight:900;color:var(--purple-text);font-variant-numeric:tabular-nums;"));
   lvlBox.appendChild(lvlTop);
   var lvlBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:8px;height:8px;overflow:hidden;");
@@ -42,7 +42,7 @@ function renderSummary() {
 
   // ── Level History Chart (SVG) ──
   var histCard=document.createElement("div"); histCard.className="card";
-  histCard.appendChild(mk("p","📈  NIVEL — HISTORIAL","font-size:10px;color:var(--gold-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  histCard.appendChild(mk("p","📈  NIVEL — HISTORIAL","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:12px;font-weight:700;"));
   histCard.appendChild(mk("p","Curva de porcentaje de nivel CEFR en el tiempo.","font-size:12px;color:var(--muted);line-height:1.45;margin-top:-6px;margin-bottom:10px;font-weight:500;"));
   var _pts=[];
   for(var _i=29;_i>=0;_i--){var _k=addDays(todayKey(),-_i);var _pct=state.session.levelLog&&state.session.levelLog[_k];if(typeof _pct==="number")_pts.push({date:_k,pct:_pct});}
@@ -89,7 +89,7 @@ function renderSummary() {
   goalBox.style.cssText="background:rgba(var(--teal-rgb),0.06);border:1px solid rgba(var(--teal-rgb),0.2);border-radius:16px;padding:16px 18px;margin-bottom:14px;";
   const gTop=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;");
   const gL=mk("div","","");
-  gL.appendChild(mk("p","🎯 META SEMANAL","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;"));
+  gL.appendChild(mk("p","🎯 META SEMANAL","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;"));
   gL.appendChild(mk("p",wk+" / "+state.session.weeklyGoal+" min","font-size:18px;font-weight:800;color:var(--text);margin-top:2px;letter-spacing:-0.01em;"));
   gTop.appendChild(gL);
   gTop.appendChild(mk("span",pct+"%","font-size:22px;font-weight:900;color:var(--teal-text);"));
@@ -118,7 +118,7 @@ function renderSummary() {
   });
 
   const chartCard=document.createElement("div"); chartCard.className="card";
-  chartCard.appendChild(mk("p","📈  ACTIVIDAD — 7 DIAS","font-size:10px;color:var(--gold-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  chartCard.appendChild(mk("p","📈  ACTIVIDAD — 7 DIAS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:12px;font-weight:700;"));
   chartCard.appendChild(mk("p","Cada número es un total diario: minutos + flashcards repasadas + drills hechos.","font-size:12px;color:var(--muted);line-height:1.45;margin-top:-6px;margin-bottom:10px;font-weight:500;"));
   const days=[];
   for(let i=6;i>=0;i--){ const k=addDays(todayKey(),-i); days.push({key:k,label:["Do","Lu","Ma","Mi","Ju","Vi","Sa"][new Date(k+"T00:00:00").getDay()]}); }
@@ -142,7 +142,7 @@ function renderSummary() {
   el.appendChild(chartCard);
 
   const srsCard=document.createElement("div"); srsCard.className="card";
-  srsCard.appendChild(mk("p","📦  DISTRIBUCION SRS","font-size:10px;color:var(--purple-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  srsCard.appendChild(mk("p","📦  DISTRIBUCION SRS","font-size:10px;color:var(--purple-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:12px;font-weight:700;"));
   srsCard.appendChild(mk("p","SRS es el sistema tipo Anki: mientras más alta la caja, mejor recordás esa flashcard. B0 = nueva/fallada; B5 = muy dominada.","font-size:12px;color:var(--muted);line-height:1.45;margin-top:-6px;margin-bottom:10px;font-weight:500;"));
   const boxColors=["#ffb4ab","#ffb955","#fbbf24","#5dd9d0","#4ade80","#22c55e"];
   const boxNames=["Nueva o fallada","Primer repaso","Ya empieza a pegar","Fuerte","Dominada","Maestra"];
@@ -169,7 +169,7 @@ function renderSummary() {
   const allLapsed=[...state.session.saved].filter(function(p){return p.lapses>0;}).sort(function(a,b){return b.lapses-a.lapses;});
   var showAllLapsed=false;
   const lapsCard=document.createElement("div"); lapsCard.className="card";
-  lapsCard.appendChild(mk("p","⚠️  MAS FALLADAS","font-size:10px;color:var(--red-text);letter-spacing:2px;margin-bottom:12px;font-weight:700;"));
+  lapsCard.appendChild(mk("p","⚠️  MAS FALLADAS","font-size:10px;color:var(--red-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:12px;font-weight:700;"));
   const lapsList=mk("div","","");
   lapsCard.appendChild(lapsList);
   function renderLapsedList(){
@@ -212,7 +212,7 @@ function renderSummary() {
   var insightHdr=document.createElement("div");
   insightHdr.style.cssText="display:flex;justify-content:space-between;align-items:center;cursor:pointer;";
   insightHdr.setAttribute("role","button"); insightHdr.setAttribute("tabindex","0"); insightHdr.setAttribute("aria-expanded","false");
-  insightHdr.appendChild(mk("p","📊  INSIGHT SEMANAL","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;"));
+  insightHdr.appendChild(mk("p","📊  INSIGHT SEMANAL","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;"));
   var insightArrow=mk("span","▼","font-size:12px;color:var(--muted);transition:transform 0.2s;");
   insightHdr.appendChild(insightArrow);
   insightCard.appendChild(insightHdr);
@@ -234,7 +234,7 @@ function renderSummary() {
     var fjHdr=document.createElement("div");
     fjHdr.style.cssText="display:flex;justify-content:space-between;align-items:center;cursor:pointer;";
     fjHdr.setAttribute("role","button"); fjHdr.setAttribute("tabindex","0"); fjHdr.setAttribute("aria-expanded","false");
-    fjHdr.appendChild(mk("p","📓  DIARIO DE ERRORES","font-size:10px;color:var(--red-text);letter-spacing:2px;font-weight:700;"));
+    fjHdr.appendChild(mk("p","📓  DIARIO DE ERRORES","font-size:10px;color:var(--red-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;"));
     var fjArrow=mk("span","▼","font-size:12px;color:var(--muted);transition:transform 0.2s;");
     fjHdr.appendChild(fjArrow);
     fjCard.appendChild(fjHdr);
@@ -258,7 +258,7 @@ function renderSummary() {
         Object.keys(groups).forEach(function(src){
           var g=groups[src];
           var sec=document.createElement("div"); sec.style.cssText="margin-top:10px;";
-          sec.appendChild(mk("p",(sourceLabels[src]||src)+" ("+g.count+")","font-size:11px;color:var(--dim);font-weight:700;letter-spacing:1px;margin-bottom:4px;"));
+          sec.appendChild(mk("p",(sourceLabels[src]||src)+" ("+g.count+")","font-size:11px;color:var(--dim);font-weight:700;letter-spacing:1px;font-family:var(--font-label);margin-bottom:4px;"));
           g.items.slice(0,10).forEach(function(e){
             var row=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px;");
             var left=mk("div","","flex:1;");

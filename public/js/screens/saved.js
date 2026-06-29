@@ -223,7 +223,7 @@ function renderVocabTable(host){
   const hrow=document.createElement("tr");
   ["de","es","cat","box","nextReview","lapses"].forEach(function(col){
     const th=document.createElement("th");
-    th.style.cssText="padding:8px 10px;text-align:left;color:var(--muted);font-weight:700;font-size:11px;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.08);cursor:pointer;user-select:none;white-space:nowrap;";
+    th.style.cssText="padding:8px 10px;text-align:left;color:var(--muted);font-weight:700;font-size:11px;letter-spacing:1px;font-family:var(--font-label);border-bottom:1px solid rgba(255,255,255,0.08);cursor:pointer;user-select:none;white-space:nowrap;";
     const arrow=state.savedView.vocabSortCol===col?(state.savedView.vocabSortAsc?" ▲":" ▼"):"";
     th.textContent=col.toUpperCase()+arrow;
     th.onclick=function(){

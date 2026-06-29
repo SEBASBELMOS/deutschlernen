@@ -44,7 +44,7 @@ function appendTempusSentence(host,sentence){
 function renderTempus(){
   var el=document.getElementById("s-tempus"); el.innerHTML="";
   var hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","⏳ Antes / Después","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","vor/nach, bevor/nachdem, vorher/danach — el color diferencia la regla, no el tipo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
@@ -100,7 +100,7 @@ function renderTempus(){
   });
   el.appendChild(ruleCard);
 
-  var pracHdr=mk("p","🎯 PRACTICAR","font-size:11px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;");
+  var pracHdr=mk("p","🎯 PRACTICAR","font-size:11px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;");
   el.appendChild(pracHdr);
   var startBtn=mk("button","Iniciar ronda (24)","width:100%;padding:14px;border-radius:var(--r-lg,14px);border:none;background:rgba(var(--gold-rgb),0.12);color:var(--gold-text);font-size:15px;font-weight:800;cursor:pointer;");
   startBtn.setAttribute("aria-label","Iniciar ronda de 24 ejercicios de antes/después");
@@ -129,14 +129,14 @@ function renderTempusCard(el,hdr){
   var d=data[idx]; d=normalizeTempusExercise(d); data[idx]=d;
   el.innerHTML="";
   hdr.innerHTML="";
-  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","⏳ Antes / Después","font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p",(idx+1)+"/"+data.length+" · Aciertos: "+state.tempus.tempusRight+" · Fallos: "+state.tempus.tempusWrong,"font-size:13px;color:var(--gold-text);margin-top:4px;font-weight:600;"));
   el.appendChild(hdr);
 
   var card=document.createElement("div"); card.className="card";
   card.style.cssText="padding:24px 20px;margin-bottom:14px;border-radius:var(--r-xl,20px);";
-  card.appendChild(mk("p","Completa la oración:","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:600;margin-bottom:10px;"));
+  card.appendChild(mk("p","Completa la oración:","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-family:var(--font-label);font-weight:600;margin-bottom:10px;"));
   var sent=document.createElement("p");
   sent.style.cssText="font-size:17px;font-weight:700;color:var(--text);line-height:1.6;letter-spacing:-0.01em;";
   appendTempusSentence(sent,d.sentence);
@@ -191,7 +191,7 @@ function renderTempusCard(el,hdr){
 function renderTempusResults(el){
   el.innerHTML="";
   var hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","⏳ Resultados","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
   var data=state.tempus.tempusData;
@@ -218,7 +218,7 @@ function renderTempusResults(el){
 
   var sumCard=document.createElement("div"); sumCard.className="card";
   sumCard.style.cssText="margin-bottom:16px;";
-  sumCard.appendChild(mk("p","Lo que practicaste:","font-size:11px;color:var(--gold-text);letter-spacing:1.5px;font-weight:700;margin-bottom:8px;"));
+  sumCard.appendChild(mk("p","Lo que practicaste:","font-size:11px;color:var(--gold-text);letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
   data.forEach(function(d,i){
     var color=state.tempus.tempusResults[i]?"var(--green-text)":"var(--red-text)";
     var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;");

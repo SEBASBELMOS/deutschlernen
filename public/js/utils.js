@@ -158,14 +158,14 @@ function showSaveCardModal(de, es, anchor) {
   var title=mk("p","","font-size:14px;font-weight:800;color:var(--gold-text);margin-bottom:16px;");
   title.appendChild(iconLabel("star","Guardar como flashcard",16));
   box.appendChild(title);
-  var deLbl=mk("p","Aleman","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
+  var deLbl=mk("p","Aleman","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;font-family:var(--font-label);");
   var deInp=document.createElement("input");
   deInp.value=de;
   deInp.className="input-field";
   deInp.style.marginBottom="12px";
   deInp.style.fontWeight="600";
   box.appendChild(deLbl); box.appendChild(deInp);
-  var esLbl=mk("p","Espanol","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;");
+  var esLbl=mk("p","Espanol","font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;letter-spacing:1px;font-family:var(--font-label);");
   var esInp=document.createElement("textarea");
   esInp.value=es;
   esInp.rows=2;

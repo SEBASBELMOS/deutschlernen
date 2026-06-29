@@ -38,7 +38,7 @@ function renderHörverstehenPlay(container){
   container.innerHTML="";
   _hvState.step="listen";
   var c=mk("div","","padding:4px 0;");
-  c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
+  c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   c.appendChild(mk("p","Escucha el diálogo y después responde.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:14px;"));
   var dialogDiv=document.createElement("div");
   dialogDiv.style.cssText="background:rgba(var(--teal-rgb),0.04);border:1px solid rgba(var(--teal-rgb),0.12);border-radius:12px;padding:14px;margin-bottom:14px;display:none;";
@@ -70,7 +70,7 @@ function renderHörverstehenQuestions(container){
   _hvState.step="questions";
   var qCount=_hvState.questions.length;
   var c=mk("div","","padding:2px 0;");
-  c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
+  c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   c.appendChild(mk("p","Responde las preguntas","font-size:14px;color:var(--text);font-weight:700;margin-bottom:14px;"));
   _hvState.questions.forEach(function(q,qi){
     var qDiv=document.createElement("div");
@@ -132,7 +132,7 @@ state.reading._readingWords=[]; state.reading._readingTarget=-1; state.reading._
 function renderReading(){
   const el=document.getElementById("s-lectura"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","LECTURA INTERACTIVA","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","LECTURA INTERACTIVA","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Leer y aprender","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","Genera un texto en aleman. Toca una palabra para ver su traduccion y guardarla.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);

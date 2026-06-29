@@ -210,7 +210,7 @@ function renderPronScore(host, target, transcript, color){
   box.className="pron-score";
   box.style.cssText="margin-top:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;";
   const top=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
-  top.appendChild(mk("span","Pronunciacion","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:700;"));
+  top.appendChild(mk("span","Pronunciacion","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;"));
   top.appendChild(mk("span",score+"%","font-size:20px;font-weight:900;color:"+(score>=80?"var(--green-text)":score>=50?"var(--gold-text)":"var(--red-text)")+";"));
   box.appendChild(top);
   const p=mk("p","","font-size:14px;line-height:1.6;font-weight:600;");

@@ -23,7 +23,7 @@ function genPickNouns(aiNouns){
 function renderGender(){
   const el=document.getElementById("s-genero"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83c\udfaf der \u00b7 die \u00b7 das","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","Adivina el art\u00edculo correcto. Azul=der \u00b7 Rojo=die \u00b7 Verde=das.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
@@ -52,13 +52,13 @@ function renderGenCard(el, hdr){
   var n=_genNouns[_genIdx];
   el.innerHTML="";
   hdr.innerHTML="";
-  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83c\udfaf der \u00b7 die \u00b7 das","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p",(_genIdx+1)+"/"+_genNouns.length+" \u00b7 Aciertos: "+_genRight+" \u00b7 Fallos: "+_genWrong,"font-size:13px;color:var(--teal-text);margin-top:4px;font-weight:600;"));
   el.appendChild(hdr);
   var card=document.createElement("div"); card.className="card";
   card.style.cssText="text-align:center;padding:32px 16px;margin-bottom:16px;border-radius:var(--r-xl,20px);background:linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));";
-  card.appendChild(mk("p","\u00bfQu\u00e9 art\u00edculo?","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:600;margin-bottom:12px;"));
+  card.appendChild(mk("p","\u00bfQu\u00e9 art\u00edculo?","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-family:var(--font-label);font-weight:600;margin-bottom:12px;"));
   var nounEl=mk("p",n.noun,"font-size:36px;font-weight:900;color:var(--text);letter-spacing:-0.02em;margin-bottom:8px;line-height:1.15;");
   if(n.plural) nounEl.appendChild(mk("span"," ("+n.plural+")","font-size:14px;color:var(--muted);font-weight:500;"));
   card.appendChild(nounEl);
@@ -98,7 +98,7 @@ function renderGenCard(el, hdr){
 function renderGenResults(el){
   el.innerHTML="";
   var hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ENTRENADOR DE GENERO","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83c\udfaf Resultados","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
   if(_genMissed.length && !window._genLogged){
@@ -115,7 +115,7 @@ function renderGenResults(el){
   el.appendChild(resultCard);
   if(_genMissed.length){
     var missCard=document.createElement("div"); missCard.className="card";
-    missCard.appendChild(mk("p","Para repasar","font-size:10px;color:var(--red-text);letter-spacing:1.5px;font-weight:700;margin-bottom:8px;"));
+    missCard.appendChild(mk("p","Para repasar","font-size:10px;color:var(--red-text);letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
     _genMissed.forEach(function(n){
       var artColor=n.article==="der"?"var(--text2)":n.article==="die"?"var(--red-text)":"var(--green-text)";
       var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;");

@@ -3,7 +3,7 @@
 function renderPhrases() {
   const el=document.getElementById("s-frases"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","Elige un tema","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","Elige un tema","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Frases de hoy","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
 
@@ -28,7 +28,7 @@ function renderPhrases() {
 
 async function renderPotd(host, forceFetch){
   host.innerHTML="";
-  host.appendChild(mk("p","✨  FRASE DEL DIA","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;margin-bottom:8px;font-weight:700;"));
+  host.appendChild(mk("p","✨  FRASE DEL DIA","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-family:var(--font-label);margin-bottom:8px;font-weight:700;"));
   const key="dl_potd_"+todayKey();
   let cached=null;
   if(!forceFetch){ try { cached=JSON.parse(localStorage.getItem(key)||"null"); } catch(e){console.error("potd cache",e);} }
@@ -152,7 +152,7 @@ function showVocabPack(host, title, icon, vocabList, categoryName){
   host.innerHTML="";
   var c=mk("div","","padding:2px 0;");
   var topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;");
-  var packTitle=mk("p","","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:800;text-transform:uppercase;");
+  var packTitle=mk("p","","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:800;text-transform:uppercase;");
   packTitle.appendChild(iconLabel(icon,title,15));
   topRow.appendChild(packTitle);
   var saveAll=mk("button","Guardar todas ("+vocabList.length+")","padding:6px 12px;border-radius:8px;border:1px solid rgba(var(--gold-rgb),0.2);background:rgba(var(--gold-rgb),0.06);color:var(--gold-text);font-size:11px;font-weight:700;cursor:pointer;transition:background 0.2s,transform 0.12s;");

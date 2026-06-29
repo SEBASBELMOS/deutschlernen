@@ -46,7 +46,7 @@ function renderToday(){
     streakLine.appendChild(streakNum);
     streakLine.appendChild(mk("span",(streak===1?"día de racha":"días de racha"),"font-size:var(--t-sm);font-weight:700;color:var(--text2);"));
     hero.appendChild(streakLine);
-    hero.appendChild(mk("p","últimos 7 días","font-size:var(--t-xs);color:var(--muted);font-weight:600;margin-top:var(--s-1);letter-spacing:1px;"));
+    hero.appendChild(mk("p","últimos 7 días","font-size:var(--t-xs);color:var(--muted);font-weight:600;margin-top:var(--s-1);letter-spacing:1px;font-family:var(--font-label);"));
   } else {
     hero.appendChild(mk("p","Empezá tu racha hoy","font-size:var(--t-md);font-weight:800;color:var(--text);"));
     hero.appendChild(mk("p","1 minuto ya cuenta","font-size:var(--t-sm);color:var(--muted);font-weight:500;margin-top:var(--s-1);"));
@@ -83,7 +83,7 @@ function renderToday(){
   var lvlLabel=state.app.level==="A2"?"A2→B1":state.app.level==="B1"?"B1→B2":"B2+";
   var lvlCard=document.createElement("div"); lvlCard.className="card";
   var lvlTop=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
-  lvlTop.appendChild(mk("p","📈 "+lvlLabel,"font-size:11px;color:var(--purple-text);letter-spacing:1.5px;font-weight:700;"));
+  lvlTop.appendChild(mk("p","📈 "+lvlLabel,"font-size:11px;color:var(--purple-text);letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;"));
   lvlTop.appendChild(mk("p",lvlPct+"%","font-size:16px;font-weight:900;color:var(--purple-text);font-variant-numeric:tabular-nums;"));
   lvlCard.appendChild(lvlTop);
   var lvlBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:6px;height:6px;overflow:hidden;");
@@ -109,7 +109,7 @@ function renderToday(){
     recCard.style.cssText="border-left:3px solid "+rec.color+";margin-bottom:10px;padding:16px 14px;";
     var recTop=mk("div","","display:flex;align-items:center;gap:6px;margin-bottom:4px;");
     recTop.appendChild(mk("span",rec.icon,"font-size:14px;"));
-    recTop.appendChild(mk("span",rec.label,"font-size:10px;color:"+rec.color+";letter-spacing:1.5px;font-weight:700;"));
+    recTop.appendChild(mk("span",rec.label,"font-size:10px;color:"+rec.color+";letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;"));
     recCard.appendChild(recTop);
     var recMsg=document.createElement("p");
     recMsg.style.cssText="font-size:13px;color:var(--text);font-weight:600;line-height:1.55;margin:0;";
@@ -131,7 +131,7 @@ function renderToday(){
     tipCard.style.cssText="border-left:3px solid "+tip.color+";padding:12px 14px;margin-bottom:10px;cursor:"+(tip.tab?"pointer":"default")+";";
     var tipTop=mk("div","","display:flex;align-items:center;gap:6px;margin-bottom:2px;");
     tipTop.appendChild(mk("span",tip.icon,"font-size:12px;"));
-    tipTop.appendChild(mk("span","TIP","font-size:9px;color:"+tip.color+";letter-spacing:1.5px;font-weight:700;"));
+    tipTop.appendChild(mk("span","TIP","font-size:9px;color:"+tip.color+";letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;"));
     tipCard.appendChild(tipTop);
     var tipMsg=document.createElement("p");
     tipMsg.style.cssText="font-size:12px;color:var(--text);font-weight:500;line-height:1.5;margin:0;";
@@ -146,7 +146,7 @@ function renderToday(){
   var imp=getInsightData();
   const impCard=document.createElement("div"); impCard.className="card";
   impCard.style.cssText="margin-bottom:10px;border:1px solid rgba(var(--gold-rgb),0.2);background:rgba(var(--gold-rgb),0.05);";
-  impCard.appendChild(mk("p","💡 CÓMO MEJORAR","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+  impCard.appendChild(mk("p","💡 CÓMO MEJORAR","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
   impCard.appendChild(mk("p",imp.error,"font-size:13px;color:var(--text2);font-weight:600;line-height:1.5;margin-bottom:6px;"));
   impCard.appendChild(mk("p","→ "+imp.tip,"font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;"));
   el.appendChild(impCard);
@@ -154,7 +154,7 @@ function renderToday(){
   // ── Mini daily progress + adaptive goal ──
   const progCard=document.createElement("div"); progCard.className="card";
   var goalHdr=mk("div","","display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;");
-  goalHdr.appendChild(mk("p","HOY","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;"));
+  goalHdr.appendChild(mk("p","HOY","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;"));
   const dailyGoal=getDailyGoal();
   var curMin=todayLog.minutes||0;
   var goalPct=Math.min(100,Math.round(curMin/dailyGoal*100));
@@ -183,7 +183,7 @@ function renderToday(){
 
   // ── Quick actions ──
   const actions=document.createElement("div"); actions.className="card";
-  actions.appendChild(mk("p","ACCION RAPIDA","font-size:10px;color:var(--muted);letter-spacing:2.5px;font-weight:700;margin-bottom:10px;"));
+  actions.appendChild(mk("p","ACCION RAPIDA","font-size:10px;color:var(--muted);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:10px;"));
   const actBtns=[
     {label:"💬 Conversar", tab:"conversar", color:"#5dd9d0"},
     {label:"✏️ Corrigeme", tab:"corrigeme", color:"#ffb4ab"},
@@ -212,7 +212,7 @@ function renderToday(){
     if(rStep){
       var rCard=document.createElement("div"); rCard.className="card";
       rCard.style.cssText="border-left:3px solid var(--teal);margin-bottom:10px;padding:14px;";
-      rCard.appendChild(mk("p","🔄 REPASO EN CURSO","font-size:10px;color:var(--teal-text);letter-spacing:2px;font-weight:700;margin-bottom:4px;"));
+      rCard.appendChild(mk("p","🔄 REPASO EN CURSO","font-size:10px;color:var(--teal-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
       rCard.appendChild(mk("p","Paso "+(rp.currentStep+1)+"/"+rp.steps.length+" · "+rStep.icon+" "+rStep.label,"font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px;"));
       var contBtn=mk("button","▶ Continuar","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-size:13px;font-weight:700;cursor:pointer;transition:background 0.2s,transform 0.12s;");
       contBtn.onclick=function(){runPersonalizedStep(rp.currentStep);};
@@ -228,7 +228,7 @@ function renderToday(){
     reviewCard.style.cssText="background:linear-gradient(135deg,rgba(var(--teal-rgb),0.08),rgba(var(--teal-rgb),0.02));border:1px solid rgba(var(--teal-rgb),0.2);border-radius:var(--r-lg,16px);padding:18px;cursor:pointer;margin-bottom:10px;";
     reviewCard.onclick=function(){startPersonalizedReview();};
     reviewCard.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();this.click();}};
-    reviewCard.appendChild(mk("p","🔄 REPASO PERSONALIZADO","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
+    reviewCard.appendChild(mk("p","🔄 REPASO PERSONALIZADO","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
     reviewCard.appendChild(mk("p","Sesión guiada a tu medida","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
     reviewCard.appendChild(mk("p","Armada con tus fallos, errores y temas débiles","font-size:11px;color:var(--muted);font-weight:500;"));
     el.appendChild(reviewCard);
@@ -244,7 +244,7 @@ function renderToday(){
     el.insertBefore(hvContainer,el.lastChild);
     startHörverstehen(hvContainer);
   };
-  hvCard.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;margin-bottom:4px;"));
+  hvCard.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
   hvCard.appendChild(mk("p","Comprensión auditiva","font-size:15px;color:var(--text);font-weight:700;margin-bottom:2px;"));
   hvCard.appendChild(mk("p","Escucha un diálogo y responde preguntas","font-size:11px;color:var(--muted);font-weight:500;"));
   el.appendChild(hvCard);
@@ -316,7 +316,7 @@ function renderReviewPlanPreview(){
   activateTab("hoy"); removeReviewBackBtn();
   var el=document.getElementById("s-hoy"); el.innerHTML="";
   var hdr=mk("div","","margin-bottom:14px;");
-  hdr.appendChild(mk("p","REPASO PERSONALIZADO","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","REPASO PERSONALIZADO","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Hoy te recomiendo","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","Armado con tus datos. Tocá un paso para sacarlo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
@@ -426,7 +426,7 @@ function renderReviewErrorsStep(host, step){
   var e=step.items[step._i]; host.innerHTML="";
   host.appendChild(mk("p",(step._i+1)+"/"+step.items.length,"text-align:center;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;"));
   var card=mk("div","","background:rgba(var(--red-rgb),0.06);border:1px solid rgba(var(--red-rgb),0.2);border-radius:var(--r-lg);padding:20px;margin-bottom:12px;");
-  card.appendChild(mk("p","Corregí esta frase:","font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;"));
+  card.appendChild(mk("p","Corregí esta frase:","font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1px;font-family:var(--font-label);margin-bottom:8px;text-transform:uppercase;"));
   card.appendChild(mk("p",e.original,"font-size:16px;color:var(--text);font-weight:700;line-height:1.5;margin-bottom:10px;"));
   var input=document.createElement("textarea"); input.rows=2; input.className="input-field"; input.placeholder="Escribí tu corrección..."; input.setAttribute("aria-label","Tu corrección"); input.style.resize="none";
   card.appendChild(input);
@@ -477,7 +477,7 @@ function renderReviewGrammarStep(host, step){
   var topo=GRAMMAR_TOPICS.filter(function(x){return x.key===step.topic;})[0];
   var card=mk("div","","background:rgba(var(--purple-rgb),0.06);border:1px solid rgba(var(--purple-rgb),0.22);border-radius:var(--r-lg);padding:22px;text-align:center;margin-bottom:12px;");
   card.appendChild(mk("p",(topo?topo.icon:"📐"),"font-size:34px;margin-bottom:6px;"));
-  card.appendChild(mk("p","DRILL DE GRAMÁTICA","font-size:11px;color:var(--purple-text);font-weight:700;letter-spacing:1px;margin-bottom:4px;"));
+  card.appendChild(mk("p","DRILL DE GRAMÁTICA","font-size:11px;color:var(--purple-text);font-weight:700;letter-spacing:1px;font-family:var(--font-label);margin-bottom:4px;"));
   card.appendChild(mk("p",(topo?topo.label:"Tema"),"font-size:18px;font-weight:800;color:var(--text);"));
   host.appendChild(card);
   var go=mk("button","Empezar drill →","width:100%;padding:14px;border-radius:12px;border:none;background:var(--purple);color:#000;font-weight:800;font-size:14px;cursor:pointer;");
@@ -490,7 +490,7 @@ function renderReviewExploreStep(host, step){
   host.innerHTML="";
   var card=mk("div","","background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;text-align:center;margin-bottom:12px;");
   card.appendChild(mk("p",step.icon,"font-size:34px;margin-bottom:6px;"));
-  card.appendChild(mk("p","BONUS","font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;"));
+  card.appendChild(mk("p","BONUS","font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;font-family:var(--font-label);margin-bottom:4px;"));
   card.appendChild(mk("p",step.detail,"font-size:15px;font-weight:700;color:var(--text);line-height:1.4;"));
   host.appendChild(card);
   var go=mk("button","Ir →","width:100%;padding:14px;border-radius:12px;border:none;background:var(--gold);color:#000;font-weight:800;font-size:14px;cursor:pointer;");
@@ -532,7 +532,7 @@ function renderReadingQA(host, step){
     var pct=Math.round(step._score/step._data.questions.length*100);
     var col=pct>=70?"var(--green-text)":(pct>=50?"var(--gold-text)":"var(--red-text)");
     var result=mk("div","","text-align:center;padding:22px;background:rgba(var(--green-rgb),0.05);border:1px solid rgba(var(--green-rgb),0.18);border-radius:var(--r-lg);margin-bottom:12px;");
-    result.appendChild(mk("p","📖 Lectura completada","font-size:10px;color:"+col+";letter-spacing:2px;font-weight:700;margin-bottom:6px;"));
+    result.appendChild(mk("p","📖 Lectura completada","font-size:10px;color:"+col+";letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:6px;"));
     result.appendChild(mk("p",step._score+"/"+step._data.questions.length+" correcto"+(step._data.questions.length>1?"s":""),"font-size:18px;font-weight:800;color:"+col+";"));
     host.appendChild(result);
     var next=mk("button","Siguiente paso →","width:100%;padding:13px;border-radius:12px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-weight:800;font-size:13px;cursor:pointer;");

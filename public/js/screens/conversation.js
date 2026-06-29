@@ -4,7 +4,7 @@ function renderConversation() {
   if(state.chat.chatScenario) return;
   const el=document.getElementById("s-conversar"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","ELIGE UN ROL","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ELIGE UN ROL","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Conversar","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
   SCENARIOS.forEach(function(s){
@@ -150,7 +150,7 @@ async function runPostChatAnalysis(){
   box.setAttribute("aria-modal","true");
   box.setAttribute("aria-label","Análisis del chat");
   const head=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;");
-  head.appendChild(mk("p","🔍  ANALISIS DEL CHAT","font-size:11px;color:var(--gold-text);letter-spacing:2.5px;font-weight:700;"));
+  head.appendChild(mk("p","🔍  ANALISIS DEL CHAT","font-size:11px;color:var(--gold-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;"));
   const closeBtn=mk("button","✕","background:none;border:none;color:var(--muted);font-size:18px;font-weight:700;");
   closeBtn.onclick=closeModal;
   head.appendChild(closeBtn); box.appendChild(head);
@@ -173,7 +173,7 @@ async function runPostChatAnalysis(){
     if(Array.isArray(r.errors) && r.errors.length){
       const b=document.createElement("div");
       b.style.cssText="background:rgba(var(--red-rgb),0.06);border:1px solid rgba(var(--red-rgb),0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
-      b.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:var(--red-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      b.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:var(--red-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
       r.errors.forEach(function(e){
         const row=mk("div","","padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);");
         row.appendChild(mk("p","✗ "+e.wrong,"font-size:13px;color:var(--red-text);font-weight:600;text-decoration:line-through;"));
@@ -186,7 +186,7 @@ async function runPostChatAnalysis(){
     if(Array.isArray(r.vocab) && r.vocab.length){
       const b=document.createElement("div");
       b.style.cssText="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;margin-bottom:10px;";
-      b.appendChild(mk("p","🔑  VOCABULARIO","font-size:10px;color:var(--text2);letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      b.appendChild(mk("p","🔑  VOCABULARIO","font-size:10px;color:var(--text2);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
       r.vocab.forEach(function(w){
         const row=mk("div","","display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);");
         row.appendChild(mk("span",w.de,"font-size:13px;font-weight:700;color:var(--text);"));
@@ -198,7 +198,7 @@ async function runPostChatAnalysis(){
     if(Array.isArray(r.suggestedPhrases) && r.suggestedPhrases.length){
       const b=document.createElement("div");
       b.style.cssText="background:rgba(var(--purple-rgb),0.06);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
-      b.appendChild(mk("p","💬  FRASES PARA GUARDAR","font-size:10px;color:var(--purple-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      b.appendChild(mk("p","💬  FRASES PARA GUARDAR","font-size:10px;color:var(--purple-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
       r.suggestedPhrases.forEach(function(ph){
         const card=mk("div","","background:rgba(255,255,255,0.03);border-radius:10px;padding:10px;margin-top:6px;display:flex;gap:8px;align-items:center;");
         const t=mk("div","","flex:1;");

@@ -17,7 +17,7 @@ function casesFailureTip(q){
 function renderCases() {
   const el=document.getElementById("s-casos"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:14px;");
-  hdr.appendChild(mk("p","ALEMÁN · LOS 4 CASOS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","ALEMÁN · LOS 4 CASOS","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Casos","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","El color es la función. Apréndete el color, no la regla.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);

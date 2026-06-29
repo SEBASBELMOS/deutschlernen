@@ -14,7 +14,7 @@ function normalizeConnectorExercise(d){
 function renderConnectors(){
   const el=document.getElementById("s-conectores"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83d\udd17 weil \u00b7 obwohl \u00b7 deshalb \u00b7 dass \u00b7 wenn","font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","Elige el conector correcto. Atenci\u00f3n al orden del verbo.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
@@ -40,14 +40,14 @@ function renderConCard(el, hdr){
   _conData[_conIdx]=d;
   el.innerHTML="";
   hdr.innerHTML="";
-  hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83d\udd17 Conector","font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p",(_conIdx+1)+"/"+_conData.length+" \u00b7 Aciertos: "+_conRight+" \u00b7 Fallos: "+_conWrong,"font-size:13px;color:var(--purple-text);margin-top:4px;font-weight:600;"));
   el.appendChild(hdr);
 
   var card=document.createElement("div"); card.className="card";
   card.style.cssText="padding:24px 20px;margin-bottom:14px;border-radius:var(--r-xl,20px);";
-  card.appendChild(mk("p","Completa la oraci\u00f3n:","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:600;margin-bottom:10px;"));
+  card.appendChild(mk("p","Completa la oraci\u00f3n:","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-family:var(--font-label);font-weight:600;margin-bottom:10px;"));
   var sentEl=mk("p",d.sentence,"font-size:17px;font-weight:700;color:var(--text);line-height:1.6;letter-spacing:-0.01em;");
   sentEl.innerHTML=d.sentence.replace(/___/g,'<span style="background:rgba(var(--purple-rgb),0.15);color:var(--purple-text);padding:2px 8px;border-radius:6px;font-weight:900;">___</span>');
   card.appendChild(sentEl);
@@ -83,7 +83,7 @@ function renderConCard(el, hdr){
 function renderConResults(el){
   el.innerHTML="";
   var hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","CONECTORES Y SUBORDINADAS","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","\ud83d\udd17 Resultados","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   el.appendChild(hdr);
   var total=_conRight+_conWrong, pct=total>0?Math.round(_conRight/total*100):0;
@@ -96,7 +96,7 @@ function renderConResults(el){
   el.appendChild(resultCard);
   var sumCard=document.createElement("div"); sumCard.className="card";
   sumCard.style.cssText="margin-bottom:16px;";
-  sumCard.appendChild(mk("p","Lo que practicaste:","font-size:11px;color:var(--purple-text);letter-spacing:1.5px;font-weight:700;margin-bottom:8px;"));
+  sumCard.appendChild(mk("p","Lo que practicaste:","font-size:11px;color:var(--purple-text);letter-spacing:1.5px;font-family:var(--font-label);font-weight:700;margin-bottom:8px;"));
   _conData.forEach(function(d,i){
     var color=_conResults[i]?"var(--green-text)":"var(--red-text)";
     var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;");

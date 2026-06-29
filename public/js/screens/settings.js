@@ -7,7 +7,7 @@ function renderSettings(){
 
   // TTS Speed
   const ttsCard=document.createElement("div"); ttsCard.className="card";
-  ttsCard.appendChild(mk("p","🔊  Velocidad TTS","font-size:10px;color:var(--gold-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  ttsCard.appendChild(mk("p","🔊  Velocidad TTS","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;font-weight:700;"));
   const ttsRate=parseFloat(localStorage.getItem("ttsRate")||"0.82");
   const ttsRow=mk("div","","display:flex;align-items:center;gap:12px;");
   const ttsSlider=document.createElement("input"); ttsSlider.type="range"; ttsSlider.min="0.5"; ttsSlider.max="1.5"; ttsSlider.step="0.05"; ttsSlider.setAttribute("aria-label","Velocidad de pronunciación");
@@ -27,7 +27,7 @@ function renderSettings(){
 
   // Weekly Goal
   const goalCard=document.createElement("div"); goalCard.className="card";
-  goalCard.appendChild(mk("p","🎯  Meta semanal","font-size:10px;color:var(--teal-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  goalCard.appendChild(mk("p","🎯  Meta semanal","font-size:10px;color:var(--teal-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;font-weight:700;"));
   const goalRow=mk("div","","display:flex;align-items:center;gap:12px;");
   const goalInp=document.createElement("input"); goalInp.type="number"; goalInp.min="0"; goalInp.max="999"; goalInp.setAttribute("aria-label","Meta semanal en minutos");
   goalInp.value=state.session.weeklyGoal;
@@ -45,14 +45,14 @@ function renderSettings(){
 
   // AI Model
   const modelCard=document.createElement("div"); modelCard.className="card";
-  modelCard.appendChild(mk("p","🤖  Modelo AI","font-size:10px;color:var(--purple-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  modelCard.appendChild(mk("p","🤖  Modelo AI","font-size:10px;color:var(--purple-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;font-weight:700;"));
   modelCard.appendChild(mk("p",state.app.serverInfo.model||"no disponible","font-size:15px;color:var(--text);font-weight:700;"));
   modelCard.appendChild(mk("p","Configurado en el servidor via AI_MODEL","font-size:11px;color:var(--muted);margin-top:6px;"));
   el.appendChild(modelCard);
 
   // Theme toggle
   const themeCard=document.createElement("div"); themeCard.className="card";
-  themeCard.appendChild(mk("p","🎨  Tema","font-size:10px;color:var(--teal-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  themeCard.appendChild(mk("p","🎨  Tema","font-size:10px;color:var(--teal-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;font-weight:700;"));
   const isLight=document.documentElement.classList.contains("light-mode");
   const themeRow=mk("div","","display:flex;align-items:center;justify-content:space-between;");
   themeRow.appendChild(mk("span",isLight?"☀️ Claro":"🌙 Oscuro","font-size:14px;color:var(--text);font-weight:600;"));
@@ -74,7 +74,7 @@ function renderSettings(){
 
   // Level
   const lvlCard=document.createElement("div"); lvlCard.className="card";
-  lvlCard.appendChild(mk("p","📚  Nivel actual","font-size:10px;color:var(--green-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  lvlCard.appendChild(mk("p","📚  Nivel actual","font-size:10px;color:var(--green-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;font-weight:700;"));
   const lvlRow=mk("div","","display:flex;gap:8px;");
   ["A2","B1","B2"].forEach(function(l){
     const btn=mk("button",l,"flex:1;padding:10px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.2s;");
@@ -89,7 +89,7 @@ function renderSettings(){
 
   // Export full progress
   const exportCard=document.createElement("div"); exportCard.className="card";
-  exportCard.appendChild(mk("p","💾  DATOS","font-size:10px;color:var(--purple-text);letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  exportCard.appendChild(mk("p","💾  DATOS","font-size:10px;color:var(--purple-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;font-weight:700;"));
   const exportBtn=document.createElement("button");
   exportBtn.textContent="📥 Export progreso completo (JSON)";
   exportBtn.setAttribute("aria-label","Exportar progreso completo en JSON");

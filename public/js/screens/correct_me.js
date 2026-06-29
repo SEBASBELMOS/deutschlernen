@@ -2,7 +2,7 @@
 function renderCorrectMe() {
   const el=document.getElementById("s-corrigeme"); el.innerHTML="";
   const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","CORRECTOR DE ALEMAN","font-size:11px;color:var(--muted);letter-spacing:2px;font-weight:700;margin-bottom:2px;"));
+  hdr.appendChild(mk("p","CORRECTOR DE ALEMAN","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
   hdr.appendChild(mk("h2","Corrigeme","font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
   hdr.appendChild(mk("p","Escribe o graba lo que intentaste decir.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
   el.appendChild(hdr);
@@ -34,7 +34,7 @@ async function doFix(ta, fixBtn, el) {
 
     const box1=document.createElement("div");
     box1.className="result-box green";
-    box1.appendChild(mk("p","✅  CORRECTO","font-size:10px;color:var(--green-text);letter-spacing:2px;margin-bottom:8px;font-weight:700;"));
+    box1.appendChild(mk("p","✅  CORRECTO","font-size:10px;color:var(--green-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:8px;font-weight:700;"));
     const rowC=mk("div","","display:flex;justify-content:space-between;align-items:center;gap:8px;");
     rowC.appendChild(mk("p",r.correcto,"font-size:20px;font-weight:800;color:var(--text);flex:1;letter-spacing:-0.01em;"));
     const pc=document.createElement("button"); pc.className="icon-btn"; pc.setAttribute("aria-label","Escuchar");pc.innerHTML="&#9654;"; pc.style.color="var(--green-text)"; pc.style.fontSize="20px";
@@ -54,7 +54,7 @@ async function doFix(ta, fixBtn, el) {
       const box2=document.createElement("div");
       box2.className="result-box red";
       box2.style.padding="16px";
-      box2.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:var(--red-text);letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
+      box2.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:var(--red-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:6px;font-weight:700;"));
       box2.appendChild(mk("p",r.errores,"font-size:14px;color:var(--text2);font-weight:500;line-height:1.6;"));
       result.appendChild(box2);
     }
@@ -62,7 +62,7 @@ async function doFix(ta, fixBtn, el) {
       const box3=document.createElement("div");
       box3.className="result-box purple";
       box3.style.padding="16px";
-      box3.appendChild(mk("p","💬  MAS NATURAL","font-size:10px;color:var(--purple-text);letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
+      box3.appendChild(mk("p","💬  MAS NATURAL","font-size:10px;color:var(--purple-text);letter-spacing:2px;font-family:var(--font-label);margin-bottom:6px;font-weight:700;"));
       const rowA=mk("div","","display:flex;justify-content:space-between;align-items:center;gap:8px;");
       rowA.appendChild(mk("p",r.alternativa,"font-size:15px;color:var(--text);flex:1;font-weight:600;"));
       const pa=document.createElement("button"); pa.className="icon-btn"; pa.setAttribute("aria-label","Escuchar");pa.innerHTML="&#9654;"; pa.style.color="var(--purple-text)"; pa.style.fontSize="20px";
