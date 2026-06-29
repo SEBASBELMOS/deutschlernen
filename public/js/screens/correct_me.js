@@ -9,10 +9,10 @@ function renderCorrectMe() {
 
   const row=mk("div","","display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;");
   const ta=document.createElement("textarea"); ta.rows=3; ta.placeholder="ej: Ich bin haben sehr mude heute..."; ta.setAttribute("aria-label","Tu frase en alemán");
-  ta.style.cssText="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:13px 15px;font-size:14px;color:var(--text);outline:none;resize:none;font-family:inherit;font-weight:500;transition:border-color 0.2s;";
-  ta.onfocus=function(){this.style.borderColor="rgba(248,113,113,0.45)";};
-  ta.onblur=function(){this.style.borderColor="rgba(248,113,113,0.2)";};
-  const mic=makeMicBtn("#F87171",function(t){ta.value=t;doFix(ta,fixBtn,el);});
+  ta.style.cssText="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,180,171,0.2);border-radius:14px;padding:13px 15px;font-size:14px;color:var(--text);outline:none;resize:none;font-family:inherit;font-weight:500;transition:border-color 0.2s;";
+  ta.onfocus=function(){this.style.borderColor="rgba(255,180,171,0.45)";};
+  ta.onblur=function(){this.style.borderColor="rgba(255,180,171,0.2)";};
+  const mic=makeMicBtn("#ffb4ab",function(t){ta.value=t;doFix(ta,fixBtn,el);});
   row.appendChild(ta); row.appendChild(mic); el.appendChild(row);
   const fixBtn=document.createElement("button");
   fixBtn.className="fix-btn-lg red";
@@ -23,7 +23,7 @@ function renderCorrectMe() {
 
 async function doFix(ta, fixBtn, el) {
   const text=ta.value.trim(); if(!text){ showToast("Escribe algo primero","error"); return; }
-  ta.disabled=true; fixBtn.disabled=true; fixBtn.textContent=""; fixBtn.appendChild(makeDots("#F87171"));
+  ta.disabled=true; fixBtn.disabled=true; fixBtn.textContent=""; fixBtn.appendChild(makeDots("#ffb4ab"));
   const old=el.querySelector("#fix-result"); if(old) el.removeChild(old);
   try {
     const sys="You are a friendly German corrector. Reply ONLY with valid JSON, no markdown: {\"correcto\":\"correct German phrase\",\"errores\":\"what was wrong in Spanish max 2 lines\",\"alternativa\":\"more natural version\",\"pronunciacion\":\"simplified pronunciation\"}";
@@ -62,10 +62,10 @@ async function doFix(ta, fixBtn, el) {
       const box3=document.createElement("div");
       box3.className="result-box purple";
       box3.style.padding="16px";
-      box3.appendChild(mk("p","💬  MAS NATURAL","font-size:10px;color:#A78BFA;letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
+      box3.appendChild(mk("p","💬  MAS NATURAL","font-size:10px;color:#c4a7e7;letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
       const rowA=mk("div","","display:flex;justify-content:space-between;align-items:center;gap:8px;");
       rowA.appendChild(mk("p",r.alternativa,"font-size:15px;color:var(--text);flex:1;font-weight:600;"));
-      const pa=document.createElement("button"); pa.className="icon-btn"; pa.setAttribute("aria-label","Escuchar");pa.innerHTML="&#9654;"; pa.style.color="#A78BFA"; pa.style.fontSize="20px";
+      const pa=document.createElement("button"); pa.className="icon-btn"; pa.setAttribute("aria-label","Escuchar");pa.innerHTML="&#9654;"; pa.style.color="#c4a7e7"; pa.style.fontSize="20px";
       pa.onclick=function(){speakGerman(r.alternativa);}; rowA.appendChild(pa); box3.appendChild(rowA);
       result.appendChild(box3);
     }

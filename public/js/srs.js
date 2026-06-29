@@ -134,13 +134,13 @@ function getStudyRecommendation(){
   for(var i=0;i<7;i++){var d=addDays(todayKey(),-i);weekReviews+=(state.session.dailyLog[d]&&state.session.dailyLog[d].phrasesReviewed)||0;}
   var consistencyPct=Math.min(str/21,1)*0.53+Math.min(weekReviews/100,1)*0.47;
   var scores=[
-    {key:"vocab", pct:vocabPct, max:400, label:"Vocabulario", icon:"📖", color:"#F5A623",
+    {key:"vocab", pct:vocabPct, max:400, label:"Vocabulario", icon:"📖", color:"#ffb955",
      msg: effectiveVocab<400 ? "Para medir avance hacia B1 cuento palabras que ya superaron los primeros repasos (caja 2 o más). Tienes "+effectiveVocab+" / 400; objetivo sugerido: guardar y repasar 10 por día." : null},
-    {key:"grammar", pct:gramPct, max:GRAMMAR_TOPICS.length, label:"Gram\u00e1tica", icon:"📐", color:"#A78BFA",
+    {key:"grammar", pct:gramPct, max:GRAMMAR_TOPICS.length, label:"Gram\u00e1tica", icon:"📐", color:"#c4a7e7",
      msg: gramCount===0 ? "Todav\u00eda no practicaste gram\u00e1tica. Haz un drill hoy." : null},
-    {key:"srs", pct:srsPct, max:1, label:"Retenci\u00f3n SRS", icon:"🔄", color:"#4ECDC4",
+    {key:"srs", pct:srsPct, max:1, label:"Retenci\u00f3n SRS", icon:"🔄", color:"#5dd9d0",
      msg: srsPct<0.6 ? "Tu retenci\u00f3n SRS necesita trabajo. Repasa flashcards a diario." : null},
-    {key:"consistency", pct:consistencyPct, max:1, label:"Consistencia", icon:"🔥", color:"#F87171",
+    {key:"consistency", pct:consistencyPct, max:1, label:"Consistencia", icon:"🔥", color:"#ffb4ab",
      msg: str<5 ? "Tu racha es corta. Intenta 5 min por d\u00eda para mantenerla." : weekReviews<50 ? "Tus revisiones semanales son bajas. Aumenta el ritmo." : null}
   ];
   // Fill grammar specific message
@@ -169,7 +169,7 @@ function getContextualTip(){
   var highLapse=saved.filter(function(p){return (p.lapses||0)>=3;}).sort(function(a,b){return (b.lapses||0)-(a.lapses||0);});
   if(highLapse.length){
     var w=highLapse[0];
-    return {icon:"\ud83d\udd01",msg:"Te cuesta recordar <b>"+w.de+"</b> ("+w.es+")<br><span style='font-size:11px;color:var(--muted);'>Lleva "+w.lapses+" fallos. Presta atenci\u00f3n extra al repasarla.</span>",color:"#F87171"};
+    return {icon:"\ud83d\udd01",msg:"Te cuesta recordar <b>"+w.de+"</b> ("+w.es+")<br><span style='font-size:11px;color:var(--muted);'>Lleva "+w.lapses+" fallos. Presta atenci\u00f3n extra al repasarla.</span>",color:"#ffb4ab"};
   }
   // 2. Weak grammar topic (accuracy < 50%)
   var gStats=state.grammar.grammarStats||{};
@@ -183,7 +183,7 @@ function getContextualTip(){
   }).sort(function(a,b){return a.acc-b.acc;});
   if(weakTopics.length){
     var tname=({articles:"Art\u00edculos",perfekt:"Perfekt",wortstellung:"Orden",adjendings:"Adjetivos",separable:"Separables",praeteritum:"Pr\u00e4teritum",conectores:"Conectores",conjugacion:"Conjugaci\u00f3n",konjunktiv2:"Konjunktiv II",plurales:"Plurales"})[weakTopics[0].key]||weakTopics[0].key;
-    return {icon:"\ud83d\udcd0",msg:tname+" te est\u00e1 costando (<b>"+Math.round(weakTopics[0].acc*100)+"%</b> de aciertos).<br><span style='font-size:11px;color:var(--muted);'>Toca para practicar un drill de gram\u00e1tica.</span>",color:"#A78BFA",tab:"gramatica"};
+    return {icon:"\ud83d\udcd0",msg:tname+" te est\u00e1 costando (<b>"+Math.round(weakTopics[0].acc*100)+"%</b> de aciertos).<br><span style='font-size:11px;color:var(--muted);'>Toca para practicar un drill de gram\u00e1tica.</span>",color:"#c4a7e7",tab:"gramatica"};
   }
   // 3. Fehlerjournal pattern — recent errors
   var ej=state.session.errorJournal||[];
@@ -191,13 +191,13 @@ function getContextualTip(){
     return e.date===todayKey()||e.date===addDays(todayKey(),-1);
   });
   if(recent.length>=3){
-    return {icon:"\ud83d\udcd3",msg:"Tienes "+recent.length+" errores registrados hoy/ayer.<br><span style='font-size:11px;color:var(--muted);'>Revísalos en Resumen para ver patrones.</span>",color:"#F5A623",tab:"resumen"};
+    return {icon:"\ud83d\udcd3",msg:"Tienes "+recent.length+" errores registrados hoy/ayer.<br><span style='font-size:11px;color:var(--muted);'>Revísalos en Resumen para ver patrones.</span>",color:"#ffb955",tab:"resumen"};
   }
   // 4. Streak at risk — no activity today
   var todayL=state.session.dailyLog[todayKey()];
   var str=computeStreak();
   if(str>0&&(!todayL||(!todayL.minutes&&!todayL.phrasesReviewed&&!todayL.drillsDone))){
-    return {icon:"\u26a0\ufe0f",msg:"Hoy todav\u00eda no practicaste.<br><span style='font-size:11px;color:var(--muted);'>Un minuto alcanza para mantener tu racha de "+str+" d\u00edas.</span>",color:"#F87171"};
+    return {icon:"\u26a0\ufe0f",msg:"Hoy todav\u00eda no practicaste.<br><span style='font-size:11px;color:var(--muted);'>Un minuto alcanza para mantener tu racha de "+str+" d\u00edas.</span>",color:"#ffb4ab"};
   }
   return null;
 }
@@ -255,6 +255,6 @@ function renderInsight(host){
   host.innerHTML="<div style='padding:10px 0;'>"+
     "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--teal-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>📖 Qué hiciste</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+learned+"</p></div>"+
     "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>⚠️ Qué conviene reforzar</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+error+"</p></div>"+
-    "<div style='background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:12px;padding:12px;'><p style='font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>💡 Próximo paso</p><p style='font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;'>"+tip+"</p></div>"+
+    "<div style='background:rgba(255,185,85,0.08);border:1px solid rgba(255,185,85,0.2);border-radius:12px;padding:12px;'><p style='font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;'>💡 Próximo paso</p><p style='font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;'>"+tip+"</p></div>"+
     "<p style='font-size:10px;color:var(--dim);margin-top:12px;'>Semana "+week+" · Datos locales de los últimos 7 días</p></div>";
 }

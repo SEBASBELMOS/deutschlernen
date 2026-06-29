@@ -27,7 +27,7 @@ function showToast(text, type, duration) {
 function fireConfetti(){
   var overlay=document.createElement("div");
   overlay.style.cssText="position:fixed;inset:0;pointer-events:none;z-index:9999;";
-  var colors=["#F5A623","#4ECDC4","#A78BFA","#4ade80","#F87171"];
+  var colors=["#ffb955","#5dd9d0","#c4a7e7","#4ade80","#ffb4ab"];
   var particles=[];
   for(var i=0;i<50;i++){
     var p=document.createElement("div");
@@ -95,7 +95,7 @@ function showOnboarding(){
 
   // Card
   var card=document.createElement("div");
-  card.style.cssText="background:var(--modal-bg);border:1px solid rgba(245,166,35,0.22);border-radius:20px;padding:32px 28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5);";
+  card.style.cssText="background:var(--modal-bg);border:1px solid rgba(255,185,85,0.22);border-radius:20px;padding:32px 28px 24px;max-width:380px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5);";
   card.setAttribute("role","dialog"); card.setAttribute("aria-modal","true"); card.setAttribute("aria-label","Tour de bienvenida");
   if(state.app._motionOK) card.style.animation="scaleIn 0.3s var(--ease-spring)";
 
@@ -119,7 +119,7 @@ function showOnboarding(){
   // Button
   var nextBtn=document.createElement("button");
   nextBtn.textContent=steps[0].btn;
-  nextBtn.style.cssText="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#F5A623,#e8950a);color:#0c0a00;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;letter-spacing:-0.01em;";
+  nextBtn.style.cssText="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#ffb955,#d48900);color:#0c0a00;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;letter-spacing:-0.01em;";
   card.appendChild(nextBtn);
 
   // Skip

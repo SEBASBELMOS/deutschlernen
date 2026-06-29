@@ -9,7 +9,7 @@ function renderPhrases() {
 
   // Phrase of the day
   const potd=document.createElement("div");
-  potd.style.cssText="background:linear-gradient(135deg,rgba(245,166,35,0.09),rgba(78,205,196,0.05));border:1px solid rgba(245,166,35,0.2);border-radius:16px;padding:16px;margin-bottom:16px;";
+  potd.style.cssText="background:linear-gradient(135deg,rgba(255,185,85,0.09),rgba(93,217,208,0.05));border:1px solid rgba(255,185,85,0.2);border-radius:16px;padding:16px;margin-bottom:16px;";
   potd.id="potd-card";
   el.appendChild(potd);
   renderPotd(potd);
@@ -28,7 +28,7 @@ function renderPhrases() {
 
 async function renderPotd(host, forceFetch){
   host.innerHTML="";
-  host.appendChild(mk("p","✨  FRASE DEL DIA","font-size:10px;color:#F5A623;letter-spacing:2.5px;margin-bottom:8px;font-weight:700;"));
+  host.appendChild(mk("p","✨  FRASE DEL DIA","font-size:10px;color:#ffb955;letter-spacing:2.5px;margin-bottom:8px;font-weight:700;"));
   const key="dl_potd_"+todayKey();
   let cached=null;
   if(!forceFetch){ try { cached=JSON.parse(localStorage.getItem(key)||"null"); } catch(e){console.error("potd cache",e);} }
@@ -61,14 +61,14 @@ function paintPotd(host, ph){
   const row=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;gap:8px;");
   row.appendChild(mk("p",ph.de,"font-size:17px;font-weight:800;color:var(--text);flex:1;line-height:1.4;letter-spacing:-0.01em;"));
   const btns=mk("div","","display:flex;gap:2px;flex-shrink:0;");
-  const play=document.createElement("button"); play.className="icon-btn"; play.setAttribute("aria-label","Escuchar");play.innerHTML="&#9654;"; play.style.color="#F5A623"; play.style.fontSize="18px";
+  const play=document.createElement("button"); play.className="icon-btn"; play.setAttribute("aria-label","Escuchar");play.innerHTML="&#9654;"; play.style.color="#ffb955"; play.style.fontSize="18px";
   play.onclick=function(){speak(ph.de);};
   const isSaved=state.session.saved.some(function(x){return x.de===ph.de;});
-  const star=document.createElement("button"); star.className="icon-btn"; star.setAttribute("aria-label","Guardar"); star.style.fontSize="20px"; star.style.color=isSaved?"#F5A623":"#334155"; setSaveIcon(star,isSaved);
+  const star=document.createElement("button"); star.className="icon-btn"; star.setAttribute("aria-label","Guardar"); star.style.fontSize="20px"; star.style.color=isSaved?"#ffb955":"#334155"; setSaveIcon(star,isSaved);
   star.onclick=function(){
     if(!state.session.saved.some(function(x){return x.de===ph.de;})){
       state.session.saved.push(ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip||"",source:"frases"}));
-      star.style.color="#F5A623"; setSaveIcon(star,true); updateBadge(); syncUp();
+      star.style.color="#ffb955"; setSaveIcon(star,true); updateBadge(); syncUp();
     }
   };
   const refresh=document.createElement("button"); refresh.className="icon-btn"; refresh.setAttribute("aria-label","Generar otra");refresh.innerHTML="&#x21bb;"; refresh.style.fontSize="16px"; refresh.style.color="#64748b";
@@ -118,12 +118,12 @@ async function loadPhrases(sit) {
       playBtn.onclick=function(){speak(ph.de);};
       const isSaved=state.session.saved.some(function(x){return x.de===ph.de;});
       const starBtn=document.createElement("button"); starBtn.className="icon-btn"; starBtn.setAttribute("aria-label","Guardar"); starBtn.style.fontSize="18px";
-      starBtn.style.color=isSaved?"#F5A623":"#334155";
+      starBtn.style.color=isSaved?"#ffb955":"#334155";
       setSaveIcon(starBtn,isSaved);
       starBtn.onclick=function(){
         if(!state.session.saved.some(function(x){return x.de===ph.de;})){
           const item=ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip,source:"frases"});
-          state.session.saved.push(item); starBtn.style.color="#F5A623"; setSaveIcon(starBtn,true); updateBadge(); syncUp();
+          state.session.saved.push(item); starBtn.style.color="#ffb955"; setSaveIcon(starBtn,true); updateBadge(); syncUp();
         }
       };
       btnRow.appendChild(playBtn); btnRow.appendChild(starBtn);
@@ -155,7 +155,7 @@ function showVocabPack(host, title, icon, vocabList, categoryName){
   var packTitle=mk("p","","font-size:10px;color:var(--gold-text);letter-spacing:2.5px;font-weight:800;text-transform:uppercase;");
   packTitle.appendChild(iconLabel(icon,title,15));
   topRow.appendChild(packTitle);
-  var saveAll=mk("button","Guardar todas ("+vocabList.length+")","padding:6px 12px;border-radius:8px;border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.06);color:#F5A623;font-size:11px;font-weight:700;cursor:pointer;");
+  var saveAll=mk("button","Guardar todas ("+vocabList.length+")","padding:6px 12px;border-radius:8px;border:1px solid rgba(255,185,85,0.2);background:rgba(255,185,85,0.06);color:#ffb955;font-size:11px;font-weight:700;cursor:pointer;");
   var savedCount=0;
   saveAll.onclick=function(){
     vocabList.forEach(function(item){

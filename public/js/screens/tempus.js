@@ -36,7 +36,7 @@ function appendTempusSentence(host,sentence){
   parts.forEach(function(part,i){
     if(part) host.appendChild(document.createTextNode(part));
     if(i<parts.length-1){
-      var blank=mk("span","___","background:rgba(245,166,35,0.15);color:var(--gold-text);padding:2px 8px;border-radius:6px;font-weight:900;");
+      var blank=mk("span","___","background:rgba(255,185,85,0.15);color:var(--gold-text);padding:2px 8px;border-radius:6px;font-weight:900;");
       host.appendChild(blank);
     }
   });
@@ -83,7 +83,7 @@ function renderTempus(){
   el.appendChild(refCard);
 
   var warn=document.createElement("div");
-  warn.style.cssText="padding:14px 16px;margin-bottom:12px;border-radius:var(--r-md,12px);background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);font-size:12px;color:var(--red-text);font-weight:600;line-height:1.5;";
+  warn.style.cssText="padding:14px 16px;margin-bottom:12px;border-radius:var(--r-md,12px);background:rgba(255,180,171,0.06);border:1px solid rgba(255,180,171,0.15);font-size:12px;color:var(--red-text);font-weight:600;line-height:1.5;";
   warn.textContent="⚠️ nach dem (2 palabras con artículo) ≠ nachdem (1 palabra, conjunción subordinante). Si ves 'dem' después de 'nach', es un DATIV con artículo, no una subordinada.";
   el.appendChild(warn);
 
@@ -102,7 +102,7 @@ function renderTempus(){
 
   var pracHdr=mk("p","🎯 PRACTICAR","font-size:11px;color:var(--gold-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;");
   el.appendChild(pracHdr);
-  var startBtn=mk("button","Iniciar ronda (24)","width:100%;padding:14px;border-radius:var(--r-lg,14px);border:none;background:rgba(245,166,35,0.12);color:var(--gold-text);font-size:15px;font-weight:800;cursor:pointer;");
+  var startBtn=mk("button","Iniciar ronda (24)","width:100%;padding:14px;border-radius:var(--r-lg,14px);border:none;background:rgba(255,185,85,0.12);color:var(--gold-text);font-size:15px;font-weight:800;cursor:pointer;");
   startBtn.setAttribute("aria-label","Iniciar ronda de 24 ejercicios de antes/después");
   startBtn.onclick=function(){
     el.innerHTML=""; el.appendChild(hdr);
@@ -143,9 +143,9 @@ function renderTempusCard(el,hdr){
   card.appendChild(sent);
   el.appendChild(card);
 
-  var hintBox=mk("div","","display:none;padding:10px 12px;border-radius:10px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;margin-bottom:8px;animation:fadeUp 0.15s ease;");
+  var hintBox=mk("div","","display:none;padding:10px 12px;border-radius:10px;background:rgba(196,167,231,0.08);border:1px solid rgba(196,167,231,0.2);color:var(--text);font-size:12px;font-weight:600;line-height:1.45;margin-bottom:8px;animation:fadeUp 0.15s ease;");
   hintBox.textContent="💡 "+d.tip;
-  var hintBtn=mk("button","💡 Pista","margin-bottom:10px;background:transparent;border:1px dashed rgba(167,139,250,0.3);color:var(--purple-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
+  var hintBtn=mk("button","💡 Pista","margin-bottom:10px;background:transparent;border:1px dashed rgba(196,167,231,0.3);color:var(--purple-text);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;");
   hintBtn.setAttribute("aria-expanded","false");
   hintBtn.onclick=function(){
     if(hintBox.style.display==="block"){hintBox.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
@@ -158,23 +158,23 @@ function renderTempusCard(el,hdr){
   for(var i=opts.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=opts[i];opts[i]=opts[j];opts[j]=t;}
   var row=mk("div","","display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px;");
   opts.forEach(function(opt){
-    var btn=mk("button",opt,"padding:12px 24px;border-radius:var(--r-lg,14px);border:2px solid rgba(245,166,35,0.25);background:rgba(245,166,35,0.08);color:var(--gold-text);font-size:16px;font-weight:800;cursor:pointer;transition:transform 0.12s;text-transform:lowercase;");
+    var btn=mk("button",opt,"padding:12px 24px;border-radius:var(--r-lg,14px);border:2px solid rgba(255,185,85,0.25);background:rgba(255,185,85,0.08);color:var(--gold-text);font-size:16px;font-weight:800;cursor:pointer;transition:transform 0.12s;text-transform:lowercase;");
     btn.setAttribute("aria-label","Opción: "+opt);
     btn.onmouseenter=function(){this.style.transform="scale(1.06)";this.style.borderColor="var(--gold-text)";};
-    btn.onmouseleave=function(){this.style.transform="";this.style.borderColor="rgba(245,166,35,0.25)";};
+    btn.onmouseleave=function(){this.style.transform="";this.style.borderColor="rgba(255,185,85,0.25)";};
     btn.onclick=function(){
       var correct=opt===d.correct;
       if(correct) state.tempus.tempusRight++; else state.tempus.tempusWrong++;
       state.tempus.tempusResults[idx]=correct;
       state.tempus.tempusSkipped[idx]=false;
       var fb=document.createElement("div"); fb.className="card";
-      fb.style.cssText="padding:16px;margin-bottom:10px;border-radius:var(--r-lg,14px);background:"+(correct?"rgba(74,222,128,0.08)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"rgba(74,222,128,0.2)":"rgba(248,113,113,0.2)")+";animation:fadeUp 0.2s ease;";
+      fb.style.cssText="padding:16px;margin-bottom:10px;border-radius:var(--r-lg,14px);background:"+(correct?"rgba(74,222,128,0.08)":"rgba(255,180,171,0.08)")+";border:1px solid "+(correct?"rgba(74,222,128,0.2)":"rgba(255,180,171,0.2)")+";animation:fadeUp 0.2s ease;";
       fb.appendChild(mk("p",correct?"✓ Correcto! — "+d.sentence.replace("___",d.correct):"✗ Incorrecto — "+d.sentence.replace("___",d.correct),"font-size:14px;font-weight:700;color:"+(correct?"var(--green-text)":"var(--red-text)")+";margin-bottom:6px;line-height:1.5;"));
-      fb.appendChild(mk("p","💡 "+d.tip,"font-size:12px;color:var(--text);font-weight:500;line-height:1.5;background:rgba(245,166,35,0.08);padding:8px 12px;border-radius:8px;"));
+      fb.appendChild(mk("p","💡 "+d.tip,"font-size:12px;color:var(--text);font-weight:500;line-height:1.5;background:rgba(255,185,85,0.08);padding:8px 12px;border-radius:8px;"));
       el.removeChild(row);
       if(skip&&skip.parentNode) skip.parentNode.removeChild(skip);
       el.insertBefore(fb,card.nextSibling);
-      var nextBtn=mk("button",(idx+1<data.length?"Siguiente →":"Ver resultado"),"width:100%;padding:12px;border-radius:12px;border:none;background:rgba(245,166,35,0.12);color:var(--gold-text);font-size:13px;font-weight:800;cursor:pointer;margin-top:6px;");
+      var nextBtn=mk("button",(idx+1<data.length?"Siguiente →":"Ver resultado"),"width:100%;padding:12px;border-radius:12px;border:none;background:rgba(255,185,85,0.12);color:var(--gold-text);font-size:13px;font-weight:800;cursor:pointer;margin-top:6px;");
       nextBtn.setAttribute("aria-label",(idx+1<data.length?"Siguiente pregunta":"Ver resultado"));
       nextBtn.onclick=function(){state.tempus.tempusIdx++;renderTempusCard(el,hdr);};
       el.insertBefore(nextBtn,fb.nextSibling);

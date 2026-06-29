@@ -105,9 +105,9 @@ function getBestMimeType() {
 function makeMicBtn(color, cb) {
   const btn = document.createElement("button");
   btn.className="mic-btn";
-  btn.style.borderColor=color||"#4ECDC4";
-  btn.style.color=color||"#4ECDC4";
-  btn.style.background="rgba("+hexToRgb(color||"#4ECDC4")+",0.08)";
+  btn.style.borderColor=color||"#5dd9d0";
+  btn.style.color=color||"#5dd9d0";
+  btn.style.background="rgba("+hexToRgb(color||"#5dd9d0")+",0.08)";
   btn.textContent="MIC";
   btn.onclick=async function(){
     if (state.app.mr&&state.app.mr.state==="recording") { state.app.mr.stop(); return; }
@@ -124,7 +124,7 @@ function makeMicBtn(color, cb) {
         try {
           const blob = new Blob(state.app.chunks, {type:usedType});
           const text = await transcribe(blob, usedType);
-          btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
+          btn.textContent="MIC"; btn.style.borderColor=color||"#5dd9d0"; btn.style.color=color||"#5dd9d0";
           if (text && text.trim() && cb) cb(text.trim());
           else if (!text || !text.trim()) showMicError(btn, color, "No se detecto voz. Intenta de nuevo.");
         } catch(err) {
@@ -194,13 +194,13 @@ function renderPronScore(host, target, transcript, color){
   box.style.cssText="margin-top:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;";
   const top=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;");
   top.appendChild(mk("span","Pronunciacion","font-size:11px;color:var(--muted);letter-spacing:1.5px;font-weight:700;"));
-  top.appendChild(mk("span",score+"%","font-size:20px;font-weight:900;color:"+(score>=80?"#4ade80":score>=50?"#fbbf24":"#F87171")+";"));
+  top.appendChild(mk("span",score+"%","font-size:20px;font-weight:900;color:"+(score>=80?"#4ade80":score>=50?"#fbbf24":"#ffb4ab")+";"));
   box.appendChild(top);
   const p=mk("p","","font-size:14px;line-height:1.6;font-weight:600;");
   wordSpans.forEach(function(s){
     const sp=document.createElement("span");
     sp.textContent=(s.got||"_")+" ";
-    sp.style.color=s.ok?"#4ade80":"#F87171";
+    sp.style.color=s.ok?"#4ade80":"#ffb4ab";
     sp.style.textDecoration=s.ok?"none":"underline";
     p.appendChild(sp);
   });
@@ -210,7 +210,7 @@ function renderPronScore(host, target, transcript, color){
 }
 
 function showMicError(btn, color, msg) {
-  btn.textContent="MIC"; btn.style.borderColor=color||"#4ECDC4"; btn.style.color=color||"#4ECDC4";
+  btn.textContent="MIC"; btn.style.borderColor=color||"#5dd9d0"; btn.style.color=color||"#5dd9d0";
   // Show the error visibly without interrupting the flow
   const errEl = document.createElement("div");
   errEl.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e2e;border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:9999;max-width:300px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,0.5);";

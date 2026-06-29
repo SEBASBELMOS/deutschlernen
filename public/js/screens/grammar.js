@@ -18,7 +18,7 @@ function renderGrammar() {
     btn.appendChild(mk("span",t.label,"font-size:12px;font-weight:600;color:var(--text);"));
     var gs=state.grammar.grammarStats[t.key];
     var pct=gs ? Math.round(gs.right/(gs.right+gs.wrong)*100) : 0;
-    var barColor=!gs ? "var(--muted)" : pct>=80 ? "#4ade80" : pct>=40 ? "#F5A623" : "#F87171";
+    var barColor=!gs ? "var(--muted)" : pct>=80 ? "#4ade80" : pct>=40 ? "#ffb955" : "#ffb4ab";
     var barOuter=document.createElement("div");
     barOuter.style.cssText="width:100%;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;overflow:hidden;";
     var barInner=document.createElement("div");
@@ -62,10 +62,10 @@ function renderDrillStep(el, topic){
 
   if(state.grammar._gramIdx>=state.grammar._gramDrills.length){
     const done=document.createElement("div");
-    done.style.cssText="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:16px;padding:24px;text-align:center;";
+    done.style.cssText="background:rgba(196,167,231,0.06);border:1px solid rgba(196,167,231,0.2);border-radius:16px;padding:24px;text-align:center;";
     done.appendChild(mk("div","🎉","font-size:48px;margin-bottom:8px;"));
     done.appendChild(mk("p","Terminaste!","font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;"));
-    done.appendChild(mk("p",state.grammar._gramCorrect+" / "+state.grammar._gramDrills.length+" correctas","font-size:14px;color:#A78BFA;font-weight:700;"));
+    done.appendChild(mk("p",state.grammar._gramCorrect+" / "+state.grammar._gramDrills.length+" correctas","font-size:14px;color:#c4a7e7;font-weight:700;"));
     el.appendChild(done);
     var prev=state.grammar.grammarStats[topic.key]||{right:0,wrong:0,lastPracticed:"",streak:0};
     var wrong=state.grammar._gramDrills.length-state.grammar._gramCorrect;
@@ -88,11 +88,11 @@ function renderDrillStep(el, topic){
         });
       }
     }
-    const again=mk("button","Otra ronda","width:100%;background:#A78BFA;color:#000;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;margin-top:12px;");
+    const again=mk("button","Otra ronda","width:100%;background:#c4a7e7;color:#000;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;margin-top:12px;");
     again.onclick=function(){loadGrammarDrills(topic);};
     el.appendChild(again);
     if(state.app._reviewPlan&&!state.app._reviewPlan.done){
-      var cont=mk("button","✅  Siguiente →","width:100%;padding:13px;border-radius:14px;border:none;background:rgba(78,205,196,0.12);color:#4ECDC4;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;");
+      var cont=mk("button","✅  Siguiente →","width:100%;padding:13px;border-radius:14px;border:none;background:rgba(93,217,208,0.12);color:#5dd9d0;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;");
       cont.onclick=function(){nextReviewStep();};
       el.appendChild(cont);
     }
@@ -104,7 +104,7 @@ function renderDrillStep(el, topic){
   const counter=mk("p","Ejercicio "+(state.grammar._gramIdx+1)+" / "+state.grammar._gramDrills.length,"color:var(--muted);font-size:12px;font-weight:600;margin-bottom:10px;letter-spacing:0.5px;");
   el.appendChild(counter);
 
-  const card=document.createElement("div"); card.className="card"; card.style.padding="18px"; card.style.borderColor="rgba(167,139,250,0.2)";
+  const card=document.createElement("div"); card.className="card"; card.style.padding="18px"; card.style.borderColor="rgba(196,167,231,0.2)";
   card.appendChild(mk("p",d.prompt,"font-size:18px;font-weight:800;color:var(--text);line-height:1.4;margin-bottom:14px;letter-spacing:-0.01em;"));
   const opts=mk("div","","display:flex;flex-direction:column;gap:8px;");
   let answered=false;
@@ -117,13 +117,13 @@ function renderDrillStep(el, topic){
       if(answered) return; answered=true;
       const ok=opt===d.answer;
       if(ok){ state.grammar._gramCorrect++; b.textContent="✓ Correcta: "+opt; b.style.background="rgba(74,222,128,0.12)"; b.style.borderColor="#4ade80"; b.style.color="#4ade80"; }
-      else { state.grammar._gramMissed.push(d); b.textContent="✗ Tu respuesta: "+opt; b.style.background="rgba(248,113,113,0.12)"; b.style.borderColor="#F87171"; b.style.color="#F87171"; }
+      else { state.grammar._gramMissed.push(d); b.textContent="✗ Tu respuesta: "+opt; b.style.background="rgba(255,180,171,0.12)"; b.style.borderColor="#ffb4ab"; b.style.color="#ffb4ab"; }
       Array.prototype.slice.call(opts.children).forEach(function(other){
         if(other.dataset.option===d.answer && other!==b){ other.textContent="✓ Correcta: "+d.answer; other.style.background="rgba(74,222,128,0.12)"; other.style.borderColor="#4ade80"; other.style.color="#4ade80"; }
       });
       const ex=mk("p","💡 "+(d.explain||""),"font-size:12px;color:var(--muted);margin-top:10px;font-style:italic;line-height:1.5;font-weight:500;");
       card.appendChild(ex);
-      const next=mk("button",(state.grammar._gramIdx+1<state.grammar._gramDrills.length?"Siguiente →":"Ver resultado"),"width:100%;background:#A78BFA;color:#000;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:800;margin-top:10px;");
+      const next=mk("button",(state.grammar._gramIdx+1<state.grammar._gramDrills.length?"Siguiente →":"Ver resultado"),"width:100%;background:#c4a7e7;color:#000;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:800;margin-top:10px;");
       next.onclick=function(){ state.grammar._gramIdx++; renderDrillStep(el, topic); };
       card.appendChild(next);
     };

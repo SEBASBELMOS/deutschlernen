@@ -9,10 +9,10 @@ function renderDidntUnderstand() {
 
   const row=mk("div","","display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;");
   const ta=document.createElement("textarea"); ta.rows=3; ta.placeholder="Escribe lo que escuchaste..."; ta.setAttribute("aria-label","Frase que escuchaste");
-  ta.style.cssText="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(78,205,196,0.2);border-radius:14px;padding:13px 15px;font-size:14px;color:var(--text);outline:none;resize:none;font-family:inherit;font-weight:500;transition:border-color 0.2s;";
-  ta.onfocus=function(){this.style.borderColor="rgba(78,205,196,0.5)";};
-  ta.onblur=function(){this.style.borderColor="rgba(78,205,196,0.2)";};
-  const mic=makeMicBtn("#4ECDC4",function(t){ta.value=t;doExplain(ta,explainBtn,el);});
+  ta.style.cssText="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(93,217,208,0.2);border-radius:14px;padding:13px 15px;font-size:14px;color:var(--text);outline:none;resize:none;font-family:inherit;font-weight:500;transition:border-color 0.2s;";
+  ta.onfocus=function(){this.style.borderColor="rgba(93,217,208,0.5)";};
+  ta.onblur=function(){this.style.borderColor="rgba(93,217,208,0.2)";};
+  const mic=makeMicBtn("#5dd9d0",function(t){ta.value=t;doExplain(ta,explainBtn,el);});
   row.appendChild(ta); row.appendChild(mic); el.appendChild(row);
   const explainBtn=document.createElement("button");
   explainBtn.className="fix-btn-lg teal";
@@ -23,7 +23,7 @@ function renderDidntUnderstand() {
 
 async function doExplain(ta, btn, el) {
   const text=ta.value.trim(); if(!text){ showToast("Escribe algo primero","error"); return; }
-  ta.disabled=true; btn.disabled=true; btn.textContent=""; btn.appendChild(makeDots("#4ECDC4"));
+  ta.disabled=true; btn.disabled=true; btn.textContent=""; btn.appendChild(makeDots("#5dd9d0"));
   const old=el.querySelector("#ni-result"); if(old) el.removeChild(old);
   try {
     const sys="You are a German language expert helping a Spanish speaker understand German. Reply ONLY with valid JSON, no markdown: {\"original\":\"the German text cleaned\",\"significado\":\"what it means in Spanish\",\"contexto\":\"when and why this is used\",\"palabras\":[{\"de\":\"key word\",\"es\":\"meaning\"}],\"respuesta\":\"how Sebastian could respond in German\",\"pronunciacion\":\"simplified pronunciation\"}";
@@ -35,16 +35,16 @@ async function doExplain(ta, btn, el) {
     box1.className="result-box teal";
     const rowO=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;");
     rowO.appendChild(mk("p",r.original,"font-size:20px;font-weight:800;color:var(--text);flex:1;letter-spacing:-0.01em;"));
-    const po=document.createElement("button"); po.className="icon-btn"; po.setAttribute("aria-label","Escuchar");po.innerHTML="&#9654;"; po.style.color="#4ECDC4"; po.style.fontSize="20px";
+    const po=document.createElement("button"); po.className="icon-btn"; po.setAttribute("aria-label","Escuchar");po.innerHTML="&#9654;"; po.style.color="#5dd9d0"; po.style.fontSize="20px";
     po.onclick=function(){speakGerman(r.original);}; rowO.appendChild(po); box1.appendChild(rowO);
     box1.appendChild(mk("p","/"+r.pronunciacion+"/","font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:500;"));
-    box1.appendChild(mk("p","SIGNIFICA","font-size:10px;color:#4ECDC4;letter-spacing:2px;margin-bottom:5px;font-weight:700;"));
+    box1.appendChild(mk("p","SIGNIFICA","font-size:10px;color:#5dd9d0;letter-spacing:2px;margin-bottom:5px;font-weight:700;"));
     box1.appendChild(mk("p",r.significado,"font-size:15px;color:var(--text);font-weight:600;line-height:1.5;"));
 
     const saveRow=mk("div","","display:flex;justify-content:flex-end;margin-top:12px;");
     const saveBtn=document.createElement("button");
     saveBtn.className="chip";
-    saveBtn.style.cssText="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;";
+    saveBtn.style.cssText="background:rgba(255,185,85,0.1);border:1px solid rgba(255,185,85,0.3);color:#ffb955;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;";
     setSaveIcon(saveBtn,false,"Guardar en flashcards");
     saveBtn.onclick=function(){
       const phrase=ensureSrsFields({de:r.original,es:r.significado,tip:r.contexto||"",source:"noentendi"});
@@ -81,14 +81,14 @@ async function doExplain(ta, btn, el) {
       const box4=document.createElement("div");
       box4.className="result-box purple";
       box4.style.padding="16px";
-      box4.appendChild(mk("p","💬  COMO PUEDES RESPONDER","font-size:10px;color:#A78BFA;letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
+      box4.appendChild(mk("p","💬  COMO PUEDES RESPONDER","font-size:10px;color:#c4a7e7;letter-spacing:2px;margin-bottom:6px;font-weight:700;"));
       const rowR=mk("div","","display:flex;justify-content:space-between;align-items:center;gap:8px;");
       rowR.appendChild(mk("p",r.respuesta,"font-size:15px;color:var(--text);flex:1;font-weight:600;"));
-      const pr=document.createElement("button"); pr.className="icon-btn"; pr.setAttribute("aria-label","Escuchar");pr.innerHTML="&#9654;"; pr.style.color="#A78BFA"; pr.style.fontSize="20px";
+      const pr=document.createElement("button"); pr.className="icon-btn"; pr.setAttribute("aria-label","Escuchar");pr.innerHTML="&#9654;"; pr.style.color="#c4a7e7"; pr.style.fontSize="20px";
       pr.onclick=function(){speakGerman(r.respuesta);}; rowR.appendChild(pr); box4.appendChild(rowR);
       const pronRow=mk("div","","display:flex;align-items:center;gap:8px;margin-top:10px;");
-      pronRow.appendChild(mk("span","🎤 Practicar pronunciación","font-size:12px;color:#A78BFA;font-weight:700;flex:1;"));
-      pronRow.appendChild(makePronMicBtn("#A78BFA", r.respuesta, box4));
+      pronRow.appendChild(mk("span","🎤 Practicar pronunciación","font-size:12px;color:#c4a7e7;font-weight:700;flex:1;"));
+      pronRow.appendChild(makePronMicBtn("#c4a7e7", r.respuesta, box4));
       box4.appendChild(pronRow);
       result.appendChild(box4);
     }

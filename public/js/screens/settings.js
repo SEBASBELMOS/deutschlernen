@@ -52,13 +52,13 @@ function renderSettings(){
 
   // Theme toggle
   const themeCard=document.createElement("div"); themeCard.className="card";
-  themeCard.appendChild(mk("p","🎨  Tema","font-size:10px;color:#4ECDC4;letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
+  themeCard.appendChild(mk("p","🎨  Tema","font-size:10px;color:#5dd9d0;letter-spacing:2px;margin-bottom:10px;font-weight:700;"));
   const isLight=document.documentElement.classList.contains("light-mode");
   const themeRow=mk("div","","display:flex;align-items:center;justify-content:space-between;");
   themeRow.appendChild(mk("span",isLight?"☀️ Claro":"🌙 Oscuro","font-size:14px;color:var(--text);font-weight:600;"));
   const toggleBtn=document.createElement("button");
   toggleBtn.textContent=isLight?"Modo oscuro":"Modo claro";
-  toggleBtn.style.cssText="padding:8px 16px;border-radius:10px;border:none;background:rgba(78,205,196,0.12);color:#4ECDC4;font-size:13px;font-weight:700;cursor:pointer;";
+  toggleBtn.style.cssText="padding:8px 16px;border-radius:10px;border:none;background:rgba(93,217,208,0.12);color:#5dd9d0;font-size:13px;font-weight:700;cursor:pointer;";
   toggleBtn.onclick=function(){
     const html=document.documentElement;
     html.classList.toggle("light-mode");
@@ -93,7 +93,7 @@ function renderSettings(){
   const exportBtn=document.createElement("button");
   exportBtn.textContent="📥 Export progreso completo (JSON)";
   exportBtn.setAttribute("aria-label","Exportar progreso completo en JSON");
-  exportBtn.style.cssText="width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(167,139,250,0.22);background:rgba(167,139,250,0.08);color:var(--purple-text);font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all 0.2s;";
+  exportBtn.style.cssText="width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(196,167,231,0.22);background:rgba(196,167,231,0.08);color:var(--purple-text);font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all 0.2s;";
   exportBtn.onclick=exportFullProgress;
   exportCard.appendChild(exportBtn);
   exportCard.appendChild(mk("p","dailyLog, racha, nivel, estadísticas de gramática, errores y más.","font-size:11px;color:var(--muted);margin-top:8px;font-weight:500;"));

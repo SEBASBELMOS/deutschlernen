@@ -12,7 +12,7 @@ function renderSaved() {
     var tabMeta=t==="frases"?{i:"star",l:"Frases"}:t==="chats"?{i:"chat",l:"Chats"}:t==="tabla"?{i:"table",l:"Tabla"}:{i:"package",l:"Temas"};
     btn.appendChild(ico(tabMeta.i,15)); btn.appendChild(document.createTextNode(tabMeta.l));
     if(state.savedView.savedTab===t){
-      btn.style.background="#F5A623"; btn.style.color="#000"; btn.style.boxShadow="0 2px 10px rgba(245,166,35,0.3)";
+      btn.style.background="#ffb955"; btn.style.color="#000"; btn.style.boxShadow="0 2px 10px rgba(255,185,85,0.3)";
     } else {
       btn.style.background="transparent"; btn.style.color="#64748b";
     }
@@ -33,7 +33,7 @@ function renderSaved() {
       return;
     }
     const searchRow=mk("div","","display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;");
-    const createBtn=mk("button","+ Crear","font-size:12px;color:var(--text);background:#F5A623;border:none;border-radius:8px;padding:7px 11px;font-weight:700;");
+    const createBtn=mk("button","+ Crear","font-size:12px;color:var(--text);background:#ffb955;border:none;border-radius:8px;padding:7px 11px;font-weight:700;");
     createBtn.onclick=openCreateModal;
     searchRow.appendChild(createBtn);
     const catFilter=document.createElement("select");
@@ -47,7 +47,7 @@ function renderSaved() {
     search.style.cssText="flex:1;font-size:13px;padding:8px 12px;font-weight:500;";
     search.oninput=function(){ state.savedView.savedFilter=this.value; renderSavedList(listHost); };
     searchRow.appendChild(search);
-    const exportBtn=mk("button","⤓ CSV","font-size:12px;color:#4ECDC4;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.25);border-radius:8px;padding:7px 11px;font-weight:700;");
+    const exportBtn=mk("button","⤓ CSV","font-size:12px;color:#5dd9d0;background:rgba(93,217,208,0.08);border:1px solid rgba(93,217,208,0.25);border-radius:8px;padding:7px 11px;font-weight:700;");
     exportBtn.onclick=exportSavedCsv;
     searchRow.appendChild(exportBtn);
     const clearBtn=mk("button","🗑","font-size:14px;color:#ef4444;background:none;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:6px 10px;font-weight:600;");
@@ -70,11 +70,11 @@ function renderSaved() {
     const intro=mk("p","Elige un paquete, guarda palabras y mira tu avance al instante.","font-size:13px;color:var(--muted);font-weight:500;margin-bottom:14px;");
     el.appendChild(intro);
     var packs=[
-      {icon:"file",name:"Trámites",desc:"Documentos, citas y burocracia",list:ERRANDS_VOCAB,cat:"Trámites",color:"#F5A623",textColor:"var(--gold-text)",rgb:"245,166,35"},
-      {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#4ECDC4",textColor:"var(--teal-text)",rgb:"78,205,196"},
+      {icon:"file",name:"Trámites",desc:"Documentos, citas y burocracia",list:ERRANDS_VOCAB,cat:"Trámites",color:"#ffb955",textColor:"var(--gold-text)",rgb:"245,166,35"},
+      {icon:"laptop",name:"Tech",desc:"Desarrollo, IT y herramientas",list:TECH_VOCAB,cat:"Tech",color:"#5dd9d0",textColor:"var(--teal-text)",rgb:"78,205,196"},
       {icon:"plane",name:"Viaje",desc:"Transporte, hotel y aeropuerto",list:TRAVEL_VOCAB,cat:"Viaje",color:"#4ade80",textColor:"var(--green-text)",rgb:"74,222,128"},
-      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:FOOD_VOCAB,cat:"Comida",color:"#F87171",textColor:"var(--red-text)",rgb:"248,113,113"},
-      {icon:"link",name:"Conectores",desc:"weil, obwohl, deshalb, wenn...",list:CONNECTORS_VOCAB,cat:"Conectores",color:"#A78BFA",textColor:"var(--purple-text)",rgb:"167,139,250"}
+      {icon:"utensils",name:"Comida",desc:"Restaurante, pedidos y cocina",list:FOOD_VOCAB,cat:"Comida",color:"#ffb4ab",textColor:"var(--red-text)",rgb:"248,113,113"},
+      {icon:"link",name:"Conectores",desc:"weil, obwohl, deshalb, wenn...",list:CONNECTORS_VOCAB,cat:"Conectores",color:"#c4a7e7",textColor:"var(--purple-text)",rgb:"167,139,250"}
     ];
     var grid=mk("div",""); grid.className="vocab-pack-grid";
     packs.forEach(function(p){
@@ -119,13 +119,13 @@ function renderSaved() {
         const isUser=m.role==="user";
         const row=mk("div","","display:flex;justify-content:"+(isUser?"flex-end":"flex-start")+";margin-bottom:6px;");
         const bub=mk("p",m.content,"max-width:90%;padding:8px 12px;font-size:13px;border-radius:12px;line-height:1.55;white-space:pre-wrap;font-weight:500;");
-        bub.style.background=isUser?"rgba(78,205,196,0.1)":"rgba(255,255,255,0.06)";
-        bub.style.border="1px solid "+(isUser?"rgba(78,205,196,0.2)":"rgba(255,255,255,0.08)");
+        bub.style.background=isUser?"rgba(93,217,208,0.1)":"rgba(255,255,255,0.06)";
+        bub.style.border="1px solid "+(isUser?"rgba(93,217,208,0.2)":"rgba(255,255,255,0.08)");
         bub.style.color="var(--text)"; row.appendChild(bub); msgs.appendChild(row);
       });
       card.appendChild(msgs);
       let open=false;
-      const toggle=mk("button","Ver conversacion ↓","font-size:12px;color:#4ECDC4;background:none;border:none;padding:0;font-weight:700;");
+      const toggle=mk("button","Ver conversacion ↓","font-size:12px;color:#5dd9d0;background:none;border:none;padding:0;font-weight:700;");
       toggle.onclick=function(e){e.stopPropagation();open=!open;msgs.style.display=open?"block":"none";toggle.textContent=open?"Ocultar ↑":"Ver conversacion ↓";};
       card.appendChild(toggle); el.appendChild(card);
     });
@@ -156,7 +156,7 @@ function renderSavedList(host){
   filtered.forEach(function(ph,i){
     ensureSrsFields(ph);
     const card=document.createElement("div"); card.className="card";
-    card.style.borderColor="rgba(245,166,35,0.12)";
+    card.style.borderColor="rgba(255,185,85,0.12)";
     card.style.animation="fadeUp 0.2s "+(Math.min(i,10)*0.04)+"s both";
     const topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;gap:12px;");
     const txt=mk("div","","flex:1;min-width:0;");
@@ -164,7 +164,7 @@ function renderSavedList(host){
     txt.appendChild(mk("p",ph.es,"font-size:13px;color:#94a3b8;margin-top:4px;font-weight:500;"));
     txt.appendChild(mk("p","caja "+ph.box+" · "+ph.nextReview,"font-size:10px;color:#475569;margin-top:4px;font-weight:600;letter-spacing:0.5px;"));
     const right=mk("div","","display:flex;align-items:center;gap:4px;flex-shrink:0;");
-    const play=document.createElement("button"); play.className="icon-btn"; play.setAttribute("aria-label","Escuchar");play.innerHTML="&#9654;"; play.style.color="#F5A623"; play.style.fontSize="20px";
+    const play=document.createElement("button"); play.className="icon-btn"; play.setAttribute("aria-label","Escuchar");play.innerHTML="&#9654;"; play.style.color="#ffb955"; play.style.fontSize="20px";
     play.onclick=function(){speak(ph.de);};
     const del=document.createElement("button"); del.className="icon-btn"; del.setAttribute("aria-label","Eliminar");del.innerHTML="&times;"; del.style.color="#475569"; del.style.fontSize="20px";
     del.title="Eliminar";
@@ -175,13 +175,13 @@ function renderSavedList(host){
     right.appendChild(play); right.appendChild(del);
     topRow.appendChild(txt); topRow.appendChild(right); card.appendChild(topRow);
     const catRow=mk("div","","display:flex;align-items:center;gap:6px;margin-top:8px;");
-    const catLbl=mk("span",ph.category||"Sin categoría","font-size:11px;font-weight:700;color:"+(ph.category?"var(--gold)":"var(--muted)")+";background:"+(ph.category?"rgba(245,166,35,0.1)":"rgba(255,255,255,0.04)")+";padding:2px 10px;border-radius:20px;");
+    const catLbl=mk("span",ph.category||"Sin categoría","font-size:11px;font-weight:700;color:"+(ph.category?"var(--gold)":"var(--muted)")+";background:"+(ph.category?"rgba(255,185,85,0.1)":"rgba(255,255,255,0.04)")+";padding:2px 10px;border-radius:20px;");
     const catBtn=document.createElement("button");
     catBtn.className="cat-edit-btn";
     catBtn.textContent="✏️";
     catRow.appendChild(catLbl); catRow.appendChild(catBtn);
     var catSelect=document.createElement("select");
-    catSelect.style.cssText="display:none;font-size:11px;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid rgba(245,166,35,0.3);border-radius:8px;padding:4px 6px;color:var(--text);outline:none;font-family:inherit;";
+    catSelect.style.cssText="display:none;font-size:11px;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid rgba(255,185,85,0.3);border-radius:8px;padding:4px 6px;color:var(--text);outline:none;font-family:inherit;";
     [""].concat(CATEGORIES).forEach(function(c){
       var o=document.createElement("option");o.value=c;o.textContent=c||"Sin categoría";
       if(c===ph.category)o.selected=true;catSelect.appendChild(o);
@@ -241,7 +241,7 @@ function renderVocabTable(host){
     const tr=document.createElement("tr");
     tr.className="stat-row-hover";
     tr.style.cssText="border-bottom:1px solid rgba(255,255,255,0.04);";
-    const boxColors=["#F87171","#F5A623","#4ECDC4","#4ade80","#A78BFA","#F5A623"];
+    const boxColors=["#ffb4ab","#ffb955","#5dd9d0","#4ade80","#c4a7e7","#ffb955"];
     const vals=[
       {text:ph.de, style:"font-weight:700;color:var(--text);"},
       {text:ph.es, style:"color:var(--text);"},

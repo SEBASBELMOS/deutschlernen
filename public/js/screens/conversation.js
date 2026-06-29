@@ -31,7 +31,7 @@ function startChat(scenario) {
 
   const top=mk("div","","display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;");
   const saveBtn=document.createElement("button");
-  saveBtn.style.cssText="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);color:#4ECDC4;border-radius:10px;padding:6px 13px;font-size:12px;font-weight:700;transition:background 0.2s;";
+  saveBtn.style.cssText="background:rgba(93,217,208,0.1);border:1px solid rgba(93,217,208,0.25);color:#5dd9d0;border-radius:10px;padding:6px 13px;font-size:12px;font-weight:700;transition:background 0.2s;";
   saveBtn.textContent="Guardar";
   saveBtn.onclick=function(){saveChatLog();runPostChatAnalysis();saveBtn.textContent="✓ Guardado";setTimeout(function(){saveBtn.textContent="Guardar";},1500);};
   const changeBtn=document.createElement("button"); changeBtn.className="btn-back"; changeBtn.textContent="← Cambiar";
@@ -53,7 +53,7 @@ function startChat(scenario) {
   const bar=document.createElement("div"); bar.className="chat-bar";
   const inp=document.createElement("input"); inp.className="chat-input"; inp.placeholder="Schreib auf Deutsch...";
   const sendBtn=document.createElement("button"); sendBtn.className="send-btn"; sendBtn.textContent="→";
-  const micBtn=makeMicBtn("#4ECDC4",function(text){inp.value=text;doSend(inp,sendBtn);});
+  const micBtn=makeMicBtn("#5dd9d0",function(text){inp.value=text;doSend(inp,sendBtn);});
   inp.onkeydown=function(e){if(e.key==="Enter"&&!inp.disabled)doSend(inp,sendBtn);};
   sendBtn.onclick=function(){doSend(inp,sendBtn);};
   bar.appendChild(inp); bar.appendChild(micBtn); bar.appendChild(sendBtn);
@@ -145,12 +145,12 @@ async function runPostChatAnalysis(){
   overlay._closeModal=closeModal;
   overlay.onclick=function(e){ if(e.target===overlay) closeModal(); };
   const box=document.createElement("div");
-  box.style.cssText="background:var(--modal-post-bg);border:1px solid rgba(245,166,35,0.25);border-radius:18px;padding:20px;max-width:560px;width:100%;margin-top:30px;box-shadow:0 12px 40px rgba(0,0,0,0.5);";
+  box.style.cssText="background:var(--modal-post-bg);border:1px solid rgba(255,185,85,0.25);border-radius:18px;padding:20px;max-width:560px;width:100%;margin-top:30px;box-shadow:0 12px 40px rgba(0,0,0,0.5);";
   box.setAttribute("role","dialog");
   box.setAttribute("aria-modal","true");
   box.setAttribute("aria-label","Análisis del chat");
   const head=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;");
-  head.appendChild(mk("p","🔍  ANALISIS DEL CHAT","font-size:11px;color:#F5A623;letter-spacing:2.5px;font-weight:700;"));
+  head.appendChild(mk("p","🔍  ANALISIS DEL CHAT","font-size:11px;color:#ffb955;letter-spacing:2.5px;font-weight:700;"));
   const closeBtn=mk("button","✕","background:none;border:none;color:#64748b;font-size:18px;font-weight:700;");
   closeBtn.onclick=closeModal;
   head.appendChild(closeBtn); box.appendChild(head);
@@ -172,7 +172,7 @@ async function runPostChatAnalysis(){
 
     if(Array.isArray(r.errors) && r.errors.length){
       const b=document.createElement("div");
-      b.style.cssText="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
+      b.style.cssText="background:rgba(255,180,171,0.06);border:1px solid rgba(255,180,171,0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
       b.appendChild(mk("p","⚠️  QUE MEJORAR","font-size:10px;color:var(--red-text);letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
       r.errors.forEach(function(e){
         const row=mk("div","","padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);");
@@ -197,8 +197,8 @@ async function runPostChatAnalysis(){
     }
     if(Array.isArray(r.suggestedPhrases) && r.suggestedPhrases.length){
       const b=document.createElement("div");
-      b.style.cssText="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
-      b.appendChild(mk("p","💬  FRASES PARA GUARDAR","font-size:10px;color:#A78BFA;letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
+      b.style.cssText="background:rgba(196,167,231,0.06);border:1px solid rgba(196,167,231,0.2);border-radius:14px;padding:14px;margin-bottom:10px;";
+      b.appendChild(mk("p","💬  FRASES PARA GUARDAR","font-size:10px;color:#c4a7e7;letter-spacing:2px;font-weight:700;margin-bottom:8px;"));
       r.suggestedPhrases.forEach(function(ph){
         const card=mk("div","","background:rgba(255,255,255,0.03);border-radius:10px;padding:10px;margin-top:6px;display:flex;gap:8px;align-items:center;");
         const t=mk("div","","flex:1;");
@@ -206,12 +206,12 @@ async function runPostChatAnalysis(){
         t.appendChild(mk("p",ph.es,"font-size:12px;color:#94a3b8;margin-top:2px;font-weight:500;"));
         const star=document.createElement("button"); star.className="icon-btn"; star.setAttribute("aria-label","Guardar"); star.style.fontSize="18px";
         var phraseSaved=state.session.saved.some(function(x){return x.de===ph.de;});
-        star.style.color=phraseSaved?"#F5A623":"#334155";
+        star.style.color=phraseSaved?"#ffb955":"#334155";
         setSaveIcon(star,phraseSaved);
         star.onclick=function(){
           if(!state.session.saved.some(function(x){return x.de===ph.de;})){
             state.session.saved.push(ensureSrsFields({de:ph.de,es:ph.es,tip:ph.tip||"",source:"conversar"}));
-            star.style.color="#F5A623"; setSaveIcon(star,true); updateBadge(); syncUp();
+            star.style.color="#ffb955"; setSaveIcon(star,true); updateBadge(); syncUp();
           }
         };
         card.appendChild(t); card.appendChild(star); b.appendChild(card);
@@ -221,7 +221,7 @@ async function runPostChatAnalysis(){
     if(!(r.errors||[]).length && !(r.vocab||[]).length && !(r.suggestedPhrases||[]).length){
       box.appendChild(mk("p","🎉 Sin observaciones. Sigue asi.","color:var(--green-text);font-size:14px;text-align:center;padding:20px 0;font-weight:600;"));
     }
-    const ok=mk("button","Cerrar","width:100%;background:#F5A623;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;margin-top:8px;");
+    const ok=mk("button","Cerrar","width:100%;background:#ffb955;color:#000;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;margin-top:8px;");
     ok.onclick=closeModal; box.appendChild(ok);
   } catch(e){
     loading.remove();

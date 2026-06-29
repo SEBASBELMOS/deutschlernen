@@ -192,10 +192,10 @@ const CASES_ART = {
   mein: {m:['mein','meinen','meinem','meines'], f:['meine','meine','meiner','meiner'], n:['mein','mein','meinem','meines']}
 };
 const CASES_CASES = [
-  {name:'Nominativ', cls:'nom', dot:'#4ECDC4'},
+  {name:'Nominativ', cls:'nom', dot:'#5dd9d0'},
   {name:'Akkusativ', cls:'akk', dot:'#4ade80'},
-  {name:'Dativ', cls:'dat', dot:'#F5A623'},
-  {name:'Genitiv', cls:'gen', dot:'#A78BFA'}
+  {name:'Dativ', cls:'dat', dot:'#ffb955'},
+  {name:'Genitiv', cls:'gen', dot:'#c4a7e7'}
 ];
 const CASES_Q = [
   {mode:'articulo', sentence:'___ Laptop ist neu.', hint:'der Laptop', op:['der','den','dem','des'], ok:'der', caso:'nom', why:'¿quién es nuevo? él, es el sujeto → Nominativ.'},

@@ -21,14 +21,14 @@ function renderShadowing(){
   el.appendChild(mk("p",(state.shadowing.idx+1)+" / "+state.shadowing.pool.length+"  ·  "+sentence.es,"color:var(--muted);font-size:12px;font-weight:600;margin-bottom:10px;"));
 
   // Sentence card
-  var card=mk("div","","background:rgba(78,205,196,0.04);border:1px solid rgba(78,205,196,0.15);border-radius:16px;padding:22px;margin-bottom:14px;text-align:center;");
+  var card=mk("div","","background:rgba(93,217,208,0.04);border:1px solid rgba(93,217,208,0.15);border-radius:16px;padding:22px;margin-bottom:14px;text-align:center;");
   card.appendChild(mk("p",sentence.de,"font-size:19px;font-weight:800;color:var(--text);line-height:1.55;margin-bottom:6px;letter-spacing:-0.01em;"));
   card.appendChild(mk("p",sentence.es,"font-size:13px;color:var(--muted);font-weight:500;"));
   el.appendChild(card);
 
   // Listen button
   var playRow=mk("div","","display:flex;gap:8px;margin-bottom:14px;");
-  var playBtn=mk("button","▶  Escuchar","flex:1;padding:14px;border-radius:14px;border:none;background:rgba(78,205,196,0.12);color:var(--teal-text);font-size:15px;font-weight:800;cursor:pointer;transition:opacity 0.2s;");
+  var playBtn=mk("button","▶  Escuchar","flex:1;padding:14px;border-radius:14px;border:none;background:rgba(93,217,208,0.12);color:var(--teal-text);font-size:15px;font-weight:800;cursor:pointer;transition:opacity 0.2s;");
   playBtn.onclick=function(){speak(sentence.de);};
   playRow.appendChild(playBtn);
   el.appendChild(playRow);
@@ -40,8 +40,8 @@ function renderShadowing(){
   // Mic row
   var micRow=mk("div","","display:flex;align-items:center;gap:10px;margin-bottom:16px;");
   micRow.appendChild(mk("span","🎤  Repetir — graba tu voz","font-size:14px;color:var(--teal-text);font-weight:700;flex:1;"));
-  var micBtn=makeMicBtn("#4ECDC4",function(transcript){
-    renderPronScore(scoreHost, sentence.de, transcript, "#4ECDC4"); logActivity("drillsDone",1); syncUp();
+  var micBtn=makeMicBtn("#5dd9d0",function(transcript){
+    renderPronScore(scoreHost, sentence.de, transcript, "#5dd9d0"); logActivity("drillsDone",1); syncUp();
     nextBtn.style.display="block";
   });
   micBtn.setAttribute("aria-label","Grabar tu voz para puntuar la pronunciación"); micRow.appendChild(micBtn);
@@ -49,10 +49,10 @@ function renderShadowing(){
 
   // Next / AI buttons
   var bottomRow=mk("div","","display:flex;gap:8px;");
-  var nextBtn=mk("button","Siguiente frase →","flex:1;padding:12px;border-radius:12px;border:none;background:rgba(245,166,35,0.1);color:var(--gold-text);font-size:13px;font-weight:800;cursor:pointer;display:none;");
+  var nextBtn=mk("button","Siguiente frase →","flex:1;padding:12px;border-radius:12px;border:none;background:rgba(255,185,85,0.1);color:var(--gold-text);font-size:13px;font-weight:800;cursor:pointer;display:none;");
   nextBtn.onclick=function(){state.shadowing.idx++;renderShadowing();};
   bottomRow.appendChild(nextBtn);
-  var aiBtn=mk("button","🤖 Generar con IA","padding:12px 14px;border-radius:12px;border:1px solid rgba(167,139,250,0.25);background:rgba(167,139,250,0.08);color:var(--purple-text);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;");
+  var aiBtn=mk("button","🤖 Generar con IA","padding:12px 14px;border-radius:12px;border:1px solid rgba(196,167,231,0.25);background:rgba(196,167,231,0.08);color:var(--purple-text);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;");
   aiBtn.onclick=async function(){
     aiBtn.disabled=true;aiBtn.textContent="Generando...";
     try{

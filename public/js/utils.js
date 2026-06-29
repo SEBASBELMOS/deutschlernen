@@ -31,7 +31,7 @@ function makeDots(color) {
   const d=document.createElement("div"); d.className="dots";
   [0,0.2,0.4].forEach(function(delay){
     const dot=document.createElement("div"); dot.className="dot";
-    dot.style.background=color||"#4ECDC4";
+    dot.style.background=color||"#5dd9d0";
     dot.style.animation="bounce 1.2s "+delay+"s infinite";
     d.appendChild(dot);
   });

@@ -67,7 +67,7 @@ function renderGenCard(el, hdr){
   var row=mk("div","","display:flex;gap:10px;justify-content:center;margin-bottom:16px;");
   var articles=[
     {art:"der", color:"#60a5fa", bg:"rgba(96,165,250,0.1)", border:"rgba(96,165,250,0.3)"},
-    {art:"die", color:"#F87171", bg:"rgba(248,113,113,0.1)", border:"rgba(248,113,113,0.3)"},
+    {art:"die", color:"#ffb4ab", bg:"rgba(255,180,171,0.1)", border:"rgba(255,180,171,0.3)"},
     {art:"das", color:"#4ade80", bg:"rgba(74,222,128,0.1)", border:"rgba(74,222,128,0.3)"}
   ];
   articles.forEach(function(a){
@@ -79,12 +79,12 @@ function renderGenCard(el, hdr){
       var correct=n.article===a.art;
       if(correct) _genRight++; else{ _genWrong++; _genMissed.push(n); }
       var fb=document.createElement("div"); fb.className="card";
-      fb.style.cssText="text-align:center;padding:16px;margin-bottom:10px;border-radius:var(--r-lg,16px);background:"+(correct?"rgba(74,222,128,0.08)":"rgba(248,113,113,0.08)")+";border:1px solid "+(correct?"rgba(74,222,128,0.2)":"rgba(248,113,113,0.2)")+";animation:fadeUp 0.2s ease;";
-      fb.appendChild(mk("p",correct?"\u2713 Correcto!":"\u2717 Incorrecto","font-size:16px;font-weight:800;color:"+(correct?"#4ade80":"#F87171")+";margin-bottom:4px;"));
+      fb.style.cssText="text-align:center;padding:16px;margin-bottom:10px;border-radius:var(--r-lg,16px);background:"+(correct?"rgba(74,222,128,0.08)":"rgba(255,180,171,0.08)")+";border:1px solid "+(correct?"rgba(74,222,128,0.2)":"rgba(255,180,171,0.2)")+";animation:fadeUp 0.2s ease;";
+      fb.appendChild(mk("p",correct?"\u2713 Correcto!":"\u2717 Incorrecto","font-size:16px;font-weight:800;color:"+(correct?"#4ade80":"#ffb4ab")+";margin-bottom:4px;"));
       fb.appendChild(mk("p","La respuesta correcta es: "+(n.article==="der"?"\ud83d\udd35":n.article==="die"?"\ud83d\udd34":"\ud83d\udfe2")+" "+n.article+" "+n.noun,"font-size:14px;color:var(--text);font-weight:500;"));
       el.removeChild(row);
       el.insertBefore(fb, el.firstChild.nextSibling.nextSibling);
-      var nextBtn=mk("button","Siguiente →","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(167,139,250,0.12);color:#A78BFA;font-size:13px;font-weight:800;cursor:pointer;margin-top:6px;");
+      var nextBtn=mk("button","Siguiente →","width:100%;padding:12px;border-radius:12px;border:none;background:rgba(196,167,231,0.12);color:#c4a7e7;font-size:13px;font-weight:800;cursor:pointer;margin-top:6px;");
       nextBtn.onclick=function(){_genIdx++;renderGenCard(el,hdr);};
       el.insertBefore(nextBtn, el.lastChild.nextSibling);
     };
@@ -106,7 +106,7 @@ function renderGenResults(el){
     _genMissed.forEach(function(n){ logError("genero", n.noun, n.article+" "+n.noun, n.meaning ? "Significa: "+n.meaning : ""); });
   }
   var total=_genRight+_genWrong, pct=total>0?Math.round(_genRight/total*100):0;
-  var scoreColor=pct>=80?"#4ade80":pct>=50?"#F5A623":"#F87171";
+  var scoreColor=pct>=80?"#4ade80":pct>=50?"#ffb955":"#ffb4ab";
   var resultCard=document.createElement("div"); resultCard.className="card";
   resultCard.style.cssText="text-align:center;padding:28px;margin-bottom:16px;";
   resultCard.appendChild(mk("p",_genRight+"/"+total,"font-size:42px;font-weight:900;color:"+scoreColor+";line-height:1;font-variant-numeric:tabular-nums;"));
@@ -117,12 +117,12 @@ function renderGenResults(el){
     var missCard=document.createElement("div"); missCard.className="card";
     missCard.appendChild(mk("p","Para repasar","font-size:10px;color:#f87171;letter-spacing:1.5px;font-weight:700;margin-bottom:8px;"));
     _genMissed.forEach(function(n){
-      var artColor=n.article==="der"?"#60a5fa":n.article==="die"?"#F87171":"#4ade80";
+      var artColor=n.article==="der"?"#60a5fa":n.article==="die"?"#ffb4ab":"#4ade80";
       var row=mk("div","","display:flex;justify-content:space-between;align-items:center;padding:4px 0;");
       row.appendChild(mk("span",n.article+" "+n.noun+(n.plural?" ("+n.plural+")":""),"font-size:14px;font-weight:600;color:"+artColor+";"));
       var save=document.createElement("button");
       save.textContent="\u2B50 Guardar";
-      save.style.cssText="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);color:#F5A623;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;";
+      save.style.cssText="background:rgba(255,185,85,0.1);border:1px solid rgba(255,185,85,0.3);color:#ffb955;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;";
       save.onclick=function(){
         var ph=ensureSrsFields({de:n.article+" "+n.noun+(n.plural?" ("+n.plural+")":""),es:n.meaning||n.noun,tip:n.article,source:"genero"});
         if(!state.session.saved.some(function(x){return x.de===ph.de;})){state.session.saved.push(ph);updateBadge();syncUp();showToast("Guardada!","success");}
