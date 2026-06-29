@@ -61,7 +61,7 @@ function startChat(scenario) {
   var workspace=document.createElement("div"); workspace.className="chat-workspace";
   var chatMain=document.createElement("div"); chatMain.className="chat-main-panel";
   var insights=document.createElement("aside"); insights.className="chat-insights";
-  insights.appendChild(mk("h3","Insights","font-size:26px;font-weight:900;color:var(--text);letter-spacing:-0.03em;margin-bottom:22px;"));
+  insights.appendChild(mk("h3","Análisis","font-size:26px;font-weight:900;color:var(--text);letter-spacing:-0.03em;margin-bottom:22px;"));
   var progressCard=mk("div","",""); progressCard.className="insight-card";
   progressCard.appendChild(mk("p","SCENARIO PROGRESS","font-size:10px;color:var(--muted);letter-spacing:.08em;font-weight:800;margin-bottom:10px;"));
   progressCard.appendChild(mk("p","65%","font-size:32px;font-weight:900;color:var(--text);line-height:1;margin-bottom:10px;font-variant-numeric:tabular-nums;"));
@@ -69,7 +69,7 @@ function startChat(scenario) {
   progressCard.appendChild(prog);
   insights.appendChild(progressCard);
   var vocabCard=mk("div","",""); vocabCard.className="insight-card";
-  vocabCard.appendChild(mk("h4","Key Vocabulary","font-size:18px;margin-bottom:12px;"));
+  vocabCard.appendChild(mk("h4","Vocabulario clave","font-size:18px;margin-bottom:12px;"));
   ["der Termin","die Antwort","sonst noch etwas?"].forEach(function(w){
     var row=mk("div","","padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);");
     row.appendChild(mk("p",w,"font-size:15px;color:var(--primary);font-weight:900;"));
@@ -79,7 +79,7 @@ function startChat(scenario) {
   insights.appendChild(vocabCard);
   var grammarCard=mk("div","",""); grammarCard.className="insight-card";
   grammarCard.style.borderColor="rgba(var(--purple-rgb),0.35)";
-  grammarCard.appendChild(mk("h4","Grammar Focus","font-size:18px;margin-bottom:10px;color:var(--purple-text);"));
+  grammarCard.appendChild(mk("h4","Foco gramatical","font-size:18px;margin-bottom:10px;color:var(--purple-text);"));
   grammarCard.appendChild(mk("p","Peticiones corteses con Konjunktiv II: Ich möchte bitte...","font-size:14px;color:var(--text2);line-height:1.55;"));
   insights.appendChild(grammarCard);
 

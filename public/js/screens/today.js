@@ -18,7 +18,10 @@ function renderToday(){
   var summaryInner=mk("div","","position:relative;z-index:1;");
   var topRow=mk("div","","display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:16px;flex-wrap:wrap;");
   var heroText=mk("div","","min-width:260px;flex:1;");
-  heroText.appendChild(mk("h2","Guten Morgen, Sebastian!","margin-bottom:14px;"));
+  var _hr=new Date().getHours();
+  var _greet=_hr<12?"Buenos días":_hr<19?"Buenas tardes":"Buenas noches";
+  var _uname=(state.app.authUser||"").trim();
+  heroText.appendChild(mk("h2","¡"+_greet+(_uname?", "+_uname:"")+"!","margin-bottom:14px;"));
   // Streak pill
   // Subtitle based on state
   var subMsg=due>0?"Tenés "+due+" tarjeta"+(due===1?"":"s")+" pendiente"+(due===1?"":"s")+". Empezá por el repaso para proteger tu racha.":allDone?"🎉 Por hoy terminaste el repaso.":"Elegí una sesión corta y mantené el hábito activo.";

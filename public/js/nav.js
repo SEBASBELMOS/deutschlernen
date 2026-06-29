@@ -53,11 +53,11 @@ function renderTabs(){
   var curTab=TABS.filter(function(t){return t.id===state.app.currentTab;})[0];
   var titleEl=document.getElementById("screen-title");
   var subEl=document.getElementById("screen-subtitle");
-  if(titleEl) titleEl.textContent=curTab&&curTab.id==="hoy"?"Dashboard":(curTab?curTab.label:curGroup.label);
+  if(titleEl) titleEl.textContent=curTab&&curTab.id==="hoy"?"Hoy":(curTab?curTab.label:curGroup.label);
   if(subEl) subEl.textContent=curGroup.label+" · "+lvlRange();
   var brand=document.createElement("div"); brand.className="side-brand";
   brand.appendChild(mk("h1","DeutschLernen",""));
-  brand.appendChild(mk("p","Premium Scholar",""));
+  brand.appendChild(mk("p","Estudiante Premium",""));
   nav.appendChild(brand);
   var navList=document.createElement("div"); navList.className="side-nav-list";
   NAV_GROUPS.forEach(function(g){
@@ -81,7 +81,7 @@ function renderTabs(){
   });
   nav.appendChild(navList);
   var sideFoot=document.createElement("div"); sideFoot.className="side-footer";
-  var start=document.createElement("button"); start.className="side-start-btn"; start.textContent="Start Daily Lesson";
+  var start=document.createElement("button"); start.className="side-start-btn"; start.textContent="Empezar repaso diario";
   start.onclick=function(){
     hideNavSheet();
     state.app.currentTab="hoy";renderTabs();
@@ -94,7 +94,7 @@ function renderTabs(){
   profile.appendChild(mk("span",initial,""));
   var profileTxt=mk("div","","");
   profileTxt.appendChild(mk("b",state.app.authUser||"Sebastian",""));
-  profileTxt.appendChild(mk("small",state.app.level+" Scholar",""));
+  profileTxt.appendChild(mk("small","Nivel "+state.app.level,""));
   profile.appendChild(profileTxt);
   sideFoot.appendChild(profile);
   nav.appendChild(sideFoot);

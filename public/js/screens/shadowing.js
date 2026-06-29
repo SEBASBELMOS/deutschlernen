@@ -7,8 +7,8 @@ function renderShadowing(){
   // Header
   const hdr=document.createElement("section"); hdr.className="stitch-page-head";
   var headCopy=mk("div","","");
-  headCopy.appendChild(mk("p","SPEAKING EXERCISE","display:inline-flex;padding:6px 14px;border-radius:var(--r-pill);background:var(--primary-container);color:var(--on-primary-container);font-size:12px;letter-spacing:.14em;font-family:var(--font-label);font-weight:900;margin-bottom:12px;"));
-  headCopy.appendChild(mk("h2","Shadowing Mastery",""));
+  headCopy.appendChild(mk("p","PRÁCTICA DE HABLA","display:inline-flex;padding:6px 14px;border-radius:var(--r-pill);background:var(--primary-container);color:var(--on-primary-container);font-size:12px;letter-spacing:.14em;font-family:var(--font-label);font-weight:900;margin-bottom:12px;"));
+  headCopy.appendChild(mk("h2","Shadowing",""));
   headCopy.appendChild(mk("p","Escuchá el audio nativo, repetí la frase y compará tu pronunciación en tiempo real.",""));
   hdr.appendChild(headCopy);
   var headStats=mk("div","","display:flex;gap:22px;align-items:center;");
@@ -34,8 +34,8 @@ function renderShadowing(){
 
   // Top row: label + level badge
   var topRow=mk("div","","display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;");
-  topRow.appendChild(mk("span","Native Audio","font-size:24px;color:var(--primary);font-weight:900;letter-spacing:-0.03em;"));
-  var levelBadge=mk("span","B1 Level","font-size:10px;color:var(--text2);background:rgba(var(--teal-rgb),0.08);border:1px solid rgba(var(--teal-rgb),0.18);border-radius:var(--r-pill,999px);padding:3px 10px;font-weight:700;");
+  topRow.appendChild(mk("span","Audio nativo","font-size:24px;color:var(--primary);font-weight:900;letter-spacing:-0.03em;"));
+  var levelBadge=mk("span","Nivel B1","font-size:10px;color:var(--text2);background:rgba(var(--teal-rgb),0.08);border:1px solid rgba(var(--teal-rgb),0.18);border-radius:var(--r-pill,999px);padding:3px 10px;font-weight:700;");
   topRow.appendChild(levelBadge);
   card.appendChild(topRow);
 
