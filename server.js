@@ -8,7 +8,7 @@ const {createClient} = require("@supabase/supabase-js");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const AI_KEY = process.env.AI_KEY || process.env.GROQ_KEY || process.env.OPENROUTER_KEY || process.env.MIMO_KEY;
-const CATEGORIES = ["Trabajo","Viajes","Comida","Naturaleza","Sentimientos","Hogar","General"];
+const CATEGORIES = ["Trabajo","Viaje","Viajes","Comida","Naturaleza","Sentimientos","Hogar","Trámites","Tech","Conectores","General"];
 const CATEGORIES_SET = new Set(CATEGORIES);
 const AI_URL = process.env.AI_URL || "https://api.groq.com/openai/v1/chat/completions";
 const AI_MODEL = process.env.AI_MODEL || "llama-3.3-70b-versatile";
@@ -208,7 +208,8 @@ async function requireAuth(req, res) {
 const rateLimits = new Map();
 const RATE_WINDOW = 15 * 60 * 1000;
 const RATE_MAX = 5;
-function checkRateLimit(ip, endpoint) {
+function checkRateLimit(ip, endpoint, max) {
+  const limit = typeof max === "number" ? max : RATE_MAX;
   const key = ip + ":" + endpoint;
   const now = Date.now();
   const entry = rateLimits.get(key);
@@ -217,7 +218,7 @@ function checkRateLimit(ip, endpoint) {
     return true;
   }
   entry.count++;
-  return entry.count <= RATE_MAX;
+  return entry.count <= limit;
 }
 function clearRateLimit(ip, endpoint) {
   rateLimits.delete(ip + ":" + endpoint);
@@ -232,10 +233,26 @@ setInterval(function(){
   }
 }, 60 * 1000).unref();
 
+// Content-Security-Policy: even if an XSS fires, connect-src/img-src 'self' block
+// exfiltration of the auth token to any external host, and object/base/frame are locked down.
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "img-src 'self' data:",
+  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "script-src 'self' 'unsafe-inline'",
+  "connect-src 'self'"
+].join("; ");
 app.use(function(_,res,next){
   res.setHeader("X-Content-Type-Options","nosniff");
   res.setHeader("X-Frame-Options","DENY");
   res.setHeader("Referrer-Policy","no-referrer");
+  res.setHeader("Content-Security-Policy", CSP);
+  res.setHeader("Permissions-Policy","geolocation=(), camera=(), payment=()");
   next();
 });
 app.use(express.json({limit:"10mb"}));
@@ -251,7 +268,7 @@ app.post("/api/register", async (req,res) => {
     if (password.length<4) return res.json({error:"Password: minimo 4 caracteres."});
     if (!checkRateLimit(req.ip, "register"))
       return res.status(429).json({error:"Demasiados intentos. Espera 15 minutos."});
-    const emptyData = {saved:[],chatLogs:[],totalPhrases:0,totalMinutes:0,dailyLog:{},shownPhrases:{},weeklyGoal:60};
+    const emptyData = {saved:[],chatLogs:[],totalPhrases:0,totalMinutes:0,dailyLog:{},shownPhrases:{},weeklyGoal:60,casesStats:{}};
     const created = await storage.createUser(username, hashPw(password), emptyData);
     if (!created) return res.json({error:"Ese username ya existe."});
     const token = makeToken();
@@ -271,8 +288,12 @@ app.post("/api/login", async (req,res) => {
     if (!checkRateLimit(req.ip, "login"))
       return res.status(429).json({error:"Demasiados intentos. Espera 15 minutos."});
     const {user} = await storage.getUser(username);
-    if (!user) return res.json({error:"Usuario no encontrado."});
-    if (!verifyPw(password, user.passwordHash)) return res.json({error:"Password incorrecto."});
+    // Same generic error + constant-time work whether or not the user exists (anti-enumeration)
+    if (!user) {
+      crypto.scryptSync(password, "dummy-enumeration-guard-salt", 64); // equalize timing
+      return res.json({error:"Usuario o contraseña incorrectos."});
+    }
+    if (!verifyPw(password, user.passwordHash)) return res.json({error:"Usuario o contraseña incorrectos."});
     if (!user.passwordHash.startsWith("scrypt:")) {
       await storage.updatePasswordHash(username, hashPw(password));
     }
@@ -297,6 +318,35 @@ app.post("/api/logout", async (req,res) => {
   }
 });
 
+app.post("/api/change-password", async (req,res) => {
+  try {
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
+    const {currentPassword,newPassword} = req.body||{};
+    if (!currentPassword||!newPassword) return res.json({error:"Completa todos los campos."});
+    if (newPassword.length<4) return res.json({error:"Nuevo password: mínimo 4 caracteres."});
+    if (!verifyPw(currentPassword, auth.user.passwordHash)) return res.json({error:"Password actual incorrecto."});
+    await storage.updatePasswordHash(auth.username, hashPw(newPassword));
+    // Invalida todas las otras sesiones de este usuario
+    if (usingSupabase) {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {auth:{persistSession:false}});
+      const {error} = await supabase.from("sessions").delete().eq("username", auth.username).neq("token", auth.token);
+      if (error) console.error("[change-password cleanup]", error);
+    } else {
+      const db = readDB();
+      for (const t of Object.keys(db.sessions)) {
+        const s = db.sessions[t];
+        if (s && (s.username||s)===auth.username && t!==auth.token) delete db.sessions[t];
+      }
+      writeDB(db);
+    }
+    res.json({ok:true});
+  } catch(err) {
+    console.error("[change-password]", err);
+    res.status(500).json({error:"Internal server error"});
+  }
+});
+
 // Sync
 app.get("/api/sync", async (req,res) => {
   try {
@@ -314,16 +364,33 @@ app.post("/api/sync", async (req,res) => {
     const auth = await getAuth(req);
     if (!auth) return res.json({error:"No autenticado."});
     const body = req.body||{};
+    const MAX_SAVED = 5000, MAX_CHATLOGS = 200, MAX_ERRJOURNAL = 100, MAX_STR = 2000;
     if (!Array.isArray(body.saved)) return res.status(400).json({error:"saved debe ser un array."});
+    if (body.saved.length > MAX_SAVED) return res.status(400).json({error:"Demasiadas frases guardadas (máx "+MAX_SAVED+")."});
     for (const item of body.saved) {
       if (!item || typeof item !== "object" || typeof item.de !== "string" || typeof item.es !== "string")
         return res.status(400).json({error:"Cada frase debe tener 'de' y 'es' como string."});
+      if (item.de.length > MAX_STR || item.es.length > MAX_STR)
+        return res.status(400).json({error:"Frase demasiado larga (máx "+MAX_STR+" caracteres)."});
       if (typeof item.category !== "string" || !CATEGORIES_SET.has(item.category)) item.category = "";
     }
     if (!Array.isArray(body.chatLogs)) return res.status(400).json({error:"chatLogs debe ser un array."});
+    if (body.chatLogs.length > MAX_CHATLOGS) return res.status(400).json({error:"Demasiados chats (máx "+MAX_CHATLOGS+")."});
     if (body.errorJournal && !Array.isArray(body.errorJournal)) return res.status(400).json({error:"errorJournal debe ser un array."});
-    const {saved,chatLogs,totalPhrases,totalMinutes,dailyLog,shownPhrases,weeklyGoal,level,grammarStats,errorJournal} = body;
+    if (Array.isArray(body.errorJournal) && body.errorJournal.length > MAX_ERRJOURNAL) body.errorJournal = body.errorJournal.slice(-MAX_ERRJOURNAL);
+    const {saved,chatLogs,totalPhrases,totalMinutes,dailyLog,shownPhrases,weeklyGoal,level,grammarStats,casesStats,errorJournal} = body;
     const existing = auth.user.data || {};
+    let cleanCasesStats = existing.casesStats || {};
+    if (casesStats && typeof casesStats==="object" && !Array.isArray(casesStats)) {
+      cleanCasesStats = {};
+      if (["identificar","transformar","reglas","practicar"].includes(casesStats.casesSubtab)) cleanCasesStats.casesSubtab = casesStats.casesSubtab;
+      if (["der","ein","mein"].includes(casesStats.casesArt)) cleanCasesStats.casesArt = casesStats.casesArt;
+      if (["all","articulo","caso","mov","traduccion"].includes(casesStats.casesQuizMode)) cleanCasesStats.casesQuizMode = casesStats.casesQuizMode;
+      ["casesNounIdx","casesHits","casesTotal","casesStreak"].forEach((k) => {
+        const n = Number(casesStats[k]);
+        if (Number.isFinite(n)) cleanCasesStats[k] = Math.max(0, Math.floor(n));
+      });
+    }
     const nextData = {
       saved: saved,
       chatLogs: chatLogs,
@@ -334,6 +401,7 @@ app.post("/api/sync", async (req,res) => {
       weeklyGoal: Number(weeklyGoal)||60,
       level: level,
       grammarStats: (grammarStats && typeof grammarStats==="object") ? grammarStats : (existing.grammarStats||{}),
+      casesStats: cleanCasesStats,
       errorJournal: Array.isArray(errorJournal) ? errorJournal : (existing.errorJournal||[])
     };
     await storage.updateUserData(auth.username, nextData);
@@ -349,7 +417,20 @@ app.post("/api/chat", async (req,res) => {
   try {
     const auth = await requireAuth(req, res);
     if (!auth) return;
-    const body = Object.assign({}, req.body||{}, {model: AI_MODEL});
+    if (!checkRateLimit(auth.username, "chat", 40))
+      return res.status(429).json({error:{message:"Demasiadas solicitudes de IA. Espera unos minutos."}});
+    // Only forward a safe allowlist of params, and clamp cost-driving fields.
+    const src = req.body || {};
+    if (!Array.isArray(src.messages)) return res.status(400).json({error:{message:"messages debe ser un array."}});
+    const body = {
+      model: AI_MODEL,
+      messages: src.messages.slice(0, 40),
+      temperature: typeof src.temperature === "number" ? Math.max(0, Math.min(2, src.temperature)) : undefined,
+      top_p: typeof src.top_p === "number" ? Math.max(0, Math.min(1, src.top_p)) : undefined,
+      max_tokens: Math.max(1, Math.min(2048, Number(src.max_tokens) || 1024)),
+      response_format: (src.response_format && typeof src.response_format === "object") ? src.response_format : undefined,
+      stop: src.stop
+    };
     const r = await fetch(AI_URL, {
       method:"POST",
       headers:{
@@ -374,6 +455,8 @@ app.post("/api/upload", async (req,res) => {
   try {
     const auth = await requireAuth(req, res);
     if (!auth) return;
+    if (!checkRateLimit(auth.username, "voice", 30))
+      return res.status(429).json({error:"Demasiadas transcripciones. Espera unos minutos."});
     const contentType = req.headers["content-type"] || "audio/webm";
     const r = await fetch("https://api.assemblyai.com/v2/upload", {
       method:"POST",
@@ -381,31 +464,35 @@ app.post("/api/upload", async (req,res) => {
       body:req.body
     });
     res.json(await r.json());
-  } catch(err) { res.status(500).json({error:err.message}); }
+  } catch(err) { console.error("[upload]", err.message); res.status(500).json({error:"Error al subir el audio."}); }
 });
 
 app.post("/api/transcript", async (req,res) => {
   try {
     const auth = await requireAuth(req, res);
     if (!auth) return;
+    if (!checkRateLimit(auth.username, "voice", 30))
+      return res.status(429).json({error:"Demasiadas transcripciones. Espera unos minutos."});
     const r = await fetch("https://api.assemblyai.com/v2/transcript", {
       method:"POST",
       headers:{authorization:ASSEMBLY_KEY,"content-type":"application/json"},
       body:JSON.stringify(req.body)
     });
     res.json(await r.json());
-  } catch(err) { res.status(500).json({error:err.message}); }
+  } catch(err) { console.error("[transcript]", err.message); res.status(500).json({error:"Error al iniciar la transcripción."}); }
 });
 
 app.get("/api/transcript/:id", async (req,res) => {
   try {
     const auth = await requireAuth(req, res);
     if (!auth) return;
+    // Only allow AssemblyAI's opaque id format — never let arbitrary path segments reach the upstream URL.
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(req.params.id)) return res.status(400).json({error:"ID inválido."});
     const r = await fetch("https://api.assemblyai.com/v2/transcript/"+req.params.id, {
       headers:{authorization:ASSEMBLY_KEY}
     });
     res.json(await r.json());
-  } catch(err) { res.status(500).json({error:err.message}); }
+  } catch(err) { console.error("[transcript:get]", err.message); res.status(500).json({error:"Error al obtener la transcripción."}); }
 });
 
 cleanupExpiredSessions().catch(err => console.error("[sessions cleanup]", err));

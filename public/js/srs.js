@@ -17,6 +17,33 @@ function ensureSrsFields(ph){
   if(typeof ph.category!=="string") ph.category="";
   return ph;
 }
+function invalidateFlashcardQueues(){
+  if(!state.flashcards) return;
+  state.flashcards.reviewQueue=[];
+  state.flashcards.allOrder=[];
+  state.flashcards._shuffledIdx=false;
+  state.flashcards._isFlipped=false;
+  state.flashcards.flashIdx=0;
+}
+function shuffledIndices(indices){
+  var arr=[].concat(indices||[]);
+  for(var i=arr.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+  }
+  return arr;
+}
+function dueReviewPhrases(limit){
+  var t=todayKey();
+  return state.session.saved
+    .filter(function(p){ensureSrsFields(p);return p.nextReview<=t;})
+    .sort(function(a,b){
+      if((a.box||0)!==(b.box||0)) return (a.box||0)-(b.box||0);
+      if((b.lapses||0)!==(a.lapses||0)) return (b.lapses||0)-(a.lapses||0);
+      return (a.nextReview||"").localeCompare(b.nextReview||"");
+    })
+    .slice(0,limit||5);
+}
 function srsUpdate(ph, grade){
   // grade: "fail" | "hard" | "good" | "easy"
   ensureSrsFields(ph);
@@ -55,16 +82,21 @@ function logError(source, original, correction, tip){
   if(state.session.errorJournal.length>200) state.session.errorJournal=state.session.errorJournal.slice(0,200);
 }
 function computeStreak(){
-  let streak=0; let cursor=todayKey();
-  // If today has activity, count it; else start from yesterday
-  const todayHas=state.session.dailyLog[cursor]&&(state.session.dailyLog[cursor].minutes>0||state.session.dailyLog[cursor].phrasesReviewed>0||state.session.dailyLog[cursor].drillsDone>0);
-  if(!todayHas){ cursor=addDays(cursor,-1); }
-  for(let i=0;i<400;i++){
-    const e=state.session.dailyLog[cursor];
-    if(e&&(e.minutes>0||e.phrasesReviewed>0||e.drillsDone>0)){ streak++; cursor=addDays(cursor,-1); }
-    else break;
+  function dayActive(k){ var e=state.session.dailyLog[k]; return !!(e&&(e.minutes>0||e.phrasesReviewed>0||e.drillsDone>0)); }
+  function walk(allowShield){
+    let streak=0; let cursor=todayKey(); let shieldUsed=false;
+    if(!dayActive(cursor)){ cursor=addDays(cursor,-1); }
+    for(let i=0;i<400;i++){
+      if(dayActive(cursor)){ streak++; cursor=addDays(cursor,-1); }
+      // Bridge ONE single-day gap if there is real streak on the other side
+      else if(allowShield && !shieldUsed && dayActive(addDays(cursor,-1))){ shieldUsed=true; cursor=addDays(cursor,-1); }
+      else break;
+    }
+    return streak;
   }
-  return streak;
+  // Streak shield: one missed day forgiven, but only for streaks that total a week+
+  const withShield=walk(true);
+  return withShield>=7 ? withShield : walk(false);
 }
 function weeklyMinutes(){
   let sum=0; let cursor=todayKey();
@@ -257,4 +289,17 @@ function renderInsight(host){
     "<div style='margin-bottom:12px;'><p style='font-size:11px;color:var(--red-text);font-weight:700;letter-spacing:1.5px;font-family:var(--font-label);margin-bottom:4px;'>⚠️ Qué conviene reforzar</p><p style='font-size:14px;color:var(--text);font-weight:600;line-height:1.5;'>"+error+"</p></div>"+
     "<div style='background:rgba(var(--gold-rgb),0.08);border:1px solid rgba(var(--gold-rgb),0.2);border-radius:12px;padding:12px;'><p style='font-size:11px;color:var(--gold-text);font-weight:700;letter-spacing:1.5px;font-family:var(--font-label);margin-bottom:4px;'>💡 Próximo paso</p><p style='font-size:14px;color:var(--gold-text);font-weight:700;line-height:1.5;'>"+tip+"</p></div>"+
     "<p style='font-size:10px;color:var(--dim);margin-top:12px;'>Semana "+week+" · Datos locales de los últimos 7 días</p></div>";
+}
+
+// ── Busuu-style strength labels (vocab boxes + grammar mastery) ──────────────
+function srsStrength(box){
+  if(box<=1) return {key:"weak",  label:"Débil",  plural:"Débiles", color:"var(--red)",   rgb:"var(--red-rgb)",   boxes:[0,1]};
+  if(box<=3) return {key:"mid",   label:"Media",  plural:"Medias",  color:"var(--gold)",  rgb:"var(--gold-rgb)",  boxes:[2,3]};
+  return          {key:"strong",label:"Fuerte", plural:"Fuertes", color:"var(--green)", rgb:"var(--green-rgb)", boxes:[4,5]};
+}
+function grammarMastery(pct){
+  if(pct<=25) return {label:"Necesita práctica", color:"var(--red)",  rgb:"var(--red-rgb)"};
+  if(pct<=50) return {label:"Mejorando",         color:"#fb923c",     rgb:"251,146,60"};
+  if(pct<=75) return {label:"Fuerte",            color:"var(--gold)", rgb:"var(--gold-rgb)"};
+  return       {label:"Dominado",          color:"var(--green)",rgb:"var(--green-rgb)"};
 }

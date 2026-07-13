@@ -21,7 +21,7 @@ function makeGermanUtterance(text) {
   if (state.app._deVoice) u.voice = state.app._deVoice;
   else if (!state.app._noDeVoiceWarned) {
     state.app._noDeVoiceWarned = true;
-    showToast("Sin voz alemana en tu dispositivo — instalá una en Ajustes del sistema (Voz/Spoken Content) para mejor pronunciación", "info", 6000);
+    showToast("Sin voz alemana en tu dispositivo — instala una en Ajustes del sistema (Voz/Spoken Content) para mejor pronunciación", "info", 6000);
   }
   return u;
 }
@@ -30,6 +30,18 @@ function speak(text) {
   window.speechSynthesis.cancel();
   const u = makeGermanUtterance(text);
   window.speechSynthesis.speak(u);
+}
+// TTS solo del alemán: quita traducciones y bloques de corrección antes de leer.
+function speakGerman(text) {
+  var t=String(text||"");
+  t=t
+    .replace(/\([^)]*\)/g," ")
+    .replace(/Spanish translation\s*:.*$/gim," ")
+    .replace(/Traducci[oó]n\s*:.*$/gim," ")
+    .replace(/Better:\s*[\s\S]*$/i," ")
+    .replace(/\s{2,}/g," ")
+    .trim();
+  if(t) speak(t);
 }
 function splitSpeechChunks(text) {
   var clean=(text||"").replace(/\s+/g," ").trim();
@@ -59,11 +71,6 @@ function speakFull(text, onDone) {
   }
   next(0);
 }
-function speakGerman(text) {
-  const clean=text.replace(/\([^)]*\)/g,"").replace(/Better:?.*/i,"").replace(/\s+/g," ").trim();
-  speak(clean);
-}
-
 // ── AssemblyAI ────────────────────────────────────────────────────────────────
 async function transcribe(blob, mimeType) {
   if (!blob || blob.size < 1000) throw new Error("Audio muy corto, habla un poco mas.");
@@ -122,21 +129,64 @@ function getBestMimeType() {
   return "";
 }
 
-function makeMicBtn(color, cb) {
+// Audio visualizer: draws frequency bars on canvas. Returns {stop()} control.
+// Never throws — returns silent no-op if setup fails.
+function startAudioViz(stream, canvasEl){
+  try{var audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return{stop:function(){}};}
+  var analyser, source, bufLen, dataArr, ctx, raf;
+  try{
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=64;
+    source=audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    bufLen=analyser.frequencyBinCount;
+    dataArr=new Uint8Array(bufLen);
+    ctx=canvasEl.getContext("2d");
+    canvasEl.style.display="block";
+  }catch(e){
+    try{audioCtx.close();}catch(ee){}
+    return{stop:function(){canvasEl.style.display="none";}};
+  }
+  function frame(){
+    raf=requestAnimationFrame(frame);
+    analyser.getByteFrequencyData(dataArr);
+    var w=canvasEl.width, h=canvasEl.height, barGap=2, barW=(w-(bufLen-1)*barGap)/bufLen;
+    ctx.clearRect(0,0,w,h);
+    for(var i=0;i<bufLen;i++){
+      var bh=dataArr[i]/255*h;
+      var grad=ctx.createLinearGradient(0,h,0,h-bh);
+      grad.addColorStop(0,"#5dd9d0"); // --teal
+      grad.addColorStop(1,"#ffb955"); // --gold
+      ctx.fillStyle=grad;
+      ctx.fillRect(i*(barW+barGap),h-bh,barW,bh);
+    }
+  }
+  frame();
+  return {stop:function(){
+    if(raf){cancelAnimationFrame(raf);raf=null;}
+    try{if(audioCtx&&audioCtx.state!=="closed")audioCtx.close();}catch(e){}
+    canvasEl.style.display="none";
+  }};
+}
+
+function makeMicBtn(color, cb, vizCanvas) {
   const btn = document.createElement("button");
   btn.className="mic-btn";
   setMicAccent(btn, color);
   btn.textContent="MIC";
+  var viz=null;
   btn.onclick=async function(){
-    if (state.app.mr&&state.app.mr.state==="recording") { state.app.mr.stop(); return; }
+    if (state.app.mr&&state.app.mr.state==="recording") { state.app.mr.stop(); if(viz)viz.stop(); viz=null; return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      if(vizCanvas) viz=startAudioViz(stream, vizCanvas);
       state.app.chunks=[];
       const mimeType = getBestMimeType();
       state.app.mr = mimeType ? new MediaRecorder(stream, {mimeType:mimeType}) : new MediaRecorder(stream);
       state.app.mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) state.app.chunks.push(e.data); };
       state.app.mr.onstop=async function(){
         stream.getTracks().forEach(function(t){t.stop();});
+        if(viz){viz.stop();viz=null;}
         btn.textContent="..."; btn.style.borderColor="var(--border)"; btn.style.color="var(--muted)"; btn.style.animation="none";
         const usedType = state.app.mr.mimeType || mimeType || "audio/webm";
         try {
@@ -152,6 +202,7 @@ function makeMicBtn(color, cb) {
       state.app.mr.start(250); // 250ms timeslice to capture chunks continuously
       btn.textContent="STOP"; btn.style.borderColor="var(--red)"; btn.style.color="var(--red-text)"; btn.style.animation="ring 1.2s infinite";
     } catch(e){
+      if(viz){viz.stop();viz=null;}
       alert("Permite el acceso al microfono en tu browser.");
     }
   };
@@ -160,22 +211,25 @@ function makeMicBtn(color, cb) {
 
 // Mic button that records, transcribes, then scores against a target phrase.
 // Renders the score inline inside `host`.
-function makePronMicBtn(color, targetPhrase, host){
+function makePronMicBtn(color, targetPhrase, host, vizCanvas){
   const btn=document.createElement("button");
   btn.className="mic-btn";
   setMicAccent(btn, color);
   btn.style.minWidth="60px";
   btn.textContent="MIC";
+  var viz=null;
   btn.onclick=async function(){
-    if(state.app.mr&&state.app.mr.state==="recording"){ state.app.mr.stop(); return; }
+    if(state.app.mr&&state.app.mr.state==="recording"){ state.app.mr.stop(); if(viz)viz.stop(); viz=null; return; }
     try {
       const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      if(vizCanvas) viz=startAudioViz(stream, vizCanvas);
       state.app.chunks=[];
       const mimeType=getBestMimeType();
       state.app.mr = mimeType ? new MediaRecorder(stream,{mimeType:mimeType}) : new MediaRecorder(stream);
       state.app.mr.ondataavailable=function(e){ if(e.data&&e.data.size>0) state.app.chunks.push(e.data); };
       state.app.mr.onstop=async function(){
         stream.getTracks().forEach(function(t){t.stop();});
+        if(viz){viz.stop();viz=null;}
         btn.textContent="..."; btn.style.borderColor="var(--border)"; btn.style.color="var(--muted)"; btn.style.animation="none";
         const usedType=state.app.mr.mimeType||mimeType||"audio/webm";
         try {
@@ -187,7 +241,7 @@ function makePronMicBtn(color, targetPhrase, host){
       };
       state.app.mr.start(250);
       btn.textContent="STOP"; btn.style.borderColor="var(--red)"; btn.style.color="var(--red-text)"; btn.style.animation="ring 1.2s infinite";
-    } catch(e){ alert("Permite el acceso al microfono."); }
+    } catch(e){ if(viz){viz.stop();viz=null;} alert("Permite el acceso al microfono."); }
   };
   return btn;
 }

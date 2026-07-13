@@ -1,272 +1,385 @@
-// ── Tempus (before/after: vor/nach, bevor/nachdem, vorher/danach, früher/später) ───
-function normalizeTempusExercise(d){
-  d=d||{};
-  d.correct=String(d.correct||"").trim().toLowerCase();
-  d.sentence=String(d.sentence||"").trim();
-  d.tip=String(d.tip||"").trim();
-  var opts=(Array.isArray(d.options)?d.options:[]).map(function(o){return String(o).trim().toLowerCase();}).filter(Boolean);
-  var seen={}, clean=[];
-  opts.forEach(function(o){ if(!seen[o]){seen[o]=true;clean.push(o);} });
-  if(d.correct&&!seen[d.correct]){ clean.push(d.correct); seen[d.correct]=true; }
-  TEMPUS_CHOICES.forEach(function(o){ if(clean.length<4&&!seen[o]){clean.push(o);seen[o]=true;} });
-  d.options=clean.slice(0,5);
-  if(d.correct&&d.options.indexOf(d.correct)===-1) d.options[d.options.length-1]=d.correct;
-  return d;
-}
-function validTempusExercise(d){
-  return d&&d.sentence.indexOf("___")>=0&&TEMPUS_CHOICES.indexOf(d.correct)>=0&&d.options.indexOf(d.correct)>=0;
-}
-function prepareTempusExercises(raw){
-  var arr=(Array.isArray(raw)?raw:[]).map(normalizeTempusExercise).filter(validTempusExercise);
-  if(arr.length<24) return TEMPUS_CURATED.map(normalizeTempusExercise);
-  return arr.slice(0,24);
-}
-function resetTempusRound(data){
-  state.tempus.tempusData=prepareTempusExercises(data);
-  state.tempus.tempusIdx=0;
-  state.tempus.tempusRight=0;
-  state.tempus.tempusWrong=0;
-  state.tempus.tempusDone=false;
-  state.tempus.tempusResults=[];
-  state.tempus.tempusSkipped=[];
-  state.tempus.tempusLogged=false;
-}
-function appendTempusSentence(host,sentence){
-  var parts=String(sentence||"").split("___");
-  parts.forEach(function(part,i){
-    if(part) host.appendChild(document.createTextNode(part));
-    if(i<parts.length-1){
-      var blank=mk("span","___","display:inline-block;background:rgba(var(--gold-rgb),0.15);color:var(--gold-text);padding:2px 10px;border-radius:var(--r-sm);font-weight:900;border:1px dashed rgba(var(--gold-rgb),0.35);");
-      host.appendChild(blank);
-    }
-  });
-}
-function renderTempus(){
-  var el=document.getElementById("s-tempus"); el.innerHTML="";
-  // ── Header ──
-  var hdr=mk("div","","margin-bottom:18px;position:relative;");
-  var accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--gold);margin-bottom:10px;");
-  hdr.appendChild(accent);
-  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
-  hdr.appendChild(mk("h2","Antes / Después","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.1;"));
-  hdr.appendChild(mk("p","vor/nach, bevor/nachdem, vorher/danach — el color diferencia la regla.","font-size:13px;color:var(--muted);margin-top:5px;font-weight:500;line-height:1.4;"));
-  el.appendChild(hdr);
+// ── TEMPUS (Drag-and-Drop Timeline) ─────────────────────────────────────────
+// Fable port: drag phrases into vor | waehrend | nach zones relative to an event.
+// Uses mk() helper, state.tempus.* namespace, called via renderTempus().
 
-  if(state.tempus.tempusDone){ renderTempusResults(el); return; }
-  if(state.tempus.tempusData&&state.tempus.tempusData.length){ renderTempusCard(el,hdr); return; }
+var TEMPUS_PHRASES = [
+  {de:"Vor dem Meeting trinke ich einen Kaffee.",es:"Antes de la reunión tomo un café.",z:"vor"},
+  {de:"Nach dem Meeting schreibe ich das Protokoll.",es:"Después de la reunión escribo el acta.",z:"nach"},
+  {de:"Während des Meetings mache ich Notizen.",es:"Durante la reunión tomo notas.",z:"waehrend"},
+  {de:"Bevor das Meeting beginnt, teste ich mein Mikro.",es:"Antes de que empiece, pruebo mi micrófono.",z:"vor"},
+  {de:"Nachdem alle gegangen sind, räume ich auf.",es:"Después de que todos se van, ordeno.",z:"nach"},
+  {de:"Ich bereite die Folien vor dem Termin vor.",es:"Preparo las diapositivas antes de la cita.",z:"vor"},
+  {de:"Währenddessen läuft die Aufnahme.",es:"Mientras tanto, corre la grabación.",z:"waehrend"},
+  {de:"Danach besprechen wir die nächsten Schritte.",es:"Después discutimos los próximos pasos.",z:"nach"},
+  {de:"Davor checke ich noch meine E-Mails.",es:"Antes de eso reviso mis correos.",z:"vor"},
+  {de:"Bevor ich präsentiere, atme ich tief durch.",es:"Antes de presentar, respiro hondo.",z:"vor"},
+  {de:"Nachdem das Meeting endete, ging ich joggen.",es:"Después de que terminó, salí a correr.",z:"nach"},
+  {de:"Während der Präsentation bleibt das Handy aus.",es:"Durante la presentación, el celular apagado.",z:"waehrend"},
+  {de:"Nach der Besprechung esse ich zu Mittag.",es:"Después de la reunión almuerzo.",z:"nach"},
+  {de:"Vor Beginn stelle ich das Dashboard bereit.",es:"Antes del inicio dejo listo el dashboard.",z:"vor"},
+  {de:"Währenddessen notiert Anna die Fragen.",es:"Mientras tanto, Anna anota las preguntas.",z:"waehrend"},
+  {de:"Danach exportiere ich die Daten.",es:"Después exporto los datos.",z:"nach"},
+  {de:"Bevor wir starten, klären wir die Agenda.",es:"Antes de empezar, aclaramos la agenda.",z:"vor"},
+  {de:"Nachdem ich gefragt hatte, bekam ich die Antwort.",es:"Después de preguntar, recibí la respuesta.",z:"nach"},
+  {de:"Während wir sprechen, teilt er den Bildschirm.",es:"Mientras hablamos, él comparte pantalla.",z:"waehrend"},
+  {de:"Nach Feierabend lerne ich Deutsch.",es:"Después del trabajo estudio alemán.",z:"nach"},
+  {de:"Vor der Demo mache ich ein Backup.",es:"Antes de la demo hago un backup.",z:"vor"}
+];
 
-  // ── Reference Table ──
-  var refCard=mk("div","","padding:18px;margin-bottom:16px;border-radius:var(--r-xl);background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.22);overflow-x:auto;");
-  refCard.appendChild(mk("p","📋 Referencia rápida","font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px;"));
-  var table=mk("div","","display:grid;grid-template-columns:110px 150px 140px minmax(200px,1fr);gap:1px;font-size:12px;min-width:600px;");
-  ["Español","Alemán","Cuándo","Ejemplo"].forEach(function(hdrTxt){
-    table.appendChild(mk("div",hdrTxt,"padding:9px 8px;font-weight:800;color:var(--text);background:var(--surface-2);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-label);"));
-  });
-  var rows=[
-    ["Antes (de)","vor (+ Dativ)","vor + sustantivo / evento","vor dem Unterricht"],
-    ["Antes de que","bevor","bevor + oración subordinada","bevor der Unterricht anfängt"],
-    ["Antes (adverbio)","vorher","solo, al final o inicio","Ich war vorher beim Arzt."],
-    ["Antes (en el pasado)","früher","antes, en el pasado","Früher habe ich in Berlin gewohnt."],
-    ["Después (de)","nach (+ Dativ)","nach + sustantivo / evento","nach der Schule"],
-    ["Después de que","nachdem","nachdem + oración subordinada","nachdem ich gegessen habe"],
-    ["Después (adverbio)","danach","solo, al final o inicio","Danach bin ich müde."],
-    ["Más tarde","später","después, más tarde","Wir sehen uns später."]
-  ];
-  rows.forEach(function(r){
-    r.forEach(function(cell,ci){
-      var color=ci===1?"var(--gold-text)":ci===2?"var(--purple-text)":ci===3?"var(--text2)":"var(--text)";
-      var weight=ci===1?"font-weight:800;":"font-weight:600;";
-      table.appendChild(mk("div",cell,"padding:9px 8px;color:"+color+";"+weight+"border-bottom:1px solid var(--border);line-height:1.4;"));
-    });
-  });
-  refCard.appendChild(table);
-  el.appendChild(refCard);
+var TEMPUS_ROUND = 8;
+var TEMPUS_EVENTS = [
+  "das Team-Meeting",
+  "die Präsentation",
+  "der Unterricht",
+  "das Abendessen",
+  "die Reise",
+  "das Vorstellungsgespräch",
+  "die Prüfung",
+  "der Workshop"
+];
 
-  // Warning
-  var warn=mk("div","","padding:14px 16px;margin-bottom:14px;border-radius:var(--r-md);background:rgba(var(--red-rgb),0.06);border:1px solid rgba(var(--red-rgb),0.15);font-size:12px;color:var(--red-text);font-weight:600;line-height:1.5;");
-  warn.textContent="⚠️ nach dem (2 palabras con artículo) ≠ nachdem (1 palabra, conjunción subordinante). Si ves 'dem' después de 'nach', es DATIV con artículo, no subordinada.";
-  el.appendChild(warn);
-
-  // Rules card
-  var ruleCard=mk("div","","padding:18px;margin-bottom:16px;border-radius:var(--r-xl);background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  ruleCard.appendChild(mk("p","📌 Regla express","font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;"));
-  var rules=[
-    "vor / nach + DATIV (sustantivo) → 2 palabras: vor dem Unterricht, nach der Schule",
-    "bevor / nachdem + oración subordinada (verbo al FINAL) → 1 palabra",
-    "vorher / danach = adverbios solos, nunca llevan sustantivo"
-  ];
-  rules.forEach(function(r){
-    ruleCard.appendChild(mk("p","• "+r,"font-size:12px;color:var(--text2);font-weight:500;line-height:1.6;margin-bottom:5px;"));
-  });
-  el.appendChild(ruleCard);
-
-  // Start button
-  var pracHdr=mk("p","🎯 PRACTICAR","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:10px;");
-  el.appendChild(pracHdr);
-  var startBtn=mk("button","Iniciar ronda (24)","width:100%;padding:15px;border-radius:var(--r-md);border:none;background:var(--gold);color:#000;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(var(--gold-rgb),0.3);transition:all 0.12s;");
-  startBtn.onmouseenter=function(){this.style.boxShadow="0 6px 24px rgba(var(--gold-rgb),0.4)";};
-  startBtn.onmouseleave=function(){this.style.boxShadow="0 4px 16px rgba(var(--gold-rgb),0.3)";};
-  startBtn.setAttribute("aria-label","Iniciar ronda de 24 ejercicios de antes/después");
-  startBtn.onclick=function(){
-    el.innerHTML=""; el.appendChild(hdr);
-    el.appendChild(skelCard(5));
-    var sys='You are a German teacher at A2-B1 level. Generate 24 fill-in-the-blank temporal connector exercises. Spread across: vor (3), bevor (3), vorher (3), früher (3), nach (3), nachdem (3), danach (3), später (3). Reply ONLY with a valid JSON array, no markdown: [{"sentence":"___ dem Essen wasche ich die Hände.","options":["vor","bevor","vorher","früher"],"correct":"vor","tip":"<15 words Spanish explaining the rule>"}]. Distractors must be plausible temporal connectors from the same group. Level '+lvlRange()+'.';
-    ai(sys,[],1800).then(function(txt){
-      var arr=parseJSONArray(txt);
-      resetTempusRound(arr);
-      el.innerHTML="";
-      renderTempusCard(el,hdr);
-    }).catch(function(){
-      resetTempusRound(TEMPUS_CURATED);
-      el.innerHTML="";
-      renderTempusCard(el,hdr);
-    });
-  };
-  el.appendChild(startBtn);
+function tempusShuffle(a) {
+  a = a.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
 }
 
-function renderTempusCard(el,hdr){
-  var data=state.tempus.tempusData;
-  var idx=state.tempus.tempusIdx;
-  if(idx>=data.length){ state.tempus.tempusDone=true; el.innerHTML=""; renderTempus(); return; }
-  var d=data[idx]; d=normalizeTempusExercise(d); data[idx]=d;
-  el.innerHTML="";
-  hdr.innerHTML="";
-  var accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--gold);margin-bottom:10px;");
-  hdr.appendChild(accent);
-  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
-  hdr.appendChild(mk("h2","Antes / Después","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.15;"));
-  // Progress
-  var prog=mk("div","","display:flex;gap:8px;margin-top:8px;");
-  [
-    {lbl:"Progreso",val:(idx+1)+"/"+data.length,color:"var(--text2)"},
-    {lbl:"Aciertos",val:state.tempus.tempusRight,color:"var(--green-text)"},
-    {lbl:"Fallos",val:state.tempus.tempusWrong,color:"var(--red-text)"}
-  ].forEach(function(m){
-    var p=mk("div","","");
-    p.appendChild(mk("span",String(m.val),"font-size:15px;font-weight:900;color:"+m.color+";font-variant-numeric:tabular-nums;"));
-    p.appendChild(mk("span",m.lbl,"font-size:10px;color:var(--muted);font-weight:600;margin-left:6px;letter-spacing:1px;font-family:var(--font-label);"));
-    prog.appendChild(p);
-  });
-  hdr.appendChild(prog);
-  el.appendChild(hdr);
-
-  // Sentence card
-  var card=mk("div","","padding:24px 20px;margin-bottom:16px;border-radius:var(--r-xl);background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  card.appendChild(mk("p","Completa la oración:","font-size:10px;color:var(--dim);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:12px;"));
-  var sent=document.createElement("p");
-  sent.style.cssText="font-size:18px;font-weight:700;color:var(--text);line-height:1.65;letter-spacing:-0.01em;";
-  appendTempusSentence(sent,d.sentence);
-  card.appendChild(sent);
-  el.appendChild(card);
-
-  // Hint
-  var hintBox=mk("div","","display:none;padding:12px 14px;border-radius:var(--r-md);background:rgba(var(--purple-rgb),0.08);border:1px solid rgba(var(--purple-rgb),0.2);color:var(--text);font-size:13px;font-weight:600;line-height:1.5;margin-bottom:10px;animation:fadeUp 0.15s ease;");
-  hintBox.textContent="💡 "+d.tip;
-  var hintBtn=mk("button","💡 Pista","margin-bottom:12px;background:transparent;border:1px dashed rgba(var(--purple-rgb),0.3);color:var(--purple-text);border-radius:var(--r-md);padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.12s;");
-  hintBtn.setAttribute("aria-expanded","false");
-  hintBtn.onmouseenter=function(){this.style.borderColor="rgba(var(--purple-rgb),0.6)";this.style.background="rgba(var(--purple-rgb),0.06)";};
-  hintBtn.onmouseleave=function(){this.style.borderColor="rgba(var(--purple-rgb),0.3)";this.style.background="transparent";};
-  hintBtn.onclick=function(){
-    if(hintBox.style.display==="block"){hintBox.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
-    hintBox.style.display="block";hintBtn.setAttribute("aria-expanded","true");
-  };
-  el.appendChild(hintBtn);
-  el.appendChild(hintBox);
-
-  // Options
-  var opts=d.options.slice();
-  for(var i=opts.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=opts[i];opts[i]=opts[j];opts[j]=t;}
-  var row=mk("div","","display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;");
-  opts.forEach(function(opt){
-    var btn=mk("button",opt,"padding:15px 12px;border-radius:var(--r-lg);border:2px solid rgba(var(--gold-rgb),0.25);background:rgba(var(--gold-rgb),0.08);color:var(--gold-text);font-size:16px;font-weight:800;cursor:pointer;transition:all 0.15s;text-transform:lowercase;min-height:54px;");
-    btn.setAttribute("aria-label","Opción: "+opt);
-    btn.onmouseenter=function(){this.style.transform="translateY(-2px)";this.style.borderColor="var(--gold)";this.style.boxShadow="0 6px 20px rgba(var(--gold-rgb),0.2)";};
-    btn.onmouseleave=function(){this.style.transform="";this.style.borderColor="rgba(var(--gold-rgb),0.25)";this.style.boxShadow="";};
-    btn.onclick=function(){
-      var correct=opt===d.correct;
-      if(correct) state.tempus.tempusRight++; else state.tempus.tempusWrong++;
-      state.tempus.tempusResults[idx]=correct;
-      state.tempus.tempusSkipped[idx]=false;
-      var fb=mk("div","","padding:18px;margin-bottom:14px;border-radius:var(--r-lg);background:"+(correct?"rgba(var(--green-rgb),0.08)":"rgba(var(--red-rgb),0.08)")+";border:1px solid "+(correct?"rgba(var(--green-rgb),0.2)":"rgba(var(--red-rgb),0.2)")+";animation:fadeUp 0.2s ease;");
-      fb.appendChild(mk("p",correct?"✓ ¡Correcto!":"✗ Incorrecto","font-size:16px;font-weight:900;color:"+(correct?"var(--green-text)":"var(--red-text)")+";margin-bottom:6px;"));
-      fb.appendChild(mk("p",d.sentence.replace("___",d.correct),"font-size:15px;font-weight:700;color:var(--text);line-height:1.55;margin-bottom:10px;"));
-      fb.appendChild(mk("p","💡 "+d.tip,"font-size:13px;color:var(--text);font-weight:500;line-height:1.55;background:rgba(var(--gold-rgb),0.08);padding:10px 14px;border-radius:var(--r-md);"));
-      el.removeChild(row);
-      if(skip&&skip.parentNode) skip.parentNode.removeChild(skip);
-      el.insertBefore(fb,card.nextSibling);
-      var nextBtn=mk("button",(idx+1<data.length?"Siguiente →":"Ver resultado"),"width:100%;padding:14px;border-radius:var(--r-md);border:none;background:var(--gold);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-top:6px;box-shadow:0 4px 16px rgba(var(--gold-rgb),0.3);");
-      nextBtn.setAttribute("aria-label",(idx+1<data.length?"Siguiente pregunta":"Ver resultado"));
-      nextBtn.onclick=function(){state.tempus.tempusIdx++;renderTempusCard(el,hdr);};
-      el.insertBefore(nextBtn,fb.nextSibling);
-    };
-    row.appendChild(btn);
-  });
-  el.appendChild(row);
-
-  var skip=mk("button","Saltar →","display:block;margin:0 auto;background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:var(--r-md);transition:all 0.12s;");
-  skip.setAttribute("aria-label","Saltar pregunta");
-  skip.onmouseenter=function(){this.style.background="rgba(255,255,255,0.04)";this.style.color="var(--text2)";};
-  skip.onmouseleave=function(){this.style.background="transparent";this.style.color="var(--muted)";};
-  skip.onclick=function(){state.tempus.tempusResults[idx]=false;state.tempus.tempusSkipped[idx]=true;state.tempus.tempusWrong++;state.tempus.tempusIdx++;renderTempusCard(el,hdr);};
-  el.appendChild(skip);
+function tempusText(s) {
+  var d = document.createElement("div");
+  d.textContent = String(s == null ? "" : s);
+  return d.innerHTML;
 }
 
-function renderTempusResults(el){
-  el.innerHTML="";
-  var hdr=mk("div","","margin-bottom:18px;");
-  var accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--gold);margin-bottom:10px;");
-  hdr.appendChild(accent);
-  hdr.appendChild(mk("p","ALEMÁN · ANTES / DESPUÉS","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
-  hdr.appendChild(mk("h2","Resultados","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.1;"));
-  el.appendChild(hdr);
-  var data=state.tempus.tempusData;
-  var total=state.tempus.tempusRight+state.tempus.tempusWrong;
-  var pct=total>0?Math.round(state.tempus.tempusRight/total*100):0;
-  var scoreColor=pct>=80?"var(--green-text)":pct>=50?"var(--gold-text)":"var(--red-text)";
-  // Score
-  var resultCard=mk("div","","text-align:center;padding:28px;margin-bottom:18px;border-radius:var(--r-xl);background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  var scoreWrap=mk("div","","display:inline-flex;align-items:center;justify-content:center;width:110px;height:110px;border-radius:50%;border:4px solid;margin-bottom:10px;");
-  scoreWrap.style.borderColor=scoreColor;
-  scoreWrap.style.background="rgba(255,255,255,0.03)";
-  scoreWrap.appendChild(mk("span",state.tempus.tempusRight+"/"+total,"font-size:26px;font-weight:900;color:"+scoreColor+";font-variant-numeric:tabular-nums;line-height:1;"));
-  resultCard.appendChild(scoreWrap);
-  resultCard.appendChild(mk("p",pct+"% acierto","font-size:15px;font-weight:700;color:"+scoreColor+";margin-top:2px;"));
-  el.appendChild(resultCard);
+function tempusInit() {
+  state.tempus.selectedEl = null;
+  state.tempus.pointerDrag = null;
+  state.tempus.suppressClick = false;
+  state.tempus.firstTryOK = 0;
+  state.tempus.attempted = {};
+  state.tempus.roundDone = false;
+  state.tempus.logged = false;
+  state.tempus.currentEvent = TEMPUS_EVENTS[Math.floor(Math.random() * TEMPUS_EVENTS.length)];
+  state.tempus.currentRound = tempusShuffle(TEMPUS_PHRASES).slice(0, TEMPUS_ROUND);
+}
 
-  // Auto-save missed
-  data.forEach(function(d,i){
-    if(state.tempus.tempusResults[i]===false&&!state.tempus.tempusSkipped[i]){
-      var fullDe=d.sentence.replace("___",d.correct);
-      var phr=ensureSrsFields({de:fullDe,es:d.tip,tip:d.correct,source:"antes-despues"});
-      if(!state.session.saved.some(function(x){return x.de===phr.de;})){
-        state.session.saved.push(phr);
-      }
-    }
-  });
-  updateBadge();
+function tempusSelect(el) {
+  if (el.classList.contains("tempus-ok")) return;
+  if (state.tempus.selectedEl === el) {
+    el.classList.remove("tempus-selected");
+    state.tempus.selectedEl = null;
+    tempusArm(false);
+    return;
+  }
+  var sel = document.querySelector(".tempus-phrase.tempus-selected");
+  if (sel) sel.classList.remove("tempus-selected");
+  state.tempus.selectedEl = el;
+  el.classList.add("tempus-selected");
+  tempusArm(true);
+}
 
-  var sumCard=mk("div","","padding:20px;margin-bottom:18px;border-radius:var(--r-xl);background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  sumCard.appendChild(mk("p","Lo que practicaste:","font-size:10px;color:var(--gold-text);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:12px;"));
-  data.forEach(function(d,i){
-    var color=state.tempus.tempusResults[i]?"var(--green-text)":"var(--red-text)";
-    var row=mk("div","","display:flex;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);");
-    var full=d.sentence.replace("___",d.correct);
-    var mark=state.tempus.tempusResults[i]?"✓ ":"✗ ";
-    if(state.tempus.tempusSkipped[i]) mark="Saltada · ";
-    row.appendChild(mk("span",mark+(i+1)+". "+full,"font-weight:700;color:"+color+";flex:1;line-height:1.45;"));
-    sumCard.appendChild(row);
-  });
-  el.appendChild(sumCard);
-
-  var restart=mk("button","← Reiniciar","width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);border-radius:var(--r-md);padding:14px;font-size:14px;font-weight:700;margin-top:4px;cursor:pointer;transition:all 0.12s;");
-  restart.onmouseenter=function(){this.style.background="rgba(255,255,255,0.08)";};
-  restart.onmouseleave=function(){this.style.background="rgba(255,255,255,0.04)";};
-  restart.onclick=function(){state.tempus.tempusData=null;state.tempus.tempusDone=false;state.tempus.tempusIdx=0;state.tempus.tempusRight=0;state.tempus.tempusWrong=0;state.tempus.tempusResults=[];state.tempus.tempusSkipped=[];state.tempus.tempusLogged=false;renderTempus();};
-  el.appendChild(restart);
-
-  if(!state.tempus.tempusLogged){
-    state.tempus.tempusLogged=true;
-    logActivity("drillsDone",1); syncUp();
+function tempusArm(on) {
+  var zones = document.querySelectorAll(".tempus-zone");
+  for (var i = 0; i < zones.length; i++) {
+    zones[i].classList.toggle("tempus-armed", on);
   }
 }
+
+function tempusClearTouchOver() {
+  var zones = document.querySelectorAll(".tempus-zone.tempus-touch-over");
+  for (var i = 0; i < zones.length; i++) zones[i].classList.remove("tempus-touch-over");
+}
+
+function tempusZoneFromPoint(x, y, dragEl) {
+  var oldPointer = dragEl ? dragEl.style.pointerEvents : "";
+  if (dragEl) dragEl.style.pointerEvents = "none";
+  var target = document.elementFromPoint(x, y);
+  if (dragEl) dragEl.style.pointerEvents = oldPointer;
+  return target && target.closest ? target.closest(".tempus-zone") : null;
+}
+
+function tempusFinishPointer(btn) {
+  btn.classList.remove("tempus-dragging");
+  btn.style.transform = "";
+  tempusClearTouchOver();
+  state.tempus.pointerDrag = null;
+}
+
+function tempusBindPointerDrag(btn) {
+  btn.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "mouse" || btn.classList.contains("tempus-ok")) return;
+    state.tempus.pointerDrag = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+      selected: false
+    };
+  });
+  btn.addEventListener("pointermove", function (e) {
+    var drag = state.tempus.pointerDrag;
+    if (!drag || drag.id !== e.pointerId || btn.classList.contains("tempus-ok")) return;
+    var dx = e.clientX - drag.startX;
+    var dy = e.clientY - drag.startY;
+    if (!drag.active && Math.abs(dx) + Math.abs(dy) < 10) return;
+    drag.active = true;
+    if (!drag.selected) {
+      tempusSelect(btn);
+      drag.selected = true;
+    }
+    e.preventDefault();
+    if (btn.setPointerCapture && !drag.captured) {
+      try { btn.setPointerCapture(e.pointerId); drag.captured = true; } catch (_err) {}
+    }
+    btn.classList.add("tempus-dragging");
+    btn.style.transform = "translate(" + dx + "px," + dy + "px)";
+    tempusClearTouchOver();
+    var zone = tempusZoneFromPoint(e.clientX, e.clientY, btn);
+    if (zone) zone.classList.add("tempus-touch-over");
+  }, { passive: false });
+  btn.addEventListener("pointerup", function (e) {
+    var drag = state.tempus.pointerDrag;
+    if (!drag || drag.id !== e.pointerId) return;
+    var wasDragging = drag.active;
+    var zone = wasDragging ? tempusZoneFromPoint(e.clientX, e.clientY, btn) : null;
+    if (wasDragging) {
+      e.preventDefault();
+      state.tempus.suppressClick = true;
+      setTimeout(function () { state.tempus.suppressClick = false; }, 350);
+    }
+    tempusFinishPointer(btn);
+    if (wasDragging && zone) tempusDrop(zone);
+  });
+  btn.addEventListener("pointercancel", function () {
+    if (state.tempus.pointerDrag) tempusFinishPointer(btn);
+  });
+
+  if (window.PointerEvent) return;
+  btn.addEventListener("touchstart", function (e) {
+    if (btn.classList.contains("tempus-ok") || !e.touches.length) return;
+    var t = e.touches[0];
+    state.tempus.pointerDrag = {
+      id: "touch",
+      startX: t.clientX,
+      startY: t.clientY,
+      active: false,
+      selected: false
+    };
+  }, { passive: true });
+  btn.addEventListener("touchmove", function (e) {
+    var drag = state.tempus.pointerDrag;
+    if (!drag || drag.id !== "touch" || btn.classList.contains("tempus-ok") || !e.touches.length) return;
+    var t = e.touches[0];
+    var dx = t.clientX - drag.startX;
+    var dy = t.clientY - drag.startY;
+    if (!drag.active && Math.abs(dx) + Math.abs(dy) < 10) return;
+    drag.active = true;
+    if (!drag.selected) {
+      tempusSelect(btn);
+      drag.selected = true;
+    }
+    e.preventDefault();
+    btn.classList.add("tempus-dragging");
+    btn.style.transform = "translate(" + dx + "px," + dy + "px)";
+    tempusClearTouchOver();
+    var zone = tempusZoneFromPoint(t.clientX, t.clientY, btn);
+    if (zone) zone.classList.add("tempus-touch-over");
+  }, { passive: false });
+  btn.addEventListener("touchend", function (e) {
+    var drag = state.tempus.pointerDrag;
+    if (!drag || drag.id !== "touch") return;
+    var t = e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : null;
+    var zone = drag.active && t ? tempusZoneFromPoint(t.clientX, t.clientY, btn) : null;
+    if (drag.active) {
+      e.preventDefault();
+      state.tempus.suppressClick = true;
+      setTimeout(function () { state.tempus.suppressClick = false; }, 350);
+    }
+    tempusFinishPointer(btn);
+    if (drag.active && zone) tempusDrop(zone);
+  }, { passive: false });
+}
+
+function tempusDrop(zone) {
+  if (!state.tempus.selectedEl) return;
+  var el = state.tempus.selectedEl;
+  var ok = el.dataset.z === zone.dataset.z;
+  var id = el.dataset.id;
+  var first = !state.tempus.attempted[id];
+  state.tempus.attempted[id] = true;
+
+  if (ok) {
+    if (first) state.tempus.firstTryOK++;
+    el.classList.remove("tempus-selected", "tempus-bad");
+    el.classList.add("tempus-ok");
+    el.draggable = false;
+    el.onclick = null;
+    zone.appendChild(el);
+    state.tempus.selectedEl = null;
+    tempusArm(false);
+  } else {
+    el.classList.add("tempus-bad");
+    setTimeout(function () { el.classList.remove("tempus-bad"); }, 400);
+  }
+  tempusPaintScore();
+}
+
+function tempusPaintScore() {
+  var ft = document.getElementById("tempusFirstTry");
+  if (ft) ft.textContent = state.tempus.firstTryOK;
+}
+
+function renderTempus() {
+  var el = document.getElementById("s-tempus");
+  el.innerHTML = "";
+
+  // Init if needed
+  if (!state.tempus.currentRound || !state.tempus.currentRound.length) {
+    tempusInit();
+  }
+
+  var ev = state.tempus.currentEvent || TEMPUS_EVENTS[0];
+  var round = state.tempus.currentRound;
+
+  // ── Header ──
+  var hdr = mk("div", "", "margin-bottom:18px;position:relative;");
+  var accent = mk("div", "", "width:48px;height:3px;border-radius:3px;background:var(--gold);margin-bottom:14px;");
+  hdr.appendChild(accent);
+  hdr.appendChild(mk("p", "Drill · Tiempo", "font-size:10px;color:var(--dim);letter-spacing:2.5px;font-weight:700;font-family:var(--font-label);text-transform:uppercase;margin-bottom:4px;"));
+  hdr.appendChild(mk("h2", "Tempus", "font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.1;margin-bottom:2px;"));
+  var sub = mk("p", "", "font-size:13px;color:var(--muted);font-weight:500;line-height:1.5;");
+  sub.innerHTML = 'Colocá cada frase en la línea de tiempo: ¿pasa <b style="color:var(--gold-text);">antes</b>, <b style="color:var(--gold-text);">durante</b> o <b style="color:var(--gold-text);">después</b> del evento? Toca una frase y luego una zona (o arrastrala).';
+  hdr.appendChild(sub);
+  el.appendChild(hdr);
+
+  // ── Grammar Note ──
+  var gn = mk("div", "", "display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;");
+  var gn1 = mk("div", "", "border-radius:14px;padding:11px 13px;border:1px solid var(--border);background:var(--surface);");
+  gn1.appendChild(mk("p", "vor / nach + Dativ", "font-size:10px;letter-spacing:1.5px;font-weight:800;text-transform:uppercase;margin-bottom:4px;color:var(--teal-text);"));
+  gn1.appendChild(mk("p", "Preposiciones — van con un sustantivo: vor dem Meeting, nach der Arbeit.", "font-size:11.5px;font-weight:500;color:var(--muted);line-height:1.45;"));
+  gn.appendChild(gn1);
+  var gn2 = mk("div", "", "border-radius:14px;padding:11px 13px;border:1px solid var(--border);background:var(--surface);");
+  gn2.appendChild(mk("p", "bevor / nachdem", "font-size:10px;letter-spacing:1.5px;font-weight:800;text-transform:uppercase;margin-bottom:4px;color:var(--purple-text);"));
+  gn2.appendChild(mk("p", "Conjunciones — abren cláusula con verbo al final: bevor ich esse, nachdem er kam.", "font-size:11.5px;font-weight:500;color:var(--muted);line-height:1.45;"));
+  gn.appendChild(gn2);
+  el.appendChild(gn);
+
+  // ── Timeline Wrap ──
+  var tl = mk("div", "", "background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:18px 14px 14px;margin-bottom:16px;");
+
+  var evLbl = mk("div", "", "text-align:center;margin-bottom:14px;");
+  var evEyebrow = mk("p", "EL EVENTO DE REFERENCIA", "font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--gold-text);text-transform:uppercase;margin-bottom:3px;");
+  evLbl.appendChild(evEyebrow);
+  var evName = mk("p", ev, "font-size:15px;font-weight:900;color:var(--text);letter-spacing:-0.01em;");
+  evLbl.appendChild(evName);
+  tl.appendChild(evLbl);
+
+  // Track
+  var track = mk("div", "", "position:relative;height:5px;border-radius:4px;margin:0 8px 14px;background:linear-gradient(90deg,rgba(var(--red-rgb),0.8) 0% 32%,rgba(var(--green-rgb),0.8) 34% 66%,rgba(var(--teal-rgb),0.8) 68% 100%);opacity:0.85;");
+  var nowDot = mk("span", "", "position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 5px rgba(var(--gold-rgb),0.22),0 0 18px rgba(var(--gold-rgb),0.7);animation:tempusPulse 1.8s infinite;");
+  track.appendChild(nowDot);
+  tl.appendChild(track);
+
+  // Arrows
+  var arrows = mk("div", "", "display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;letter-spacing:1px;color:var(--dim);padding:0 6px;margin-bottom:12px;");
+  arrows.appendChild(mk("span", "← VERGANGENHEIT", ""));
+  arrows.appendChild(mk("span", "DAS EREIGNIS", "color:var(--gold-text);"));
+  arrows.appendChild(mk("span", "ZUKUNFT →", ""));
+  tl.appendChild(arrows);
+
+  // Zones
+  var zones = mk("div", "", "display:grid;grid-template-columns:repeat(3,1fr);gap:9px;");
+  var zoneData = [
+    { z: "vor", lbl: "Davor · vor", cls: "tempus-vor" },
+    { z: "waehrend", lbl: "Dabei · während", cls: "tempus-waehrend" },
+    { z: "nach", lbl: "Danach · nach", cls: "tempus-nach" }
+  ];
+  zoneData.forEach(function (zd) {
+    var zone = mk("div", "", "min-height:120px;border-radius:16px;border:1.5px dashed;padding:9px 8px;display:flex;flex-direction:column;gap:7px;transition:background 0.2s,box-shadow 0.2s;");
+    zone.className = "tempus-zone " + zd.cls;
+    zone.dataset.z = zd.z;
+    zone.appendChild(mk("p", zd.lbl, "font-size:10px;font-weight:900;letter-spacing:1.5px;text-align:center;text-transform:uppercase;margin-bottom:2px;"));
+
+    zone.addEventListener("click", function () { tempusDrop(zone); });
+    zone.addEventListener("dragover", function (e) { e.preventDefault(); zone.classList.add("tempus-over"); });
+    zone.addEventListener("dragleave", function () { zone.classList.remove("tempus-over"); });
+    zone.addEventListener("drop", function (e) { e.preventDefault(); zone.classList.remove("tempus-over"); tempusDrop(zone); });
+
+    zones.appendChild(zone);
+  });
+  tl.appendChild(zones);
+  el.appendChild(tl);
+
+  // ── HAND ──
+  var handLbl = mk("p", "Frases por colocar", "font-size:10px;letter-spacing:2px;font-weight:800;color:var(--muted);text-transform:uppercase;margin:16px 0 8px;");
+  el.appendChild(handLbl);
+  var hand = mk("div", "", "display:flex;flex-direction:column;gap:8px;min-height:52px;");
+  hand.id = "tempusHand";
+
+  round.forEach(function (ph, k) {
+    var btn = document.createElement("button");
+    btn.className = "tempus-phrase";
+    btn.draggable = true;
+    btn.dataset.z = ph.z;
+    btn.dataset.id = k;
+    btn.innerHTML = tempusText(ph.de) + '<span class="tempus-es">' + tempusText(ph.es) + '</span>';
+    btn.onclick = function () {
+      if (state.tempus.suppressClick) {
+        state.tempus.suppressClick = false;
+        return;
+      }
+      tempusSelect(btn);
+    };
+    btn.addEventListener("dragstart", function (e) {
+      tempusSelect(btn);
+      e.dataTransfer.setData("text/plain", "x");
+    });
+    tempusBindPointerDrag(btn);
+    hand.appendChild(btn);
+  });
+  el.appendChild(hand);
+
+  // ── Scoreline ──
+  var scoreRow = mk("div", "", "margin-top:14px;display:flex;justify-content:space-between;align-items:center;");
+  var scoreP = document.createElement("p");
+  scoreP.style.cssText = "font-size:12px;font-weight:700;color:var(--muted);";
+  var ftSpan = mk("b", "0", "color:var(--green-text);font-weight:900;");
+  scoreP.appendChild(document.createTextNode("Colocadas al primer intento: "));
+  scoreP.appendChild(ftSpan);
+  var totN = mk("span", "", "color:var(--muted);font-weight:500;");
+  totN.textContent = " / " + TEMPUS_ROUND;
+  scoreP.appendChild(totN);
+  ftSpan.id = "tempusFirstTry";
+  scoreRow.appendChild(scoreP);
+
+  var resetBtn = mk("button", "↻ Nueva ronda", "background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;padding:9px 14px;font-size:12.5px;font-weight:800;cursor:pointer;transition:background 0.15s,color 0.15s;");
+  resetBtn.onmouseenter = function () { this.style.background = "rgba(255,255,255,0.04)"; this.style.color = "var(--text2)"; };
+  resetBtn.onmouseleave = function () { this.style.background = "transparent"; this.style.color = "var(--muted)"; };
+  resetBtn.onclick = function () {
+    tempusInit();
+    renderTempus();
+  };
+  scoreRow.appendChild(resetBtn);
+  el.appendChild(scoreRow);
+
+  // Log activity when all placed (checked via hand emptiness via CSS ::after)
+  // We use a MutationObserver-like polling approach: check every 2s
+  if (!state.tempus._watchInterval) {
+    state.tempus._watchInterval = setInterval(function () {
+      var handEl = document.getElementById("tempusHand");
+      if (!handEl || !state.tempus.currentRound) return;
+      var remaining = handEl.querySelectorAll(".tempus-phrase:not(.tempus-ok)");
+      if (remaining.length === 0 && state.tempus.currentRound.length > 0 && !state.tempus.logged) {
+        state.tempus.logged = true;
+        if (typeof logActivity === "function") logActivity("drillsDone", 1);
+        if (typeof syncUp === "function") syncUp();
+      }
+    }, 2000);
+  }
+
+  tempusPaintScore();
+}
+
+window.renderTempus = renderTempus;

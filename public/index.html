@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#131313">
 </head>
 <body>
 
@@ -35,7 +37,7 @@
       <input id="login-pass" class="login-input" placeholder="Password" type="password" autocomplete="current-password" aria-label="Contraseña"/>
       <button class="login-btn" id="login-btn" onclick="doAuth()">Iniciar sesión</button>
       <button class="login-toggle" onclick="toggleAuthMode()">No tienes cuenta? Regístrate</button>
-      <p id="auth-mode-lbl" style="text-align:center;font-size:11px;color:var(--dim);margin-top:10px;font-weight:500;">Modo: Login</p>
+      <button class="login-toggle" id="reset-pw-btn" onclick="showResetPassword()" style="margin-top:6px;">¿Olvidaste tu contraseña?</button>
     </div>
   </div>
 </div>
@@ -53,10 +55,12 @@
     </div>
     <div class="topbar-title" aria-live="polite">
       <h2 id="screen-title">Hoy</h2>
-      <p id="screen-subtitle">Premium Scholar</p>
+      <p id="screen-subtitle">Pro Plan</p>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-      <span id="sync-status" style="display:none;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;"></span>
+      <span id="sync-chip" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap;"><span id="sync-lbl"></span></span>
+      <button id="level-pill" title="Tu nivel actual. Cámbialo en Ajustes." style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;border:1px solid rgba(var(--purple-rgb),0.3);background:rgba(var(--purple-rgb),0.08);color:var(--purple-text);cursor:default;white-space:nowrap;pointer-events:none;">A2–B1</button>
+      <span id="tier-badge" style="display:none;font-size:10px;font-weight:800;letter-spacing:0.5px;padding:3px 9px;border-radius:12px;"></span>
       <div id="badge" style="display:none;background:rgba(255,185,85,0.1);border:1px solid rgba(255,185,85,0.25);border-radius:20px;padding:4px 11px;">
         <span style="font-size:12px;color:var(--gold-text);font-weight:700;">&#9733; <span id="badge-n">0</span></span>
       </div>
@@ -83,21 +87,32 @@
 
   <!-- SCREENS -->
   <div class="content">
+    <div id="subtab-bar" style="display:none"></div>
     <div id="s-hoy" class="screen"></div>
+    <div id="s-practicar" class="screen"></div>
     <div id="s-frases" class="screen"></div>
     <div id="s-conversar" class="screen"></div>
     <div id="s-corrigeme" class="screen"></div>
     <div id="s-noentendi" class="screen"></div>
     <div id="s-lectura" class="screen"></div>
+    <div id="s-dictado" class="screen"></div>
     <div id="s-shadowing" class="screen"></div>
     <div id="s-gramatica" class="screen"></div>
     <div id="s-casos" class="screen"></div>
     <div id="s-genero" class="screen"></div>
     <div id="s-conectores" class="screen"></div>
     <div id="s-tempus" class="screen"></div>
+    <div id="s-conjugacion" class="screen"></div>
+    <div id="s-preposiciones" class="screen"></div>
+    <div id="s-perfekt" class="screen"></div>
+    <div id="s-satzbau" class="screen"></div>
+    <div id="s-adjektive" class="screen"></div>
+    <div id="s-ndeklination" class="screen"></div>
+    <div id="s-trennbare" class="screen"></div>
     <div id="s-flashcards" class="screen"></div>
     <div id="s-guardadas" class="screen"></div>
     <div id="s-resumen" class="screen"></div>
+    <div id="s-leveltest" class="screen"></div>
     <div id="s-config" class="screen"></div>
   </div>
 </div>
@@ -114,25 +129,37 @@
 <script src="js/auth.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/srs.js"></script>
+<script src="js/level.js"></script>
 <script src="js/voice.js"></script>
 <script src="js/nav.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/screens/today.js"></script>
+<script src="js/screens/practicar.js"></script>
 <script src="js/screens/phrases.js"></script>
 <script src="js/screens/conversation.js"></script>
 <script src="js/screens/correct_me.js"></script>
 <script src="js/screens/didnt_understand.js"></script>
 <script src="js/screens/reading.js"></script>
+<script src="js/screens/dictado.js"></script>
 <script src="js/screens/shadowing.js"></script>
 <script src="js/screens/grammar.js"></script>
 <script src="js/screens/cases.js"></script>
 <script src="js/screens/gender.js"></script>
 <script src="js/screens/connectors.js"></script>
 <script src="js/screens/tempus.js"></script>
+<script src="js/screens/conjugacion.js"></script>
+<script src="js/screens/preposiciones.js"></script>
+<script src="js/screens/perfekt.js"></script>
+<script src="js/screens/satzbau.js"></script>
+<script src="js/screens/adjektive.js"></script>
+<script src="js/screens/ndeklination.js"></script>
+<script src="js/screens/trennbare.js"></script>
 <script src="js/screens/flashcards.js"></script>
 <script src="js/screens/saved.js"></script>
 <script src="js/screens/summary.js"></script>
+<script src="js/screens/leveltest.js"></script>
 <script src="js/screens/settings.js"></script>
 <script src="js/main.js"></script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
 </body>
 </html>

@@ -7,10 +7,10 @@ function startHörverstehen(container){
   var skelDiv=mk("div","","padding:20px;");
   for(var si=0;si<4;si++) skelDiv.appendChild(skelCard(4));
   container.appendChild(skelDiv);
-  var lvl=state.app.level||"B1";
+  var lvl=state.readingLevel||state.app.level||"B1";
   var lvlRng=lvl==="A2"?"A2":lvl==="B1"?"A2-B1":"B1-B2";
   ai("You are a German teacher. Reply ONLY with valid JSON, no markdown.",
-    [{role:"user",content:'Generate a short natural German dialog ('+lvlRng+' level) between two people (3-4 exchanges). Then 2 multiple-choice comprehension questions in German. Format: {"dialog":[{"speaker":"PersonA","text":"..."},...],"questions":[{"q":"...","options":["...","...","..."],"correct":0},...]}. Each question has 3 options, correct is 0-indexed.'}],2000)
+    [{role:"user",content:'Generate a natural German dialog ('+lvlRng+' level) between two people (4-5 exchanges). Then 3 multiple-choice comprehension questions in German with 3 options each (A, B, C). Format: {"dialog":[{"speaker":"PersonA","text":"..."},...],"questions":[{"q":"...","options":["A) ...","B) ...","C) ..."],"correct":0},...]}. correct is 0-indexed.'}],2000)
     .then(function(raw){
       var m=raw.match(/\{[\s\S]*\}/);
       if(!m){showToast("Error: respuesta inválida","error");renderHörverstehenFallback(container);return;}
@@ -38,20 +38,19 @@ function renderHörverstehenPlay(container){
   container.innerHTML="";
   _hvState.step="listen";
   var c=mk("div","","padding:2px 0;");
-  // Label
   var labelRow=mk("div","","display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;");
-  labelRow.appendChild(mk("p","\uD83C\uDFA7 H\u00d6RVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;"));
-  var lvlBadge=mk("span",state.app.level||"B1","font-size:10px;font-weight:700;padding:2px 10px;border-radius:var(--r-pill,999px);background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);");
+  labelRow.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;font-family:var(--font-label);"));
+  var currentLvl=state.readingLevel||state.app.level||"B1";
+  var lvlBadge=mk("span",currentLvl,"font-size:10px;font-weight:700;padding:2px 10px;border-radius:999px;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);");
   labelRow.appendChild(lvlBadge);
   c.appendChild(labelRow);
-  c.appendChild(mk("p","Escuch\u00e1 el di\u00e1logo y despu\u00e9s respond\u00e9 las preguntas.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:14px;"));
+  var backBtn=mk("button","← Volver a lectura","background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;margin-bottom:8px;text-align:left;");
+  backBtn.onclick=function(){renderReading();};
+  c.appendChild(backBtn);
+  c.appendChild(mk("p","Escucha el diálogo y después responde las preguntas.","font-size:12px;color:var(--muted);font-weight:500;margin-bottom:14px;"));
 
-  // Dialog card — hidden until playback
   var dialogDiv=document.createElement("div");
-  dialogDiv.style.cssText="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:16px;display:none;position:relative;overflow:hidden;";
-  var dialogAccent=document.createElement("div");
-  dialogAccent.style.cssText="position:absolute;top:0;right:0;width:84px;height:4px;background:var(--teal);border-radius:0 0 0 var(--r-pill);opacity:0.85;pointer-events:none;";
-  dialogDiv.appendChild(dialogAccent);
+  dialogDiv.style.cssText="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:16px;display:none;position:relative;overflow:hidden;";
   var dialogInner=mk("div","","position:relative;z-index:1;");
   _hvState.dialog.forEach(function(ex){
     var bubble=mk("div","","display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;");
@@ -66,20 +65,19 @@ function renderHörverstehenPlay(container){
   dialogDiv.appendChild(dialogInner);
   c.appendChild(dialogDiv);
 
-  // Play button — prominent floating style
-  var playBtn=mk("button","\u25B6 Reproducir di\u00e1logo","width:100%;padding:15px;border-radius:var(--r-lg,14px);border:1px solid rgba(var(--teal-rgb),0.2);background:rgba(var(--teal-rgb),0.1);color:var(--teal-text);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;");
+  var playBtn=mk("button","▶ Reproducir diálogo","width:100%;padding:15px;border-radius:14px;border:1px solid rgba(var(--teal-rgb),0.2);background:rgba(var(--teal-rgb),0.1);color:var(--teal-text);font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;");
   playBtn.onclick=function(){
-    playBtn.disabled=true;playBtn.style.opacity="0.6";playBtn.textContent="\uD83D\uDD0A Reproduciendo...";
+    playBtn.disabled=true;playBtn.style.opacity="0.6";playBtn.textContent="🔊 Reproduciendo...";
     var fullDialog=_hvState.dialog.map(function(ex){return ex.speaker+": "+ex.text;}).join(" ");
     speakFull(fullDialog,function(){
       dialogDiv.style.display="block";
-      playBtn.textContent="\u2705 Escuchado \u2014 Responder \u2192";
+      playBtn.textContent="✅ Escuchado — Responder →";
       playBtn.disabled=false;playBtn.style.opacity="1";playBtn.style.background="rgba(var(--green-rgb),0.12)";playBtn.style.borderColor="rgba(var(--green-rgb),0.25)";playBtn.style.color="var(--green-text)";
       playBtn.onclick=function(){renderHörverstehenQuestions(container);};
     });
   };
   c.appendChild(playBtn);
-  var skipBtn=mk("button","Saltar y responder \u2192","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;width:100%;padding:8px;text-decoration:underline;");
+  var skipBtn=mk("button","Saltar y responder →","background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;width:100%;padding:8px;text-decoration:underline;");
   skipBtn.onclick=function(){renderHörverstehenQuestions(container);};
   c.appendChild(skipBtn);
   container.appendChild(c);
@@ -89,27 +87,26 @@ function renderHörverstehenQuestions(container){
   _hvState.step="questions";
   var qCount=_hvState.questions.length;
   var c=mk("div","","padding:2px 0;");
-  c.appendChild(mk("p","\uD83C\uDFA7 H\u00d6RVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
-  c.appendChild(mk("p","Respond\u00e9 las preguntas","font-size:15px;color:var(--text);font-weight:700;margin-bottom:14px;"));
+  c.appendChild(mk("p","🎧 HÖRVERSTEHEN","font-size:10px;color:var(--teal-text);letter-spacing:2.5px;font-weight:700;font-family:var(--font-label);margin-bottom:4px;"));
+  c.appendChild(mk("p","Responde las preguntas","font-size:15px;color:var(--text);font-weight:700;margin-bottom:14px;"));
 
   _hvState.questions.forEach(function(q,qi){
     var qDiv=document.createElement("div");
-    qDiv.style.cssText="margin-bottom:16px;padding:16px;border-radius:var(--r-lg,14px);background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);";
-    // Question label + counter
+    qDiv.style.cssText="margin-bottom:16px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(12px);box-shadow:0 8px 28px rgba(0,0,0,.35);";
     var qHead=mk("div","","display:flex;align-items:center;gap:8px;margin-bottom:8px;");
-    qHead.appendChild(mk("span","Q"+(qi+1),"font-size:11px;font-weight:700;color:var(--teal-text);background:rgba(var(--teal-rgb),0.12);padding:3px 9px;border-radius:var(--r-pill,999px);"));
+    qHead.appendChild(mk("span","Q"+(qi+1),"font-size:11px;font-weight:700;color:var(--teal-text);background:rgba(var(--teal-rgb),0.12);padding:3px 9px;border-radius:999px;"));
     qHead.appendChild(mk("span",qi+1+"/"+qCount,"font-size:10px;color:var(--muted);font-weight:600;"));
     qDiv.appendChild(qHead);
     qDiv.appendChild(mk("p",q.q,"font-size:14px;color:var(--text);font-weight:600;margin-bottom:10px;line-height:1.45;"));
     q.options.forEach(function(opt,oi){
       var optBtn=document.createElement("button");
       optBtn.textContent=opt;
-      optBtn.style.cssText="display:block;width:100%;text-align:left;padding:11px 14px;border-radius:var(--r-md,10px);border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:6px;transition:all 0.15s;";
-      optBtn.onmouseenter=function(){this.style.borderColor="rgba(var(--teal-rgb),0.4)";this.style.background="rgba(var(--teal-rgb),0.06)";};
-      optBtn.onmouseleave=function(){this.style.borderColor="rgba(255,255,255,0.07)";this.style.background="rgba(255,255,255,0.02)";};
+      optBtn.style.cssText="display:block;width:100%;text-align:left;padding:11px 14px;border-radius:13px;border:1.5px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:7px;transition:all .15s;";
+      optBtn.onmouseenter=function(){optBtn.style.borderColor="rgba(var(--teal-rgb),0.4)";optBtn.style.background="rgba(var(--teal-rgb),0.06)";};
+      optBtn.onmouseleave=function(){optBtn.style.borderColor="var(--border)";optBtn.style.background="rgba(255,255,255,.04)";};
       optBtn.onclick=function(){
         var btns=qDiv.querySelectorAll("button");
-        btns.forEach(function(b){b.style.borderColor="rgba(255,255,255,0.07)";b.style.background="rgba(255,255,255,0.02)";});
+        btns.forEach(function(b){b.disabled=true;b.style.cursor="default";b.style.borderColor="var(--border)";b.style.background="rgba(255,255,255,.04)";});
         optBtn.style.borderColor="var(--teal)";optBtn.style.background="rgba(var(--teal-rgb),0.13)";
         _hvState.answers[qi]=oi;
         var allDone=_hvState.questions.every(function(_q,qj){return _hvState.answers[qj]!==undefined&&_hvState.answers[qj]!==null;});
@@ -128,30 +125,36 @@ function renderHörverstehenResults(container){
   var total=_hvState.questions.length,pct=Math.round(_hvState.score/total*100);
   var color=pct>=100?"var(--green-text)":pct>=50?"var(--gold-text)":"var(--red-text)";
   var fillColor=pct>=100?"var(--green)":pct>=50?"var(--gold)":"var(--red)";
-  var emoji=pct>=100?"\uD83C\uDF89":pct>=50?"\uD83D\uDC4D":"\uD83D\uDCAA";
-  var msg=pct>=100?"\u00A1Perfecto!":pct>=50?"Bien, segu\u00ED practicando":"Segu\u00ED intentando";
+  var emoji=pct>=100?"🎉":pct>=50?"👍":"💪";
+  var msg=pct>=100?"¡Perfecto!":pct>=50?"Bien, sigue practicando":"Sigue intentando";
 
   var c=mk("div","","text-align:center;padding:8px 0;");
-  // Score hero
   var scoreCard=document.createElement("div");
-  scoreCard.style.cssText="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-lg,16px);padding:24px;margin-bottom:16px;";
+  scoreCard.style.cssText="background:var(--surface);border:1px solid var(--border);border-radius:22px;backdrop-filter:blur(12px);box-shadow:0 8px 28px rgba(0,0,0,.35);padding:24px;margin-bottom:16px;";
   scoreCard.appendChild(mk("span",emoji,"display:block;font-size:40px;margin-bottom:8px;"));
   scoreCard.appendChild(mk("p",_hvState.score+"/"+total,"font-size:44px;font-weight:900;color:"+color+";line-height:1;font-variant-numeric:tabular-nums;margin-bottom:4px;"));
   scoreCard.appendChild(mk("p",msg,"font-size:14px;color:var(--text);font-weight:700;margin-bottom:10px;"));
-  // Progress bar
-  var pBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:var(--r-pill,999px);height:6px;overflow:hidden;margin:0 10px;");
-  var pFill=mk("div","","background:"+fillColor+";height:100%;width:"+pct+"%;transition:width 0.4s;border-radius:var(--r-pill,999px);");
+  var pBar=mk("div","","background:rgba(255,255,255,0.06);border-radius:999px;height:6px;overflow:hidden;margin:0 10px;");
+  var pFill=mk("div","","background:"+fillColor+";height:100%;width:"+pct+"%;transition:width 0.4s;border-radius:999px;");
   pBar.appendChild(pFill);scoreCard.appendChild(pBar);
   c.appendChild(scoreCard);
 
-  // Per-question feedback
+  var currentLvl=state.readingLevel||state.app.level||"B1";
+  if(pct>=100){
+    var nextLvl=currentLvl==="A2"?"B1":"B2";
+    if(currentLvl!=="B2"){
+      var upBtn=mk("button","🎯 Muy fácil — subir a "+nextLvl,"width:100%;padding:13px;border-radius:14px;border:none;background:rgba(var(--green-rgb),0.15);color:var(--green-text);font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;");
+      upBtn.onclick=function(){state.readingLevel=nextLvl;startHörverstehen(container);};
+      c.appendChild(upBtn);
+    }
+  }
+
   _hvState.questions.forEach(function(q,qi){
     var ans=_hvState.answers[qi];
     var correct=ans===q.correct;
-    var box=mk("div","","margin-bottom:10px;padding:14px;border-radius:var(--r-md,12px);background:"+(correct?"rgba(var(--green-rgb),0.06)":"rgba(var(--red-rgb),0.06)")+";border:1px solid "+(correct?"rgba(var(--green-rgb),0.15)":"rgba(var(--red-rgb),0.15)")+";text-align:left;");
-    // Question label
+    var box=mk("div","","margin-bottom:10px;padding:14px;border-radius:14px;background:"+(correct?"rgba(var(--green-rgb),0.06)":"rgba(var(--red-rgb),0.06)")+";border:1px solid "+(correct?"rgba(var(--green-rgb),0.15)":"rgba(var(--red-rgb),0.15)")+";text-align:left;");
     var qLabel=mk("div","","display:flex;align-items:center;gap:8px;margin-bottom:6px;");
-    qLabel.appendChild(mk("span",correct?"\u2705":"\u274C","font-size:14px;"));
+    qLabel.appendChild(mk("span",correct?"✅":"❌","font-size:14px;"));
     qLabel.appendChild(mk("p",q.q,"font-size:12px;color:var(--text);font-weight:600;"));
     box.appendChild(qLabel);
     if(!correct){
@@ -161,9 +164,12 @@ function renderHörverstehenResults(container){
     c.appendChild(box);
   });
 
-  var retry=mk("button","\uD83D\uDD04 Otro di\u00e1logo","width:100%;padding:14px;border-radius:var(--r-md,12px);border:1px solid rgba(var(--teal-rgb),0.2);background:rgba(var(--teal-rgb),0.1);color:var(--teal-text);font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:background 0.2s;");
+  var retry=mk("button","🔄 Otro diálogo","width:100%;padding:14px;border-radius:14px;border:1px solid rgba(var(--teal-rgb),0.2);background:rgba(var(--teal-rgb),0.1);color:var(--teal-text);font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:background 0.2s;");
   retry.onclick=function(){startHörverstehen(container);};
   c.appendChild(retry);
+  var backBtn2=mk("button","← Volver a lectura","width:100%;padding:11px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;");
+  backBtn2.onclick=function(){renderReading();};
+  c.appendChild(backBtn2);
   container.appendChild(c);
   logActivity("drillsDone",1); syncUp();
 }
@@ -173,56 +179,66 @@ state.reading._readingWords=[]; state.reading._readingTarget=-1; state.reading._
 function renderReading(){
   const el=document.getElementById("s-lectura"); el.innerHTML="";
 
-  // ── Header ──
-  const hdr=mk("div","","margin-bottom:16px;");
-  hdr.appendChild(mk("p","LECTURA INTERACTIVA","font-size:11px;color:var(--muted);letter-spacing:2px;font-family:var(--font-label);font-weight:700;margin-bottom:2px;"));
-  hdr.appendChild(mk("h2","Leer y aprender","font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.02em;"));
-  hdr.appendChild(mk("p","Eleg\u00ed un tema para generar un texto en alem\u00e1n. Toc\u00e1 cualquier palabra para ver su traducci\u00f3n.","font-size:13px;color:var(--muted);margin-top:4px;font-weight:500;"));
-  el.appendChild(hdr);
+  // ── Eyebrow + heading ──
+  el.appendChild(mk("p","Comprensión · Lectura","font-size:10px;letter-spacing:2.5px;font-weight:700;color:var(--muted);text-transform:uppercase;"));
+  el.appendChild(mk("h1","📖 Lectura","font-size:24px;font-weight:900;letter-spacing:-.03em;margin:2px 0 16px;color:var(--text);"));
+
+  var diffPills=mk("div","","display:flex;gap:7px;margin-bottom:12px;");
+  var currentLvl=state.readingLevel||state.app.level||"B1";
+  ["A2","B1","B2"].forEach(function(lvl){
+    var active=lvl===currentLvl;
+    var p=mk("button",lvl,"flex:1;min-width:60px;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:900;cursor:pointer;font-family:inherit;transition:all .15s;color:"+(active?"#061111":"var(--muted)")+";background:"+(active?"var(--teal)":"transparent")+";border:1px solid "+(active?"var(--teal)":"var(--border)")+";");
+    p.onclick=function(){
+      state.readingLevel=lvl;
+      startHörverstehen(el);
+    };
+    diffPills.appendChild(p);
+  });
+  el.appendChild(diffPills);
 
   // ── Topic chips ──
   const topics=[
     {id:"daily",label:"Vida diaria",icon:"🏠"},
     {id:"travel",label:"Viajes",icon:"✈️"},
     {id:"work",label:"Trabajo",icon:"💼"},
-    {id:"tech",label:"Tecnolog\u00eda",icon:"💻"},
+    {id:"tech",label:"Tecnología",icon:"💻"},
     {id:"food",label:"Comida",icon:"🍕"},
     {id:"nature",label:"Naturaleza",icon:"🌿"},
     {id:"feelings",label:"Emociones",icon:"😊"}
   ];
-  const topicRow=mk("div","","display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;");
+  var pills=mk("div","","display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:14px;scrollbar-width:none;");
+  pills.style.cssText+="-ms-overflow-style:none;";
   topics.forEach(function(t,i){
-    const b=document.createElement("button");
-    b.style.cssText="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);border-radius:var(--r-pill,999px);padding:8px 15px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;";
-    b.onmouseenter=function(){this.style.borderColor="rgba(var(--purple-rgb),0.4)";this.style.background="rgba(var(--purple-rgb),0.08)";this.style.color="var(--text)";};
-    b.onmouseleave=function(){this.style.borderColor="rgba(255,255,255,0.08)";this.style.background="rgba(255,255,255,0.04)";this.style.color="var(--text2)";};
-    b.onclick=function(){generateReading(t.id,el);};
-    b.appendChild(mk("span",t.icon,"font-size:14px;line-height:1;"));
-    b.appendChild(document.createTextNode(t.label));
-    topicRow.appendChild(b);
+    var b=mk("button",t.icon+" "+t.label,"flex-shrink:0;padding:9px 16px;border-radius:22px;font-size:12.5px;font-weight:800;background:var(--surface-2);border:1px solid rgba(69,70,82,0.5);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit;"); b.className="lift"; b.style.setProperty("--lift-rgb","var(--primary-rgb)");
+    b.onmouseenter=function(){b.style.background="rgba(var(--primary-rgb),0.15)";b.style.borderColor="rgba(var(--primary-rgb),0.45)";b.style.color="var(--primary)";};
+    b.onmouseleave=function(){if(!b.dataset.active||b.dataset.active!=="1"){b.style.background="var(--surface-2)";b.style.borderColor="rgba(69,70,82,0.5)";b.style.color="var(--text2)";}};
+    b.onclick=function(){
+      pills.querySelectorAll("button").forEach(function(p){p.style.background="var(--surface-2)";p.style.borderColor="rgba(69,70,82,0.5)";p.style.color="var(--text2)";p.dataset.active="0";});
+      b.style.background="rgba(var(--primary-rgb),0.16)";b.style.borderColor="rgba(var(--primary-rgb),0.5)";b.style.color="var(--primary)";b.dataset.active="1";
+      generateReading(t.id,el);
+    };
+    pills.appendChild(b);
   });
-  el.appendChild(topicRow);
+  el.appendChild(pills);
 
-  // ── Reading area card ──
+  // ── Reading area card (Stitch surface-2 glass) ──
   const textArea=document.createElement("div");
+  textArea.className="anim-in";
   textArea.id="lectura-text";
-  textArea.style.cssText="position:relative;overflow:hidden;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:var(--r-lg,16px);min-height:140px;display:flex;align-items:center;justify-content:center;";
-  var accent=document.createElement("div");
-  accent.style.cssText="position:absolute;top:0;right:0;width:110px;height:4px;background:linear-gradient(90deg,var(--purple),var(--primary));border-radius:0 0 0 var(--r-pill);opacity:0.85;pointer-events:none;";
-  textArea.appendChild(accent);
+  textArea.style.cssText="position:relative;overflow:hidden;background:var(--surface-2);border:1px solid rgba(69,70,82,0.6);border-radius:22px;min-height:140px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 28px rgba(0,0,0,0.24);";
   var placeholder=mk("div","","text-align:center;padding:36px 20px;position:relative;z-index:1;");
   placeholder.appendChild(mk("span","📖","display:block;font-size:36px;margin-bottom:8px;opacity:0.55;"));
-  placeholder.appendChild(mk("p","Eleg\u00ed un tema arriba para empezar","font-size:14px;color:var(--muted);font-weight:500;"));
+  placeholder.appendChild(mk("p","Elige un tema arriba para empezar","font-size:14px;color:var(--muted);font-weight:500;"));
   textArea.appendChild(placeholder);
   el.appendChild(textArea);
 }
 function generateReading(topicId,host){
   const ta=host.querySelector("#lectura-text");
-  ta.innerHTML=""; ta.style.cssText="padding:20px;";
+  ta.innerHTML=""; ta.style.cssText="padding:20px;position:relative;overflow:hidden;background:var(--surface-2);border:1px solid rgba(69,70,82,0.6);border-radius:22px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 28px rgba(0,0,0,0.24);";
   ta.appendChild(skelCard(6));
   const topicLabels={daily:"daily life",travel:"traveling in Germany",work:"at the workplace",tech:"technology and IT",food:"ordering food at a restaurant",nature:"a walk in nature",feelings:"expressing emotions"};
   var topicLabel=topicLabels[topicId]||"daily life";
-  var sys='You are a German language teacher. Generate a short German text about '+topicLabel+' at '+state.app.level+' level. Reply ONLY with valid JSON, no markdown: {"text":"the German text (3-5 sentences, natural, no translations in the text)","words":[{"de":"German word","es":"Spanish meaning"}]}. Include 8-12 key words in the words array. Level '+state.app.level+'.';
+  var sys='You are a German language teacher. Generate a short German text about '+topicLabel+'. Reply ONLY with valid JSON, no markdown: {"text":"the German text (3-5 sentences, natural, no translations in the text)","words":[{"de":"German word","es":"Spanish meaning"}]}. Include 8-12 key words in the words array. '+levelPrompt();
   ai(sys,[{role:"user",content:"Generate a reading passage."}],1200).then(function(reply){
     var clean=reply.replace(/```json|```/g,"").trim();
     var m=clean.match(/\{[\s\S]*\}/); if(!m) throw new Error("no JSON");
@@ -230,7 +246,7 @@ function generateReading(topicId,host){
     ta.innerHTML="";
     var wordMap={};
     (obj.words||[]).forEach(function(w){wordMap[w.de.toLowerCase()]=w.es;});
-    var textEl=mk("div","","font-size:17px;line-height:1.8;color:var(--text);font-weight:500;margin-bottom:16px;");
+    var textEl=mk("div","","font-size:17px;line-height:1.85;color:var(--text);font-weight:600;margin-bottom:16px;");
     var words=obj.text.split(/(\s+)/);
     state.reading._readingWords=[];
     state.reading._readingTarget=-1;
@@ -239,15 +255,17 @@ function generateReading(topicId,host){
       var cleanW=w.replace(/[.,!?;:"'()]/g,"");
       var btn=document.createElement("button");
       btn.type="button";
-      btn.className="lectura-word";
       btn.textContent=w;
+      btn.style.cssText="background:none;border:none;font:inherit;color:var(--text);padding:0 1px;cursor:pointer;border-bottom:1.5px dashed rgba(245,166,35,.45);border-radius:3px;display:inline;transition:background .15s;";
+      btn.onmouseenter=function(){btn.style.background="rgba(245,166,35,.14)";};
+      btn.onmouseleave=function(){if(!btn.classList.contains("active"))btn.style.background="none";};
       btn.onclick=function(e){
         e.stopPropagation();
         var wasActive=btn.classList.contains("active");
-        var prevActive=textEl.querySelector(".lectura-word.active");
-        if(prevActive) prevActive.classList.remove("active");
-        if(wasActive){ state.reading._readingTarget=-1; hideReadingTranslation(); return; }
-        btn.classList.add("active");
+        var prevActive=textEl.querySelector(".active");
+        if(prevActive){prevActive.classList.remove("active");prevActive.style.background="none";}
+        if(wasActive){state.reading._readingTarget=-1;hideReadingTranslation();return;}
+        btn.classList.add("active");btn.style.background="rgba(245,166,35,.14)";
         state.reading._readingTarget=i;
         var trans=wordMap[cleanW.toLowerCase()]||state.reading._wordCache[cleanW.toLowerCase()]||null;
         var contextSentence="";
@@ -258,24 +276,28 @@ function generateReading(topicId,host){
             break;
           }
         }
-        showReadingTranslation(w,cleanW,trans,host,contextSentence,this);
+        showReadingTranslation(w,cleanW,trans,host,contextSentence,btn);
       };
       state.reading._readingWords.push(cleanW);
       textEl.appendChild(btn);
     });
     ta.appendChild(textEl);
+    // Bottom sheet hint
+    var hint=mk("p","💡 Toca las palabras subrayadas para ver traducción y género.","font-size:10.5px;color:var(--dim);font-weight:700;margin-top:13px;margin-bottom:12px;");
+    ta.appendChild(hint);
+
     var playBtn=document.createElement("button");
-    playBtn.className="gen-btn gen-btn-teal";
+    playBtn.style.cssText="padding:11px 22px;border-radius:14px;border:1.5px solid rgba(78,205,196,.5);background:rgba(78,205,196,.13);color:var(--teal-text);font-size:13px;font-weight:900;cursor:pointer;margin-right:8px;margin-bottom:8px;transition:background .15s;display:inline-block;";
     playBtn.textContent="🔊 Escuchar texto";
     playBtn.onclick=function(){speak(obj.text);};
     ta.appendChild(playBtn);
     var copyBtn=document.createElement("button");
-    copyBtn.className="gen-btn gen-btn-muted";
+    copyBtn.style.cssText="padding:11px 22px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;margin-right:8px;margin-bottom:8px;transition:background .15s;display:inline-block;";
     copyBtn.textContent="📋 Copiar texto";
     copyBtn.onclick=function(){navigator.clipboard.writeText(obj.text).then(function(){showToast("Texto copiado","success");}).catch(function(){showToast("No se pudo copiar","error");});};
     ta.appendChild(copyBtn);
     var newBtn=document.createElement("button");
-    newBtn.className="gen-btn gen-btn-muted";
+    newBtn.style.cssText="padding:11px 22px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;transition:background .15s;display:inline-block;";
     newBtn.textContent="🔄 Otro texto";
     newBtn.onclick=function(){generateReading(topicId,host);};
     ta.appendChild(newBtn);
@@ -288,7 +310,7 @@ function generateReading(topicId,host){
   });
 }
 function showReadingTranslationManual(rawWord,host,contextSentence){
-  var popup=mk("div","","background:rgba(var(--purple-rgb),0.08);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:var(--r-lg,16px);padding:16px;margin-bottom:14px;");
+  var popup=mk("div","","background:rgba(var(--purple-rgb),0.08);border:1px solid rgba(var(--purple-rgb),0.2);border-radius:16px;padding:16px;margin-bottom:14px;");
   popup.id="lectura-popup";
   popup.appendChild(mk("p","📖 "+rawWord,"font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px;"));
   var askWrap=mk("div","","margin-bottom:10px;");
@@ -308,8 +330,8 @@ function showReadingTranslationManual(rawWord,host,contextSentence){
     if(!es){showToast("Escribi la traduccion","error");return;}
     var tip=contextSentence||"lectura";
     var phrase=ensureSrsFields({de:rawWord,es:es,tip:tip,source:"lectura"});
-    if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
-      state.session.saved.push(phrase);updateBadge();syncUp();
+    if(!isDuplicate(phrase.de)){
+      state.session.saved.push(phrase);invalidateFlashcardQueues();updateBadge();syncUp();
       saveBtn.textContent="✓ Guardada";saveBtn.style.color="var(--green-text)";saveBtn.style.borderColor="rgba(var(--green-rgb),0.3)";saveBtn.disabled=true;
       showToast("Palabra guardada en flashcards");
     } else {saveBtn.textContent="Ya guardada";saveBtn.disabled=true;}
@@ -368,8 +390,8 @@ function showReadingTranslation(rawWord,cleanWord,knownTranslation,host,contextS
         starBtn.title="Guardar en flashcards";
         var doSave=function(){
           var phrase=ensureSrsFields({de:base,es:es,tip:ctx||"lectura",source:"lectura"});
-          if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
-            state.session.saved.push(phrase);updateBadge();syncUp();
+          if(!isDuplicate(phrase.de)){
+            state.session.saved.push(phrase);invalidateFlashcardQueues();updateBadge();syncUp();
             starBtn.textContent="✓";starBtn.style.color="var(--green-text)";starBtn.disabled=true;
             showToast("Guardada: "+es,"success");
           } else {showToast("Ya estaba guardada","success");}
@@ -402,8 +424,8 @@ function showReadingTranslation(rawWord,cleanWord,knownTranslation,host,contextS
   saveMini.title="Guardar en flashcards";
   var doSaveMini=function(){
     var phrase=ensureSrsFields({de:rawWord,es:knownTranslation,tip:contextSentence||"lectura",source:"lectura"});
-    if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
-      state.session.saved.push(phrase);updateBadge();syncUp();
+    if(!isDuplicate(phrase.de)){
+      state.session.saved.push(phrase);invalidateFlashcardQueues();updateBadge();syncUp();
       saveMini.textContent="✓";saveMini.style.color="var(--green-text)";saveMini.disabled=true;
       showToast("Guardada: "+knownTranslation,"success");
     } else {showToast("Ya estaba guardada","success");}

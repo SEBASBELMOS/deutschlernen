@@ -1,139 +1,297 @@
-// ── Cases (4-case trainer: Nom/Akk/Dat/Gen) ───────────────────────────────────
-function casesCaseForQuestion(q){
-  if(q.caso) return q.caso;
-  var src=(q.de||q.sentence||q.why||"");
-  var m=src.match(/c-(nom|akk|dat|gen)|\b(Nominativ|Akkusativ|Dativ|Genitiv)\b/i);
-  if(!m) return "";
-  if(m[1]) return m[1];
-  return {nominativ:"nom",akkusativ:"akk",dativ:"dat",genitiv:"gen"}[m[2].toLowerCase()]||"";
+// ── Cases (Fable visual port + state.js CASOS_* constants) ─────
+// Note: CASOS_NOUNS, CASOS_ART, CASOS_CASES, CASOS_Q are declared in state.js (loaded first).
+// state.js uses English property names: .mode, .sentence, .hint
+
+// State
+function casesInitState(){
+  state.cases = state.cases || {};
+  if(["identificar","transformar","reglas","practicar"].indexOf(state.cases.casesSubtab)<0) state.cases.casesSubtab = "identificar";
+  if(!CASOS_ART[state.cases.casesArt]) state.cases.casesArt = "der";
+  if(typeof state.cases.casesNounIdx!=="number") state.cases.casesNounIdx = 0;
+  state.cases.casesNounIdx=Math.max(0,Math.min(CASOS_NOUNS.length-1,state.cases.casesNounIdx|0));
+  if(["all","articulo","caso","mov","traduccion"].indexOf(state.cases.casesQuizMode)<0) state.cases.casesQuizMode = "all";
+  if(!Array.isArray(state.cases.casesPool)) state.cases.casesPool = [];
+  if(typeof state.cases.casesIdx!=="number") state.cases.casesIdx = 0;
+  state.cases.casesIdx=Math.max(0,state.cases.casesIdx|0);
+  if(typeof state.cases.casesHits!=="number") state.cases.casesHits = 0;
+  if(typeof state.cases.casesTotal!=="number") state.cases.casesTotal = 0;
+  if(typeof state.cases.casesStreak!=="number") state.cases.casesStreak = 0;
+  state.cases.casesHits=Math.max(0,state.cases.casesHits|0);
+  state.cases.casesTotal=Math.max(0,state.cases.casesTotal|0);
+  state.cases.casesStreak=Math.max(0,state.cases.casesStreak|0);
+  if(state.cases.casesHits>state.cases.casesTotal) state.cases.casesHits=state.cases.casesTotal;
+  if(!state.cases.casesLastAnswer||typeof state.cases.casesLastAnswer!=="object") state.cases.casesLastAnswer=null;
+  if(typeof state.cases.casesAnswered!=="boolean") state.cases.casesAnswered=false;
 }
-function casesFailureTip(q){
-  var cs=casesCaseForQuestion(q);
-  if(!cs || !CASES_TIPS[cs]) return "";
-  if(state.cases.casesWrongStreak>=2 || (state.cases.casesCaseMisses[cs]||0)>=2) return CASES_TIPS[cs];
-  return "";
+function getCasesSyncState(){
+  casesInitState();
+  return {
+    casesSubtab:state.cases.casesSubtab,
+    casesArt:state.cases.casesArt,
+    casesNounIdx:state.cases.casesNounIdx,
+    casesQuizMode:state.cases.casesQuizMode,
+    casesHits:state.cases.casesHits,
+    casesTotal:state.cases.casesTotal,
+    casesStreak:state.cases.casesStreak
+  };
+}
+casesInitState();
+
+function casesText(s){
+  return String(s==null?"":s).replace(/[&<>"']/g,function(ch){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];
+  });
+}
+function casesInlineHtml(s){
+  s=String(s==null?"":s);
+  var out="", last=0;
+  var re=/<\/?(?:b|span)(?:\s+class="(?:cs-de|c-nom|c-akk|c-dat|c-gen)")?\s*>/g;
+  var m;
+  while((m=re.exec(s))){
+    out+=casesText(s.slice(last,m.index))+m[0];
+    last=re.lastIndex;
+  }
+  return out+casesText(s.slice(last));
+}
+function casesQuestionKey(q){
+  return q.mode+"|"+(q.sentence||q.es||q.ok||"");
 }
 
 function renderCases() {
-  const el=document.getElementById("s-casos"); el.innerHTML="";
-  // ── Header with accent bar ──
-  const hdr=mk("div","","margin-bottom:18px;position:relative;");
-  const accent=mk("div","","width:48px;height:3px;border-radius:3px;background:var(--gold);margin-bottom:10px;");
-  hdr.appendChild(accent);
-  hdr.appendChild(mk("p","ALEMÁN · LOS 4 CASOS","font-size:10px;color:var(--dim);letter-spacing:2.5px;font-family:var(--font-label);font-weight:700;margin-bottom:4px;"));
-  hdr.appendChild(mk("h2","Casos","font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1.1;"));
-  hdr.appendChild(mk("p","El color es la función. Apréndete el color, no la regla.","font-size:13px;color:var(--muted);margin-top:5px;font-weight:500;line-height:1.4;"));
+  casesInitState();
+  var el=document.getElementById("s-casos"); el.innerHTML="";
+
+  // ── Stitch header ──
+  var hdr=mk("div","","margin-bottom:16px;");
+  hdr.appendChild(mk("p","Alemán · Los 4 casos","font-size:10px;letter-spacing:2.5px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:2px;"));
+  var h2row=mk("div","","display:flex;align-items:center;gap:10px;margin:3px 0 4px;");
+  h2row.appendChild(mk("h2","Casos","font-size:28px;font-weight:900;letter-spacing:-0.03em;line-height:1.1;margin:0;color:var(--text);"));
+  var hintBtn=mk("button","💡","width:34px;height:34px;border-radius:12px;border:1px solid rgba(var(--gold-rgb),0.35);background:rgba(var(--gold-rgb),0.08);font-size:16px;cursor:pointer;padding:0;line-height:1;transition:background .15s,transform .1s;");
+  hintBtn.setAttribute("aria-label","Recordatorio rápido de los casos"); hintBtn.setAttribute("aria-expanded","false");
+  hintBtn.onmouseenter=function(){hintBtn.style.background="rgba(var(--gold-rgb),0.15)";};
+  hintBtn.onmouseleave=function(){hintBtn.style.background="rgba(var(--gold-rgb),0.08)";};
+  h2row.appendChild(hintBtn);
+  // 📗 Full declension table (der/ein/mein) in a modal — quick reference mid-quiz
+  var refBtn=mk("button","📗","background:none;border:none;font-size:20px;cursor:pointer;opacity:0.6;transition:opacity .15s;padding:2px;");
+  refBtn.title="Tabla de declinación (artículos + ein/dein)";
+  refBtn.setAttribute("aria-label","Tabla completa de casos");
+  refBtn.onmouseenter=function(){this.style.opacity="1";};
+  refBtn.onmouseleave=function(){this.style.opacity="0.6";};
+  refBtn.onclick=function(){
+    var o=document.createElement("div");
+    o.style.cssText="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.6);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;opacity:0;transition:opacity .18s ease;";
+    function closeRef(){o.style.opacity="0";setTimeout(function(){if(o.parentNode)o.parentNode.removeChild(o);},180);}
+    o.onclick=function(e){if(e.target===o)closeRef();};
+    var c=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:22px;max-width:580px;width:100%;margin:16px 0;box-shadow:0 20px 60px rgba(0,0,0,0.5);");
+    c.setAttribute("role","dialog"); c.setAttribute("aria-modal","true"); c.setAttribute("aria-label","Tabla completa de casos");
+    c.onclick=function(e){e.stopPropagation();};
+    c.appendChild(mk("p","Tabla de declinación","font-size:15px;font-weight:900;color:var(--text);margin-bottom:2px;letter-spacing:-0.02em;"));
+    c.appendChild(mk("p","Cada celda: artículo · ein/dein. Los ein-Wörter (mein, dein, sein, kein, ihr…) se declinan TODOS igual que ein.","font-size:11px;color:var(--muted);font-weight:500;margin-bottom:12px;line-height:1.5;"));
+    // Full declension grid: 4 cases × (Mask / Fem / Neut / Plural), definite + ein·dein per cell
+    var CASE_ROWS=[
+      {c:"nom",lbl:"Nominativ",cells:[["der","ein · dein"],["die","eine · deine"],["das","ein · dein"],["die","— · deine"]]},
+      {c:"akk",lbl:"Akkusativ",cells:[["den","einen · deinen"],["die","eine · deine"],["das","ein · dein"],["die","— · deine"]]},
+      {c:"dat",lbl:"Dativ",   cells:[["dem","einem · deinem"],["der","einer · deiner"],["dem","einem · deinem"],["den","— · deinen"]]},
+      {c:"gen",lbl:"Genitiv", cells:[["des","eines · deines"],["der","einer · deiner"],["des","eines · deines"],["der","— · deiner"]]}
+    ];
+    var caseColor={nom:"var(--teal-text)",akk:"var(--green-text)",dat:"var(--gold-text)",gen:"var(--purple-text)"};
+    var scroll=mk("div","","overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;border:1px solid var(--border);");
+    var html='<table style="border-collapse:collapse;width:100%;min-width:420px;font-size:11.5px;">';
+    html+='<thead><tr>'
+      +'<th style="text-align:left;padding:8px 10px;color:var(--muted);font-weight:800;font-size:10px;letter-spacing:1px;">CASO</th>'
+      +'<th style="padding:8px 8px;color:var(--text);font-weight:800;">Mask.</th>'
+      +'<th style="padding:8px 8px;color:var(--text);font-weight:800;">Fem.</th>'
+      +'<th style="padding:8px 8px;color:var(--text);font-weight:800;">Neut.</th>'
+      +'<th style="padding:8px 8px;color:var(--text);font-weight:800;">Plural</th>'
+      +'</tr></thead><tbody>';
+    CASE_ROWS.forEach(function(row){
+      html+='<tr style="border-top:1px solid var(--border);">'
+        +'<td style="padding:9px 10px;font-weight:800;color:'+caseColor[row.c]+';white-space:nowrap;">'+row.lbl+'</td>';
+      row.cells.forEach(function(cell){
+        html+='<td style="padding:9px 8px;text-align:center;line-height:1.5;">'
+          +'<span style="font-weight:800;color:var(--text);">'+cell[0]+'</span><br>'
+          +'<span style="font-size:10px;color:var(--muted);font-weight:600;">'+cell[1]+'</span></td>';
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    scroll.innerHTML=html;
+    c.appendChild(scroll);
+    var note=mk("div","","margin-top:12px;font-size:12px;color:var(--text2);line-height:1.7;font-weight:500;");
+    note.innerHTML='<b style="color:var(--red-text);">Reglas clave:</b><br>'
+      +'• Akkusativ cambia SOLO en masculino: der→den, ein→einen, dein→deinen. Fem/Neut NO cambian.<br>'
+      +'• Dativ: dem/einem (masc·neut), der/einer (fem), den/deinen (plural, +n al sustantivo).<br>'
+      +'• ein no tiene plural (—), pero dein/mein/kein sí: deine, deinen…';
+    c.appendChild(note);
+    var close=mk("button","Cerrar","width:100%;padding:13px;border-radius:13px;border:none;background:rgba(var(--teal-rgb),0.12);color:var(--teal-text);font-size:13px;font-weight:700;cursor:pointer;margin-top:14px;font-family:inherit;");
+    close.onclick=closeRef;
+    c.appendChild(close);o.appendChild(c);
+    document.body.appendChild(o);
+    requestAnimationFrame(function(){o.style.opacity="1";});
+  };
+  h2row.appendChild(refBtn);
+  hdr.appendChild(h2row);
+  hdr.appendChild(mk("p","El color es la función. Apréndete el color, no la regla.","font-size:13px;color:var(--text2);font-weight:500;margin-bottom:0;"));
   el.appendChild(hdr);
+  // Quick case reminder (toggled by the bulb)
+  var hintCard=mk("div","","display:none;border-radius:12px;padding:12px 14px;margin-bottom:14px;background:rgba(var(--gold-rgb),.07);border:1px solid rgba(var(--gold-rgb),.25);font-size:12.5px;line-height:1.7;font-weight:500;color:var(--text);animation:fadeUp .15s ease;");
+  hintCard.innerHTML=
+    '<b style="color:var(--teal)">Nominativ</b> — ¿quién? / ¿qué es? → el sujeto<br>'
+   +'<b style="color:var(--green)">Akkusativ</b> — ¿qué? / ¿a quién? → objeto directo<br>'
+   +'<b style="color:var(--gold)">Dativ</b> — ¿a quién? / ¿para quién? → objeto indirecto · con <b>mit, zu, bei, von</b><br>'
+   +'<b style="color:var(--purple)">Genitiv</b> — ¿de quién? → posesión · con <b>während, trotz, wegen</b><br><br>'
+   +'<b>der/die/das</b><br>'
+   +'<span style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px 8px;margin-top:4px;font-variant-numeric:tabular-nums;">'
+   +'<span> </span><span><b>M</b></span><span><b>F</b></span><span><b>N</b></span>'
+   +'<span style="color:var(--teal)">Nom</span><span>der</span><span>die</span><span>das</span>'
+   +'<span style="color:var(--green)">Akk</span><span>den</span><span>die</span><span>das</span>'
+   +'<span style="color:var(--gold)">Dat</span><span>dem</span><span>der</span><span>dem</span>'
+   +'<span style="color:var(--purple)">Gen</span><span>des</span><span>der</span><span>des</span>'
+   +'</span><br>'
+   +'<span style="font-size:10.5px;color:var(--dim);">ein/eine: mismo patrón, pero <b>Nom.m ein</b>, <b>Nom.n ein</b> y <b>Akk.n ein</b> no llevan sufijo.</span>';
+  hintBtn.onclick=function(){
+    var open=hintCard.style.display==="block";
+    hintCard.style.display=open?"none":"block";
+    hintBtn.setAttribute("aria-expanded",open?"false":"true");
+  };
+  el.appendChild(hintCard);
 
-  // ── Legend cards ──
-  const legend=mk("div","","display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;");
+  // ── Signature: 4-color spectrum legend (Stitch card style) ──
+  var spectrum=mk("div","","display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;");
   [
-    {c:"nom",t:"Nominativ",s:"el que ACTÚA · ¿quién?"},
-    {c:"akk",t:"Akkusativ",s:"RECIBE la acción · ¿qué?"},
-    {c:"dat",t:"Dativ",s:"a/para quién · prep. Dativ"},
-    {c:"gen",t:"Genitiv",s:"de quién · de qué"}
+    {c:"nom",n:"Nominativ",s:"el que ACTÚA",s2:"¿quién?"},
+    {c:"akk",n:"Akkusativ",s:"RECIBE acción",s2:"¿qué?"},
+    {c:"dat",n:"Dativ",s:"a / para quién",s2:"mit, zu…"},
+    {c:"gen",n:"Genitiv",s:"posesión",s2:"¿de quién?"}
   ].forEach(function(l){
-    var d=mk("div","","border-radius:var(--r-lg);padding:14px;border:1px solid;border-top-width:4px;border-top-color:var(--"+l.c+");border-color:var(--"+l.c+"-line);background:linear-gradient(160deg,var(--"+l.c+"-bg),rgba(255,255,255,0.02));");
-    d.appendChild(mk("b",l.t,"font-size:14px;font-weight:800;color:var(--"+l.c+");display:block;margin-bottom:3px;"));
-    d.appendChild(mk("span",l.s,"font-size:11px;color:var(--muted);line-height:1.35;display:block;"));
-    legend.appendChild(d);
+    var spec=mk("div","","border-radius:14px;padding:12px 10px 10px;border:1.5px solid;background:var(--surface);box-shadow:0 2px 14px rgba(0,0,0,0.18);");
+    spec.style.borderColor="var(--"+l.c+"-line)";
+    spec.appendChild(mk("b",l.n,"display:block;font-size:13px;font-weight:800;letter-spacing:-0.01em;color:var(--"+l.c+");"));
+    spec.appendChild(mk("span",l.s,"display:block;font-size:9.5px;color:var(--text2);font-weight:700;margin-top:3px;line-height:1.3;"));
+    spec.appendChild(mk("span",l.s2,"display:block;font-size:9px;color:var(--muted);font-weight:500;margin-top:1px;line-height:1.2;"));
+    spectrum.appendChild(spec);
   });
-  el.appendChild(legend);
+  el.appendChild(spectrum);
 
-  // ── Subtabs ──
-  var sub=mk("div","","display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;");
+  // ── Subtabs (Stitch pill-tab bar) ──
+  var sub=mk("div","","display:flex;gap:6px;background:var(--surface);border:1px solid rgba(143,144,158,0.35);border-radius:16px;padding:5px;margin-bottom:18px;overflow-x:auto;box-shadow:0 2px 12px rgba(0,0,0,0.14);");
   [
     {id:"identificar",lbl:"1 · Identificar"},
     {id:"transformar",lbl:"2 · Transformar"},
     {id:"reglas",lbl:"3 · Reglas"},
     {id:"practicar",lbl:"4 · Practicar"}
   ].forEach(function(s){
-    var b=mk("button",s.lbl,"flex:0 0 auto;font-size:12px;font-weight:700;padding:9px 15px;border-radius:var(--r-pill);border:1.5px solid var(--border);background:rgba(255,255,255,0.03);color:var(--muted);white-space:nowrap;transition:all 0.18s;");
+    var b=mk("button",s.lbl,"flex:1;text-align:center;padding:10px 6px;border-radius:12px;font-size:12px;font-weight:700;border:none;white-space:nowrap;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s;font-family:inherit;");
     if(state.cases.casesSubtab===s.id){
-      b.style.background="var(--text)";b.style.color="var(--bg)";b.style.borderColor="var(--text)";b.style.fontWeight="800";
+      b.style.background="rgba(var(--primary-rgb),0.15)";b.style.color="var(--primary)";b.style.boxShadow="0 2px 12px rgba(0,0,0,.24)";
+    }else{
+      b.style.background="transparent";b.style.color="var(--text2)";
     }
     b.onclick=function(){state.cases.casesSubtab=s.id;renderCases();};
     sub.appendChild(b);
   });
   el.appendChild(sub);
 
-  var body=mk("div","",""); el.appendChild(body);
-  if(state.cases.casesSubtab==="identificar") casesIdentify(body);
-  else if(state.cases.casesSubtab==="transformar") casesTransform(body);
-  else if(state.cases.casesSubtab==="reglas") casesRules(body);
-  else if(state.cases.casesSubtab==="practicar") casesPractice(body);
+  var body=mk("div","","animation:fadeUp 0.25s ease;");
+  el.appendChild(body);
+  if(state.cases.casesSubtab==="identificar") casosIdentificar(body);
+  else if(state.cases.casesSubtab==="transformar") casosTransformar(body);
+  else if(state.cases.casesSubtab==="reglas") casosReglas(body);
+  else if(state.cases.casesSubtab==="practicar") casosPracticar(body);
 }
 
-function casesIdentify(host){
-  var c1=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  c1.appendChild(mk("h3","¿Qué caso es? En 3 preguntas","font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-0.02em;"));
-  c1.appendChild(mk("p","Hazlas en orden. La primera que diga \"sí\" gana.","font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500;line-height:1.4;"));
-  c1.innerHTML += '<div class="cs-step" style="border-left-color:var(--dat);"><div class="q">① ¿Hay una preposición antes? (mit, für, an, in, von, wegen…)</div><div class="a">Sí → <b>la preposición manda el caso</b>. Ni mires el verbo. Ve a "Reglas".</div></div>'
-    + '<div class="cs-arrow">▼ si no hay preposición ▼</div>'
-    + '<div class="cs-step" style="border-left-color:var(--nom);"><div class="q">② ¿Es el que hace la acción? (el sujeto)</div><div class="a"><span class="cs-tag nom">Nominativ</span> — el típico der/die/das de diccionario.</div></div>'
-    + '<div class="cs-arrow">▼ si no ▼</div>'
-    + '<div class="cs-step" style="border-left-color:var(--akk);"><div class="q">③ ¿Qué o a quién recibe directamente la acción?</div><div class="a"><span class="cs-tag akk">Akkusativ</span> — el objeto directo. Aquí <b>solo</b> el masculino cambia: der → <b>den</b>.</div></div>'
-    + '<div class="cs-arrow">▼ si le doy / digo / ayudo A alguien ▼</div>'
-    + '<div class="cs-step" style="border-left-color:var(--dat);"><div class="q">④ ¿A quién / para quién? (segundo objeto)</div><div class="a"><span class="cs-tag dat">Dativ</span> — receptor. Verbos clave: helfen, danken, geben, erklären, gehören.</div></div>'
-    + '<div class="cs-arrow">▼ si es "de quién / de qué" ▼</div>'
-    + '<div class="cs-step" style="border-left-color:var(--gen);"><div class="q">⑤ ¿De quién es / parte de qué?</div><div class="a"><span class="cs-tag gen">Genitiv</span> — posesión. "el inicio <b>del</b> video".</div></div>';
+function casosIdentificar(host){
+  // Keep existing logic — port visual only
+  var c1=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:16px;margin-bottom:12px;");
+  c1.appendChild(mk("p","¿Qué caso es? En 5 pasos","font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;"));
+  c1.appendChild(mk("p","Hazlas en orden. La primera que diga \"sí\" gana.","font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:500;"));
+  // Flow steps — Fable style
+  var flow=mk("div","","position:relative;padding-left:18px;");
+  flow.innerHTML=
+    '<div style="position:absolute;left:5px;top:14px;bottom:14px;width:2px;background:linear-gradient(180deg,var(--nom),var(--akk),var(--dat),var(--gen));border-radius:2px;opacity:.5;"></div>'+
+    '<div class="cs-step" style="border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:13px 14px;background:rgba(255,255,255,0.03);margin-bottom:10px;position:relative;border-left-color:var(--nom);">'+
+    '<div style="position:absolute;left:-17.5px;top:16px;width:9px;height:9px;border-radius:99px;background:var(--nom);"></div>'+
+    '<div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.4;">① ¿Hay una preposición antes? (mit, für, an, in, von, wegen…)</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-top:5px;line-height:1.5;">Sí → <b>la preposición manda el caso</b>. Ni mires el verbo. Ve a "Reglas".</div></div>'+
+    '<div style="text-align:center;font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:1px;margin:2px 0 10px;text-transform:uppercase;">▼ si no hay preposición</div>'+
+    '<div class="cs-step" style="border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:13px 14px;background:rgba(255,255,255,0.03);margin-bottom:10px;position:relative;border-left-color:var(--nom);">'+
+    '<div style="position:absolute;left:-17.5px;top:16px;width:9px;height:9px;border-radius:99px;background:var(--nom);"></div>'+
+    '<div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.4;">② ¿Es el que hace la acción? (el sujeto)</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-top:5px;line-height:1.5;"><span class="cs-tag nom">Nominativ</span> — el típico der/die/das de diccionario.</div></div>'+
+    '<div style="text-align:center;font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:1px;margin:2px 0 10px;text-transform:uppercase;">▼ si no</div>'+
+    '<div class="cs-step" style="border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:13px 14px;background:rgba(255,255,255,0.03);margin-bottom:10px;position:relative;border-left-color:var(--akk);">'+
+    '<div style="position:absolute;left:-17.5px;top:16px;width:9px;height:9px;border-radius:99px;background:var(--akk);"></div>'+
+    '<div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.4;">③ ¿Qué o a quién recibe directamente la acción?</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-top:5px;line-height:1.5;"><span class="cs-tag akk">Akkusativ</span> — el objeto directo. Aquí <b>solo</b> el masculino cambia: der → <b>den</b>.</div></div>'+
+    '<div style="text-align:center;font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:1px;margin:2px 0 10px;text-transform:uppercase;">▼ si le doy / digo / ayudo a alguien</div>'+
+    '<div class="cs-step" style="border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:13px 14px;background:rgba(255,255,255,0.03);margin-bottom:10px;position:relative;border-left-color:var(--dat);">'+
+    '<div style="position:absolute;left:-17.5px;top:16px;width:9px;height:9px;border-radius:99px;background:var(--dat);"></div>'+
+    '<div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.4;">④ ¿A quién / para quién? (segundo objeto)</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-top:5px;line-height:1.5;"><span class="cs-tag dat">Dativ</span> — receptor. Verbos clave: helfen, danken, geben, erklären, gehören.</div></div>'+
+    '<div style="text-align:center;font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:1px;margin:2px 0 10px;text-transform:uppercase;">▼ si es "de quién / de qué"</div>'+
+    '<div class="cs-step" style="border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:13px 14px;background:rgba(255,255,255,0.03);margin-bottom:10px;position:relative;border-left-color:var(--gen);">'+
+    '<div style="position:absolute;left:-17.5px;top:16px;width:9px;height:9px;border-radius:99px;background:var(--gen);"></div>'+
+    '<div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.4;">⑤ ¿De quién es / parte de qué?</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-top:5px;line-height:1.5;"><span class="cs-tag gen">Genitiv</span> — posesión. "el inicio <b>del</b> video".</div></div>';
+  c1.appendChild(flow);
   host.appendChild(c1);
 
-  var c2=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  c2.appendChild(mk("h3","El truco del masculino","font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-0.02em;"));
-  c2.appendChild(mk("p","El femenino y el neutro casi no se mueven. Tu energía va al masculino:","font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:500;line-height:1.5;"));
-  c2.appendChild(mk("p","der → den → dem → des","font-size:26px;font-weight:900;letter-spacing:0.03em;margin-bottom:16px;background:linear-gradient(90deg,var(--nom),var(--akk),var(--dat),var(--gen));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"));
-  var examples=mk("div","","border-left:3px solid var(--border);padding-left:14px;");
-  [
-    {a:"Der",c:"nom",d:"Der Laptop ist neu.",e:"— ¿quién es nuevo? Nominativ."},
-    {a:"den",c:"akk",d:"Ich benutze den Laptop.",e:"— recibe la acción. Akkusativ."},
-    {a:"dem",c:"dat",d:"Ich arbeite mit dem Laptop.",e:"— \"mit\" manda Dativ."},
-    {a:"des",c:"gen",d:"Die Tastatur des Laptops ist gut.",e:"— ¿de quién? Genitiv (+s)."}
-  ].forEach(function(x){
-    var row=mk("div","","margin:7px 0;font-size:14px;color:var(--text2);line-height:1.5;");
-    var colored=row.innerHTML='<span style="color:var(--'+x.c+');font-weight:800;">'+x.a+'</span> '+x.d.replace(x.a+' ','')+' <span style="color:var(--muted);font-size:12px;">'+x.e+'</span>';
-    examples.appendChild(row);
-  });
-  c2.appendChild(examples);
+  // Card 2: El truco del masculino
+  var c2=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:16px;margin-bottom:12px;");
+  c2.appendChild(mk("p","El truco del masculino","font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;"));
+  c2.appendChild(mk("p","El femenino y el neutro casi no se mueven. Tu energía va al masculino:","font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:500;"));
+  c2.appendChild(mk("p","der → den → dem → des","font-size:22px;font-weight:800;letter-spacing:0.02em;margin-bottom:14px;color:var(--text);"));
+  var borderBox=mk("div","","border-left:3px solid var(--border);padding-left:12px;");
+  borderBox.innerHTML='<p style="margin:6px 0;font-size:14px;color:var(--text2);"><span class="c-nom">Der</span> Laptop ist neu. <span style="color:var(--muted);font-size:12px;">— ¿quién es nuevo? Nominativ.</span></p>'+
+    '<p style="margin:6px 0;font-size:14px;color:var(--text2);">Ich benutze <span class="c-akk">den</span> Laptop. <span style="color:var(--muted);font-size:12px;">— recibe la acción. Akkusativ.</span></p>'+
+    '<p style="margin:6px 0;font-size:14px;color:var(--text2);">Ich arbeite mit <span class="c-dat">dem</span> Laptop. <span style="color:var(--muted);font-size:12px;">— "mit" manda Dativ.</span></p>'+
+    '<p style="margin:6px 0;font-size:14px;color:var(--text2);">Die Tastatur <span class="c-gen">des</span> Laptops ist gut. <span style="color:var(--muted);font-size:12px;">— ¿de quién? Genitiv (+s).</span></p>';
+  c2.appendChild(borderBox);
   host.appendChild(c2);
 }
 
-function casesTransform(host){
-  var c=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  c.appendChild(mk("h3","Transformador de artículos","font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-0.02em;"));
-  c.appendChild(mk("p","Elige una palabra de tu mundo y el tipo de artículo. Ves los 4 casos al instante con su color.","font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500;line-height:1.5;"));
+function casosTransformar(host){
+  var c=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:16px;margin-bottom:12px;");
+  c.appendChild(mk("p","Transformador de artículos","font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;"));
+  c.appendChild(mk("p","Elige una palabra de tu mundo y el tipo de artículo. Ves los 4 casos al instante con su color.","font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:500;line-height:1.5;"));
 
-  var sel=document.createElement("select"); sel.className="cs-select"; sel.style.marginBottom="12px";
-  CASES_NOUNS.forEach(function(n,i){
-    var art=n.gen==='m'?'der':n.gen==='f'?'die':'das';
-    var o=document.createElement("option"); o.value=i; o.textContent=art+" "+n.f[0]+" — "+n.es;
-    if(i===state.cases.casesNounIdx) o.selected=true;
-    sel.appendChild(o);
+  var sel=document.createElement("select"); sel.className="cs-select"; sel.style.marginBottom="10px";
+  [["m","Masculino"],["f","Femenino"],["n","Neutro"]].forEach(function(group){
+    var og=document.createElement("optgroup"); og.label=group[1];
+    CASOS_NOUNS.forEach(function(n,i){
+      if(n.gen!==group[0]) return;
+      var art=n.gen==='m'?'der':n.gen==='f'?'die':'das';
+      var o=document.createElement("option"); o.value=i; o.textContent=art+" "+n.f[0]+" — "+n.es;
+      if(i===state.cases.casesNounIdx) o.selected=true;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
   });
-  sel.onchange=function(){state.cases.casesNounIdx=+this.value;paintCasesTable(out,note);};
+  sel.onchange=function(){state.cases.casesNounIdx=+this.value;paintCasosTable(out,note);};
   c.appendChild(sel);
 
-  var seg=mk("div","","display:inline-flex;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:12px;");
+  var seg=mk("div","","display:inline-flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;");
   [["der","der/die/das"],["ein","ein"],["mein","mein"]].forEach(function(a){
-    var b=mk("button",a[1],"font-size:13px;font-weight:700;padding:10px 16px;border:0;background:transparent;color:var(--muted);transition:all 0.15s;");
-    if(state.cases.casesArt===a[0]){b.style.background="var(--text)";b.style.color="var(--bg)";b.style.fontWeight="800";}
-    b.onclick=function(){state.cases.casesArt=a[0];paintCasesTable(out,note);};
+    var b=mk("button",a[1],"font-size:13px;font-weight:700;padding:9px 14px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;");
+    if(state.cases.casesArt===a[0]){b.style.background="var(--text)";b.style.color="var(--bg)";}
+    b.onclick=function(){state.cases.casesArt=a[0];paintCasosTable(out,note);
+      Array.prototype.forEach.call(seg.children,function(x){x.style.background="transparent";x.style.color="var(--muted)";}); b.style.background="var(--text)";b.style.color="var(--bg)";};
     seg.appendChild(b);
   });
   c.appendChild(seg);
 
-  var note=mk("p","","font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:600;"); c.appendChild(note);
+  var note=mk("p","","font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500;"); c.appendChild(note);
   var out=mk("div","",""); out.className="cs-tcase"; c.appendChild(out);
-  c.appendChild(mk("p","Las frases molde siempre son correctas: sehen obliga Akkusativ, mit obliga Dativ, \"die Idee…\" obliga Genitiv.","font-size:12px;color:var(--dim);margin-top:14px;font-weight:500;line-height:1.5;"));
+  c.appendChild(mk("p","Las frases molde siempre son correctas: sehen obliga Akkusativ, mit obliga Dativ, \"die Idee…\" obliga Genitiv.","font-size:12px;color:var(--dim);margin-top:12px;font-weight:500;line-height:1.5;"));
   host.appendChild(c);
-  paintCasesTable(out,note);
+  paintCasosTable(out,note);
 }
 
-function paintCasesTable(out, note){
-  var n=CASES_NOUNS[state.cases.casesNounIdx];
-  var arts=CASES_ART[state.cases.casesArt][n.gen];
+function paintCasosTable(out, note){
+  var n=CASOS_NOUNS[state.cases.casesNounIdx];
+  var arts=CASOS_ART[state.cases.casesArt][n.gen];
   var genName={m:'masculino',f:'femenino',n:'neutro'}[n.gen];
-  note.innerHTML="Género: <b style='color:var(--text2)'>"+genName+"</b>"
+  note.innerHTML="Género: <b style='color:var(--text2)'>"+casesText(genName)+"</b>"
     +(n.weak?" · ojo, sustantivo débil (-n en Akk/Dat/Gen)":"")
     +(n.gen==='f'?" · el femenino casi no cambia":"");
   var frames=[
@@ -143,19 +301,17 @@ function paintCasesTable(out, note){
     function(a){return {de:"die Idee "+a+" "+n.f[3], es:"la idea de "+n.es};}
   ];
   out.innerHTML="";
-  CASES_CASES.forEach(function(cs,i){
+  CASOS_CASES.forEach(function(cs,i){
     var fr=frames[i](arts[i]);
     var row=mk("div","","display:grid;grid-template-columns:auto 1fr;border-bottom:1px solid var(--border);");
-    if(i===3) row.style.borderBottom="none";
-    var lbl=mk("div","","font-size:11px;font-weight:800;padding:14px 14px;display:flex;align-items:center;gap:8px;background:var(--"+cs.cls+"-bg);color:var(--"+cs.cls+");");
-    var dot=mk("span","","width:8px;height:8px;border-radius:50%;background:"+cs.dot+";display:inline-block;");
-    lbl.appendChild(dot);
-    lbl.appendChild(document.createTextNode(cs.name));
+    if(i===3) row.style.borderBottom="0";
+    var lbl=mk("div","","font-size:11px;font-weight:800;padding:12px;display:flex;align-items:center;gap:7px;background:var(--"+cs.cls+"-bg);color:var(--"+cs.cls+");");
+    lbl.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+cs.dot+';display:inline-block;flex-shrink:0;"></span>'+casesText(cs.name);
     row.appendChild(lbl);
-    var val=mk("div","","padding:14px;border-left:1px solid var(--border);");
-    val.appendChild(mk("div",arts[i]+" "+n.f[i],"font-size:18px;font-weight:800;color:var(--text);"));
-    val.appendChild(mk("div",fr.de,"font-size:13px;color:var(--text2);font-weight:600;margin-top:4px;"));
-    val.appendChild(mk("div",fr.es,"font-size:11px;color:var(--muted);margin-top:2px;"));
+    var val=mk("div","","padding:12px 14px;border-left:1px solid var(--border);");
+    val.innerHTML='<div style="font-size:17px;font-weight:800;color:var(--text);">'+casesText(arts[i]+" "+n.f[i])+'</div>'
+      +'<div style="font-size:13px;margin-top:3px;color:var(--text2);font-weight:600;">'+casesText(fr.de)+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:1px;">'+casesText(fr.es)+'</div>';
     row.appendChild(val);
     out.appendChild(row);
   });
@@ -163,10 +319,10 @@ function paintCasesTable(out, note){
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function capEs(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 
-function casesRules(host){
-  var c=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  c.innerHTML = '<h3 style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-0.02em;">Reglas express</h3>'
-    + '<p style="font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500;line-height:1.4;">Cerradas para que no te abrumen. Abre solo la que necesites.</p>'
+function casosReglas(host){
+  var c=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:16px;margin-bottom:12px;");
+  c.innerHTML = '<p style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;">Reglas express</p>'
+    + '<p style="font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:500;">Cerradas para que no te abrumen. Abre solo la que necesites.</p>'
     + '<details class="cs-acc" open><summary>Preposiciones que SIEMPRE mandan caso</summary><div class="cs-accbody">'
       + '<p style="margin:8px 0 2px;font-size:13px;"><span class="cs-tag akk">Akkusativ</span> siempre:</p>'
       + '<div class="cs-chips"><span class="cs-chip akk">durch</span><span class="cs-chip akk">für</span><span class="cs-chip akk">gegen</span><span class="cs-chip akk">ohne</span><span class="cs-chip akk">um</span><span class="cs-chip akk">bis</span></div>'
@@ -188,11 +344,24 @@ function casesRules(host){
       + '<p style="margin:8px 0;font-size:14px;"><b style="color:var(--dat);">¿DÓNDE? (ya está fijo)</b> → <span class="cs-tag dat">Dativ</span></p>'
       + '<p class="cs-ex">Das MacBook liegt auf <span class="c-dat">dem</span> Tisch. <span style="color:var(--muted);">(está ahí, quieto)</span></p>'
     + '</div></details>'
-    + '<details class="cs-acc"><summary>Verbos clave de tu contexto y su caso</summary><div class="cs-accbody">'
-      + '<p class="cs-ex">benutzen, schreiben, lesen, bauen, schneiden, suchen, sehen → <span class="cs-tag akk">Akkusativ</span></p>'
-      + '<p class="cs-ex">helfen, danken, gehören, antworten → <span class="cs-tag dat">Dativ</span></p>'
-      + '<p class="cs-ex">geben, erklären, schicken, zeigen → <span class="cs-tag dat">Dativ</span> (a quién) + <span class="cs-tag akk">Akkusativ</span> (qué)</p>'
-      + '<p class="cs-ex">denken an + <span class="cs-tag akk">Akk</span> · warten auf + <span class="cs-tag akk">Akk</span> · arbeiten an + <span class="cs-tag dat">Dativ</span></p>'
+    + '<details class="cs-acc"><summary>Verbos y el caso que mandan (rección)</summary><div class="cs-accbody">'
+      + '<p style="margin:8px 0 2px;font-size:13px;"><span class="cs-tag nom">Nominativ</span> — copulativos: lo que sigue NO es objeto, es el mismo sujeto:</p>'
+      + '<div class="cs-chips"><span class="cs-chip nom">sein</span><span class="cs-chip nom">werden</span><span class="cs-chip nom">bleiben</span><span class="cs-chip nom">heißen</span></div>'
+      + '<p class="cs-ex">Er ist <span class="c-nom">der</span> Chef. <span style="color:var(--muted);">(¡no "den"! — sein no lleva Akkusativ)</span></p>'
+      + '<p class="cs-ex">Das bleibt <span class="c-nom">ein</span> Problem.</p>'
+      + '<p style="margin:14px 0 2px;font-size:13px;"><span class="cs-tag akk">Akkusativ</span> — la gran mayoría (objeto directo, ¿qué?):</p>'
+      + '<div class="cs-chips"><span class="cs-chip akk">haben</span><span class="cs-chip akk">machen</span><span class="cs-chip akk">sehen</span><span class="cs-chip akk">kaufen</span><span class="cs-chip akk">brauchen</span><span class="cs-chip akk">suchen</span><span class="cs-chip akk">finden</span><span class="cs-chip akk">benutzen</span><span class="cs-chip akk">es gibt</span></div>'
+      + '<p class="cs-ex">Ich brauche <span class="c-akk">einen</span> neuen Laptop.</p>'
+      + '<p class="cs-ex">Es gibt <span class="c-akk">einen</span> Fehler im Code.</p>'
+      + '<p style="margin:14px 0 2px;font-size:13px;"><span class="cs-tag dat">Dativ</span> — el grupo que se memoriza (la "víctima" es persona):</p>'
+      + '<div class="cs-chips"><span class="cs-chip dat">helfen</span><span class="cs-chip dat">danken</span><span class="cs-chip dat">gefallen</span><span class="cs-chip dat">gehören</span><span class="cs-chip dat">antworten</span><span class="cs-chip dat">glauben</span><span class="cs-chip dat">folgen</span><span class="cs-chip dat">passen</span><span class="cs-chip dat">schmecken</span></div>'
+      + '<p class="cs-ex">Ich helfe <span class="c-dat">dem</span> Mann. <span style="color:var(--muted);">(nunca "den Mann")</span></p>'
+      + '<p class="cs-ex">Das Handy gehört <span class="c-dat">meiner</span> Schwester.</p>'
+      + '<p style="margin:14px 0 2px;font-size:13px;"><span class="cs-tag dat">Dat</span> + <span class="cs-tag akk">Akk</span> — dar ALGO (Akk) a ALGUIEN (Dat):</p>'
+      + '<div class="cs-chips"><span class="cs-chip dat">geben</span><span class="cs-chip dat">schenken</span><span class="cs-chip dat">zeigen</span><span class="cs-chip dat">erklären</span><span class="cs-chip dat">bringen</span><span class="cs-chip dat">schicken</span><span class="cs-chip dat">empfehlen</span></div>'
+      + '<p class="cs-ex">Ich gebe <span class="c-dat">dem</span> Kunden <span class="c-akk">den</span> Report.</p>'
+      + '<p style="margin:14px 0 2px;font-size:13px;">Verbo + preposición fija (el caso lo manda la preposición):</p>'
+      + '<p class="cs-ex">denken an + <span class="cs-tag akk">Akk</span> · warten auf + <span class="cs-tag akk">Akk</span> · sich freuen auf + <span class="cs-tag akk">Akk</span> · arbeiten an + <span class="cs-tag dat">Dat</span> · träumen von + <span class="cs-tag dat">Dat</span></p>'
     + '</div></details>'
     + '<details class="cs-acc"><summary>Tus errores típicos</summary><div class="cs-accbody">'
       + '<div class="cs-err">Ich sehe <s>der Lehrer</s> → Ich sehe <span class="fix">den Lehrer</span><br><span style="color:var(--muted);">"ver" recibe objeto directo → Akkusativ.</span></div>'
@@ -213,106 +382,103 @@ function casesRules(host){
   host.appendChild(c);
 }
 
-function casesPractice(host){
-  var c=mk("div","","background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;box-shadow:0 4px 24px rgba(0,0,0,0.22);");
-  c.appendChild(mk("h3","Practicar","font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-0.02em;"));
-  c.appendChild(mk("p","Eliges, te corrige ahí mismo y te dice el porqué.","font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:500;"));
+function casosPracticar(host){
+  var c=mk("div","","background:var(--surface);border:1px solid rgba(143,144,158,0.35);border-radius:20px;padding:20px;margin-bottom:12px;box-shadow:0 4px 24px rgba(0,0,0,0.22);");
+  c.appendChild(mk("p","Practicar","font-size:18px;font-weight:900;color:var(--text);margin-bottom:4px;letter-spacing:-0.02em;"));
+  c.appendChild(mk("p","Eliges, te corrige ahí mismo y te dice el porqué.","font-size:13px;color:var(--text2);margin-bottom:14px;font-weight:500;"));
 
-  // Mode pills
-  var modes=mk("div","","display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;");
+  var modes=mk("div","","display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;");
   [["all","Mezcla"],["articulo","Artículos"],["caso","Identificar"],["mov","Movimiento"],["traduccion","Traducir"]].forEach(function(m){
-    var b=mk("button",m[1],"font-size:12px;font-weight:700;padding:8px 14px;border-radius:var(--r-pill);border:1.5px solid var(--border);background:rgba(255,255,255,0.03);color:var(--muted);transition:all 0.15s;");
-    if(state.cases.casesQuizMode===m[0]){
-      b.style.background="var(--text)";b.style.color="var(--bg)";b.style.borderColor="var(--text)";b.style.fontWeight="800";
-    }
-    b.onclick=function(){state.cases.casesQuizMode=m[0];casesBuildPool();casesNextQ();renderCases();};
+    var b=mk("button",m[1],"font-size:12px;font-weight:700;padding:8px 14px;border-radius:22px;border:1.5px solid rgba(143,144,158,0.3);background:rgba(255,255,255,0.04);color:var(--text2);font-family:inherit;cursor:pointer;transition:all .2s;");
+    if(state.cases.casesQuizMode===m[0]){b.style.background="var(--primary)";b.style.color="var(--on-primary)";b.style.borderColor="var(--primary)";b.style.boxShadow="0 4px 16px rgba(var(--primary-rgb),0.25)";}
+    b.onclick=function(){state.cases.casesQuizMode=m[0];state.cases.casesLastAnswer=null;casesBuildPool();casesNextQ();renderCases();};
     modes.appendChild(b);
   });
   c.appendChild(modes);
 
-  // Score metrics row
-  var score=mk("div","","display:flex;gap:12px;margin-bottom:16px;");
-  [
-    {lbl:"Aciertos",val:state.cases.casesHits+"/"+state.cases.casesTotal,idHint:"cs-hit"},
-    {lbl:"Racha",val:state.cases.casesStreak,color:state.cases.casesStreak>2?"var(--gold-text)":"var(--text2)",idHint:"cs-streak"},
-    {lbl:"%",val:state.cases.casesTotal?Math.round(state.cases.casesHits/state.cases.casesTotal*100)+'%':'—',idHint:"cs-pct"}
-  ].forEach(function(m){
-    var metric=mk("div","","flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center;");
-    var valEl=mk("span",String(m.val),"display:block;font-size:22px;font-weight:900;color:"+(m.color||"var(--text)")+";line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;");
-    valEl.id=m.idHint;
-    metric.appendChild(valEl);
-    metric.appendChild(mk("span",m.lbl,"display:block;font-size:10px;color:var(--muted);font-weight:700;margin-top:3px;letter-spacing:1px;font-family:var(--font-label);"));
-    score.appendChild(metric);
-  });
+  var hit=state.cases.casesHits, tot=state.cases.casesTotal, str=state.cases.casesStreak;
+  var score=mk("div","","display:flex;gap:20px;align-items:baseline;margin-bottom:16px;font-size:13px;");
+  score.innerHTML='<span style="display:flex;flex-direction:column;gap:2px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;">ACIERTOS<b id="cs-hit" style="color:var(--text);font-size:22px;font-weight:900;">'+hit+'</b> <span style="font-weight:600;color:var(--dim);">de <b id="cs-tot" style="color:var(--text);font-weight:800;">'+tot+'</b></span></span>'
+    +'<span style="display:flex;flex-direction:column;gap:2px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;">RACHA<b id="cs-streak" style="color:var(--gold-text);font-size:22px;font-weight:900;">'+str+'</b></span>'
+    +'<span style="display:flex;flex-direction:column;gap:2px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;">%<b id="cs-pct" style="color:var(--text);font-size:22px;font-weight:900;">'+(tot?Math.round(hit/tot*100)+'%':'—')+'</b></span>';
   c.appendChild(score);
 
   var mount=mk("div","",""); mount.id="cs-quiz-mount"; c.appendChild(mount);
   host.appendChild(c);
   if(!state.cases.casesPool.length) casesBuildPool();
-  casesRenderQ(mount);
+  casosRenderQ(mount);
 }
 
 function casesShuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.random()*(i+1)|0;var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-function casesBuildPool(){ state.cases.casesPool=casesShuffle(state.cases.casesQuizMode==='all'?CASES_Q:CASES_Q.filter(function(q){return q.mode===state.cases.casesQuizMode;})); state.cases.casesIdx=0; }
+function casesBuildPool(){ state.cases.casesPool=casesShuffle(state.cases.casesQuizMode==='all'?CASOS_Q:CASOS_Q.filter(function(q){return q.mode===state.cases.casesQuizMode;})); state.cases.casesIdx=0; state.cases.casesLastAnswer=null; }
 function casesUpdateScore(){
-  var ms=document.querySelectorAll("#s-casos [id]");
-  Array.prototype.forEach.call(ms,function(el){
-    if(el.id==="cs-hit") el.textContent=state.cases.casesHits+"/"+state.cases.casesTotal;
-    if(el.id==="cs-streak"){el.textContent=state.cases.casesStreak;el.style.color=state.cases.casesStreak>2?"var(--gold-text)":"var(--text2)";}
-    if(el.id==="cs-pct") el.textContent=state.cases.casesTotal?Math.round(state.cases.casesHits/state.cases.casesTotal*100)+'%':'—';
-  });
+  var h=document.getElementById("cs-hit"); if(!h) return;
+  h.textContent=state.cases.casesHits; document.getElementById("cs-tot").textContent=state.cases.casesTotal;
+  document.getElementById("cs-streak").textContent=state.cases.casesStreak;
+  document.getElementById("cs-pct").textContent=state.cases.casesTotal?Math.round(state.cases.casesHits/state.cases.casesTotal*100)+'%':'—';
 }
-function casesNextQ(){ if(state.cases.casesIdx>=state.cases.casesPool.length){ state.cases.casesPool=casesShuffle(state.cases.casesPool); state.cases.casesIdx=0; } var m=document.getElementById("cs-quiz-mount"); if(m) casesRenderQ(m); }
-
-function casesRenderQ(mount){
-  if(!state.cases.casesPool.length){ mount.innerHTML="<p style='color:var(--muted);font-size:13px;text-align:center;padding:24px;'>Sin preguntas en este mode.</p>"; return; }
+function casesNextQ(){
   if(state.cases.casesIdx>=state.cases.casesPool.length){ state.cases.casesPool=casesShuffle(state.cases.casesPool); state.cases.casesIdx=0; }
-  var q=state.cases.casesPool[state.cases.casesIdx]; state.cases.casesAnswered=false;
-  if(q.mode==='traduccion'){ casesRenderTrad(q,mount); return; }
-  var modeLbl={articulo:'Elige el artículo',caso:'¿Qué caso es?',mov:'Movimiento o ubicación'}[q.mode];
-  var sentence=q.sentence.replace('___','<span style="display:inline-block;min-width:48px;border-bottom:2px dashed var(--muted);text-align:center;font-weight:900;color:var(--gold-text);padding:0 4px;">___</span>');
-  mount.innerHTML='<div style="border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;background:linear-gradient(160deg,rgba(255,255,255,0.02),rgba(255,255,255,0.05));">'
-    +'<div style="font-size:10px;color:var(--dim);font-weight:700;letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;">'+modeLbl+'</div>'
-    +'<p style="font-size:19px;line-height:1.55;margin-bottom:6px;color:var(--text);font-weight:700;">'+sentence+'</p>'
-    +(q.hint?'<p style="font-size:12px;color:var(--muted);margin-bottom:16px;font-weight:500;">'+q.hint+'</p>':'<div style="margin-bottom:16px;"></div>')
-    +'<div id="cs-opts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px;"></div>'
-    +'<div id="cs-hint" style="margin-top:10px;display:none;padding:12px 14px;border-radius:var(--r-md);background:rgba(var(--gold-rgb),0.08);border:1px solid rgba(var(--gold-rgb),0.2);color:var(--text);font-size:13px;font-weight:600;line-height:1.5;animation:fadeUp 0.15s ease;"></div>'
-    +'<div id="cs-fb" style="margin-top:16px;display:none;"></div>'
-    +'<div id="cs-next" style="margin-top:16px;display:none;justify-content:flex-end;">'
-    +'<button id="cs-nextbtn" style="font-size:14px;font-weight:800;padding:12px 20px;border-radius:var(--r-md);border:0;background:var(--gold);color:#000;box-shadow:0 4px 16px rgba(var(--gold-rgb),0.3);">Siguiente →</button></div>'
+  var m=document.getElementById("cs-quiz-mount"); if(m) casosRenderQ(m);
+}
+function casesAdvanceQ(){
+  state.cases.casesIdx++;
+  state.cases.casesLastAnswer=null;
+  casesNextQ();
+}
+function casesRecordResult(correct){
+  state.cases.casesTotal++;
+  if(correct){state.cases.casesHits++;state.cases.casesStreak++;}
+  else state.cases.casesStreak=0;
+  logActivity("drillsDone",1);
+  syncUp();
+  casesUpdateScore();
+}
+
+function casosRenderQ(mount){
+  if(!state.cases.casesPool.length){ mount.innerHTML="<p style='color:var(--muted);font-size:13px;text-align:center;padding:20px;'>Sin preguntas en este modo.</p>"; return; }
+  if(state.cases.casesIdx>=state.cases.casesPool.length){ state.cases.casesPool=casesShuffle(state.cases.casesPool); state.cases.casesIdx=0; }
+  var q=state.cases.casesPool[state.cases.casesIdx];
+  var last=state.cases.casesLastAnswer;
+  state.cases.casesAnswered=!!(last&&last.key===casesQuestionKey(q)&&last.idx===state.cases.casesIdx);
+  if(q.mode==='traduccion'){ casosRenderTrad(q,mount); return; }
+  var modoLbl={articulo:'Elige el artículo',caso:'¿Qué caso es?',mov:'Movimiento o ubicación'}[q.mode];
+  var sentence=casesInlineHtml(q.sentence).replace('___','<span class="cs-blank">___</span>');
+  mount.innerHTML='<div style="border:1.5px solid rgba(143,144,158,0.3);border-radius:18px;padding:20px;background:rgba(255,255,255,0.02);box-shadow:0 4px 18px rgba(0,0,0,0.16);">'
+    +'<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">'+casesText(modoLbl)+'</div>'
+    +'<p style="font-size:18px;line-height:1.5;margin-bottom:4px;color:var(--text);">'+sentence+'</p>'
+    +(q.hint?'<p style="font-size:12px;color:var(--muted);margin-bottom:14px;">'+casesText(q.hint)+'</p>':'<div style="margin-bottom:14px;"></div>')
+    +'<div class="cs-opts" id="cs-opts"></div>'
+    +'<div id="cs-fb" style="margin-top:14px;display:none;"></div>'
+    +'<div id="cs-next" style="margin-top:14px;display:none;justify-content:flex-end;">'
+    +'<button id="cs-nextbtn" style="font-size:14px;font-weight:700;padding:10px 18px;border-radius:11px;border:0;background:var(--primary);color:var(--on-primary);cursor:pointer;">Siguiente →</button></div>'
     +'</div>';
   var opts=document.getElementById("cs-opts");
   q.op.forEach(function(o){
-    var b=mk("button",o,"font-size:15px;font-weight:700;padding:14px;border-radius:var(--r-md);border:1.5px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);transition:all 0.12s;");
-    b.onmouseenter=function(){this.style.borderColor="var(--gold)";this.style.background="rgba(var(--gold-rgb),0.06)";};
-    b.onmouseleave=function(){if(!this.classList.contains("correct")&&!this.classList.contains("wrong")&&!this.classList.contains("dim")){this.style.borderColor="var(--border)";this.style.background="rgba(255,255,255,0.04)";}};
+    var b=mk("button",o,"font-size:15px;font-weight:700;padding:14px;border-radius:14px;border:1.5px solid rgba(143,144,158,0.35);background:var(--surface);color:var(--text);transition:transform .05s,border-color .15s;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.1);");
     b.onclick=function(){casesChoose(q,o,opts,b);};
     opts.appendChild(b);
   });
-  var hintBtn=mk("button","💡 Pista","margin-top:10px;background:transparent;border:1px dashed rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:var(--r-md);padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.12s;");
-  hintBtn.setAttribute("aria-expanded","false");
-  hintBtn.onmouseenter=function(){this.style.borderColor="rgba(var(--gold-rgb),0.6)";this.style.background="rgba(var(--gold-rgb),0.06)";};
-  hintBtn.onmouseleave=function(){this.style.borderColor="rgba(var(--gold-rgb),0.3)";this.style.background="transparent";};
-  hintBtn.onclick=function(){
-    var h=document.getElementById("cs-hint");
-    if(h.style.display==="block"){h.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
-    var css=casesCaseForQuestion(q);
-    var tip=casesFailureTip(q)||(CASES_TIPS[css]||"Pista: mira el verbo y la preposición para decidir el caso.");
-    h.innerHTML="💡 "+tip; h.style.display="block"; hintBtn.setAttribute("aria-expanded","true");
-  };
-  opts.parentNode.insertBefore(hintBtn,opts.nextSibling);
-  var nb=document.getElementById("cs-nextbtn"); if(nb) nb.onclick=function(){state.cases.casesIdx++;casesNextQ();};
+  var nb=document.getElementById("cs-nextbtn"); if(nb) nb.onclick=casesAdvanceQ;
+  if(last&&last.key===casesQuestionKey(q)&&last.idx===state.cases.casesIdx){
+    var selectedBtn=null;
+    Array.prototype.forEach.call(opts.children,function(b){if(b.textContent===last.selected) selectedBtn=b;});
+    casesPaintChoice(q,last.selected,opts,selectedBtn,last.correct,false);
+  }
 }
 
 function casesChoose(q,o,opts,btn){
   if(state.cases.casesAnswered) return; state.cases.casesAnswered=true;
   var correct=o===q.ok;
-  state.cases.casesTotal++; if(correct){state.cases.casesHits++;state.cases.casesStreak++;state.cases.casesWrongStreak=0;} else {state.cases.casesStreak=0;state.cases.casesWrongStreak=(state.cases.casesWrongStreak||0)+1; var missCase=casesCaseForQuestion(q); if(missCase) state.cases.casesCaseMisses[missCase]=(state.cases.casesCaseMisses[missCase]||0)+1;}
-  logActivity("drillsDone",1); syncUp();
-  casesUpdateScore();
+  state.cases.casesLastAnswer={key:casesQuestionKey(q),idx:state.cases.casesIdx,selected:o,correct:correct};
+  casesRecordResult(correct);
+  casesPaintChoice(q,o,opts,btn,correct,true);
+}
+
+function casesPaintChoice(q,o,opts,btn,correct,focusNext){
   Array.prototype.forEach.call(opts.children,function(b){
-    if(b.textContent===q.ok){b.style.borderColor="var(--akk)";b.style.background="var(--akk-bg)";b.style.color="var(--green-text)";}
-    else if(b===btn){b.style.borderColor="var(--red)";b.style.background="rgba(var(--red-rgb),0.1)";b.style.color="var(--red-text)";}
+    if(b.textContent===q.ok){ b.style.borderColor="var(--akk)";b.style.background="var(--akk-bg)";b.style.color="var(--green-text)"; }
+    else if(b===btn){ b.style.borderColor="var(--red)";b.style.background="rgba(var(--red-rgb),0.1)";b.style.color="var(--red-text)"; }
     else b.style.opacity="0.4";
     b.style.pointerEvents="none";
   });
@@ -320,74 +486,36 @@ function casesChoose(q,o,opts,btn){
   var caseNames={nom:'Nominativ',akk:'Akkusativ',dat:'Dativ',gen:'Genitiv'};
   var tag=q.caso?'<span class="cs-tag '+q.caso+'">'+caseNames[q.caso]+'</span> ':'';
   fb.style.display="block";
-  fb.style.cssText="margin-top:16px;display:block;border-radius:var(--r-md);padding:16px;font-size:14px;background:"+(correct?"var(--akk-bg)":"rgba(var(--red-rgb),0.08)")+";border:1px solid "+(correct?"var(--akk-line)":"rgba(var(--red-rgb),0.25)")+";";
-  var tip=correct?"":casesFailureTip(q);
-  fb.innerHTML='<div style="font-weight:900;font-size:15px;color:'+(correct?"var(--green-text)":"var(--red-text)")+';margin-bottom:6px;">'+(correct?'✓ Correcto':'✗ Casi · la respuesta es '+q.ok)+'</div>'
-    +'<div style="color:var(--text2);line-height:1.55;font-size:14px;">'+tag+q.why+'</div>'
-    +(tip?'<div style="margin-top:12px;padding:12px 14px;border-radius:var(--r-md);background:rgba(var(--gold-rgb),0.10);border:1px solid rgba(var(--gold-rgb),0.24);color:var(--text);font-size:13px;line-height:1.5;font-weight:600;">💡 '+tip+'</div>':'');
+  fb.style.cssText="margin-top:14px;display:block;border-radius:12px;padding:13px;font-size:14px;background:"+(correct?"var(--akk-bg)":"rgba(var(--red-rgb),0.08)")+";border:1px solid "+(correct?"var(--akk-line)":"rgba(var(--red-rgb),0.25)")+";";
+  fb.innerHTML='<div style="font-weight:800;color:'+(correct?"var(--green-text)":"var(--red-text)")+';margin-bottom:5px;">'+(correct?'✓ Correcto':'✗ Casi · la respuesta es '+casesText(q.ok))+'</div>'
+    +'<div style="color:var(--text2);line-height:1.5;">'+tag+casesText(q.why)+'</div>';
   document.getElementById("cs-next").style.display="flex";
+  var nb=document.getElementById("cs-nextbtn");
+  if(focusNext&&nb) setTimeout(function(){nb.focus();},0);
 }
 
-function casesRenderTrad(q,mount){
-  mount.innerHTML="";
-  var targetText=q.de.replace(/<[^>]*>/g,"").replace(/\s+/g," ").trim();
-  var targetWords=targetText.replace(/[.!?]$/g,"").split(" ").filter(Boolean);
-  var distractors=["ich","du","wir","der","die","das","ein","eine","einen","dem","den","mit","für","auf","neben","ist","bin","habe","mache","lerne","arbeite","suche","gut","wichtig"];
-  var used={}; targetWords.forEach(function(w){used[w.toLowerCase()]=true;});
-  var extras=distractors.filter(function(w){return !used[w.toLowerCase()];}).slice(0,4);
-  var bank=casesShuffle(targetWords.concat(extras));
-  var chosen=[];
-  var card=mk("div","","border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;background:linear-gradient(160deg,rgba(255,255,255,0.02),rgba(255,255,255,0.05));");
-  card.appendChild(mk("div","Ordena las palabras","font-size:10px;color:var(--dim);font-weight:700;letter-spacing:2px;font-family:var(--font-label);margin-bottom:10px;"));
-  card.appendChild(mk("p",q.es,"font-size:19px;line-height:1.5;margin-bottom:16px;color:var(--text);font-weight:700;"));
-  var answer=mk("div","","min-height:52px;border:2px dashed rgba(var(--purple-rgb),0.35);border-radius:var(--r-md);padding:10px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;background:rgba(var(--purple-rgb),0.05);");
-  var bankEl=mk("div","","display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;");
-  var fb=mk("div","","display:none;margin-top:14px;padding:16px;border-radius:var(--r-md);font-size:14px;");
-  var row=mk("div","","display:flex;gap:10px;margin-top:14px;");
-  var check=mk("button","Comprobar","flex:1;font-size:14px;font-weight:800;padding:12px 18px;border-radius:var(--r-md);border:0;background:var(--gold);color:#000;box-shadow:0 4px 16px rgba(var(--gold-rgb),0.3);");
-  var clear=mk("button","Limpiar","font-size:14px;font-weight:700;padding:12px 18px;border-radius:var(--r-md);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);");
-  function normalize(s){return s.toLowerCase().replace(/[.,!?;:]/g,"").replace(/\s+/g," ").trim();}
-  function makeChip(word,fromAnswer){
-    var b=mk("button",word,"font-size:14px;font-weight:800;padding:10px 14px;border-radius:var(--r-md);border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);transition:all 0.12s;");
-    b.onmouseenter=function(){if(!this.disabled)this.style.borderColor="var(--gold)";};
-    b.onmouseleave=function(){if(!this.disabled)this.style.borderColor="var(--border)";};
-    b.onclick=function(){
-      if(state.cases.casesAnswered) return;
-      if(fromAnswer){ chosen.splice(chosen.indexOf(word),1); render(); }
-      else { chosen.push(word); b.disabled=true; b.style.opacity="0.35"; renderAnswer(); }
-    };
-    return b;
-  }
-  function renderAnswer(){ answer.innerHTML=""; chosen.forEach(function(w){answer.appendChild(makeChip(w,true));}); }
-  function render(){ bankEl.innerHTML=""; bank.forEach(function(w){var chip=makeChip(w,false); if(chosen.indexOf(w)>=0){chip.disabled=true;chip.style.opacity="0.35";} bankEl.appendChild(chip);}); renderAnswer(); }
-  check.onclick=function(){
-    if(state.cases.casesAnswered) return;
-    var target=normalize(targetWords.join(" "));
-    var got=normalize(chosen.join(" "));
-    var correct=got===target;
-    state.cases.casesAnswered=true;
-    state.cases.casesTotal++; if(correct){state.cases.casesHits++;state.cases.casesStreak++;state.cases.casesWrongStreak=0;} else {state.cases.casesStreak=0;state.cases.casesWrongStreak=(state.cases.casesWrongStreak||0)+1; var missCase=casesCaseForQuestion(q); if(missCase) state.cases.casesCaseMisses[missCase]=(state.cases.casesCaseMisses[missCase]||0)+1;}
-    logActivity("drillsDone",1); syncUp(); casesUpdateScore();
-    fb.style.display="block";
-    fb.style.background=correct?"var(--akk-bg)":"rgba(var(--red-rgb),0.08)";
-    fb.style.border="1px solid "+(correct?"var(--akk-line)":"rgba(var(--red-rgb),0.25)");
-    var tip=correct?"":casesFailureTip(q);
-    fb.innerHTML='<div style="font-weight:900;font-size:15px;color:'+(correct?'var(--green-text)':'var(--red-text)')+';margin-bottom:6px;">'+(correct?'✓ Correcto':'✗ Casi')+'</div>'
-      +'<div style="font-size:17px;font-weight:700;color:var(--text);line-height:1.5;">'+q.de+'</div>'
-      +'<div style="margin-top:8px;font-size:14px;color:var(--text2);line-height:1.55;">'+q.why+'</div>'
-      +(tip?'<div style="margin-top:12px;padding:12px 14px;border-radius:var(--r-md);background:rgba(var(--gold-rgb),0.10);border:1px solid rgba(var(--gold-rgb),0.24);color:var(--text);font-size:13px;line-height:1.5;font-weight:600;">💡 '+tip+'</div>':'')
-      +'<button id="cs-nexttrad" style="margin-top:14px;width:100%;font-size:14px;font-weight:800;padding:12px 18px;border-radius:var(--r-md);border:0;background:var(--gold);color:#000;box-shadow:0 4px 16px rgba(var(--gold-rgb),0.3);">Siguiente →</button>';
-    setTimeout(function(){var nb=document.getElementById("cs-nexttrad");if(nb)nb.onclick=function(){state.cases.casesIdx++;casesNextQ();};},0);
+function casosRenderTrad(q,mount){
+  mount.innerHTML='<div style="border:1px solid var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,0.03);">'
+    +'<div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">Tradúcelo en tu cabeza</div>'
+    +'<p style="font-size:18px;line-height:1.5;margin-bottom:14px;color:var(--text);">'+casesText(q.es)+'</p>'
+    +'<button id="cs-rev" style="font-size:14px;font-weight:700;padding:10px 16px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);cursor:pointer;">Ver respuesta</button>'
+    +'<div id="cs-ans" style="display:none;margin-top:14px;padding:13px;border-radius:12px;background:var(--akk-bg);border:1px solid var(--akk-line);">'
+      +'<div style="font-size:16px;font-weight:600;color:var(--text);">'+casesInlineHtml(q.de)+'</div>'
+      +'<div style="margin-top:6px;font-size:13px;color:var(--text2);line-height:1.5;">'+casesText(q.why)+'</div>'
+      +'<div style="margin-top:12px;display:flex;gap:8px;">'
+        +'<button id="cs-got" style="font-size:13px;font-weight:700;padding:9px 14px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);cursor:pointer;">La tenía ✓</button>'
+        +'<button id="cs-miss" style="font-size:13px;font-weight:700;padding:9px 14px;border-radius:11px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);cursor:pointer;">Fallé</button>'
+      +'</div></div></div>';
+  document.getElementById("cs-rev").onclick=function(){
+    document.getElementById("cs-ans").style.display="block"; this.style.display="none";
+    var got=document.getElementById("cs-got"); if(got) got.focus();
   };
-  clear.onclick=function(){ if(state.cases.casesAnswered) return; chosen=[]; render(); };
-  var hintBox=mk("div","","display:none;margin-top:10px;padding:12px 14px;border-radius:var(--r-md);background:rgba(var(--gold-rgb),0.08);border:1px solid rgba(var(--gold-rgb),0.2);color:var(--text);font-size:13px;font-weight:600;line-height:1.5;animation:fadeUp 0.15s ease;");
-  var hintBtn=mk("button","💡 Pista","margin-top:10px;background:transparent;border:1px dashed rgba(var(--gold-rgb),0.3);color:var(--gold-text);border-radius:var(--r-md);padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.12s;");
-  hintBtn.setAttribute("aria-expanded","false");
-  hintBtn.onclick=function(){
-    if(hintBox.style.display==="block"){hintBox.style.display="none";hintBtn.setAttribute("aria-expanded","false");return;}
-    var css=casesCaseForQuestion(q);
-    hintBox.textContent="💡 "+(CASES_TIPS[css]||"Identifica la función (sujeto, objeto, receptor) para elegir el caso.");
-    hintBox.style.display="block"; hintBtn.setAttribute("aria-expanded","true");
+  document.getElementById("cs-got").onclick=function(){
+    casesRecordResult(true);
+    casesAdvanceQ();
   };
-  card.appendChild(answer); card.appendChild(bankEl); card.appendChild(hintBtn); card.appendChild(hintBox); row.appendChild(check); row.appendChild(clear); card.appendChild(row); card.appendChild(fb); mount.appendChild(card); render();
+  document.getElementById("cs-miss").onclick=function(){
+    casesRecordResult(false);
+    casesAdvanceQ();
+  };
 }

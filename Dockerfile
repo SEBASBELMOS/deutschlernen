@@ -11,6 +11,9 @@ RUN npm ci --omit=dev
 COPY server.js ./
 COPY public ./public
 
+# Drop root: run as the unprivileged built-in "node" user (defense in depth)
+USER node
+
 EXPOSE 7860
 
 CMD ["npm", "start"]

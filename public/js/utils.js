@@ -1,19 +1,80 @@
 // ── Utils (parse JSON, DOM mk()/ico, skeletons, focus-trap a11y) ──────────────
 // Extracts and parses the first valid JSON array from the AI text
 function parseJSONArray(text) {
-  const clean = text.replace(/```json|```/g,"").trim();
-  // Find the array even if there is extra text before/after
-  const match = clean.match(/\[[\s\S]*\]/);
-  if (!match) throw new Error("No JSON array found");
-  try {
-    return JSON.parse(match[0]);
-  } catch(e) {
-    // Try to truncate at the last complete object if the JSON was cut off
-    const truncated = match[0].replace(/,?\s*\{[^}]*$/, "]");
-    const parsed = JSON.parse(truncated);
-    if (!parsed.length) throw new Error("JSON vacío después de reparar");
-    return parsed;
+  // 1. Strip markdown code fences aggressively (nested or bare)
+  var clean = text.replace(/```[\s\S]*?```/g, function(m){ return m.replace(/```/g,""); });
+  clean = clean.replace(/```/g,"").trim();
+
+  // 2. Drop any prose before the first [ or {
+  var bracketStart = clean.search(/[\[\{]/);
+  if (bracketStart >= 0) clean = clean.slice(bracketStart);
+  var startChar = (clean[0] === "[" || clean[0] === "{") ? clean[0] : null;
+
+  // Accept a parsed value, coercing an object → array when possible
+  function accept(val){
+    if (Array.isArray(val) && val.length) return val;
+    if (val && typeof val === "object" && !Array.isArray(val)) {
+      for (var k in val) { if (Array.isArray(val[k]) && val[k].length) return val[k]; }
+      if (val.de) return [val]; // single record → wrap
+    }
+    return null;
   }
+
+  // 3. Balanced scan to find the end of the first complete JSON value
+  var depth = 0, inString = false, escape = false, end = -1;
+  for (var i = 0; i < clean.length; i++) {
+    var ch = clean[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "[" || ch === "{") depth++;
+    else if (ch === "]" || ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end >= 0) {
+    try { var got = accept(JSON.parse(clean.slice(0, end + 1))); if (got) return got; } catch(e) {}
+  }
+
+  // 4. Truncation recovery (array cut mid-object by max_tokens — balanced scan never closed)
+  if (startChar === "[") {
+    var lastComplete = clean.lastIndexOf("},");
+    if (lastComplete < 0) lastComplete = clean.lastIndexOf("}");
+    if (lastComplete > 0) {
+      try { var got2 = accept(JSON.parse(clean.slice(0, lastComplete + 1) + "]")); if (got2) return got2; } catch(e) {}
+    }
+    try { var got3 = accept(JSON.parse(clean + "]")); if (got3) return got3; } catch(e) {}
+  }
+
+  // 5. Regex extraction + its own truncation fallback
+  var m = clean.match(/\[[\s\S]*\]/);
+  if (m) {
+    try { var got4 = accept(JSON.parse(m[0])); if (got4) return got4; } catch(e) {}
+    var trunc = m[0].replace(/,?\s*\{[^}]*$/, "]");
+    try { var got5 = accept(JSON.parse(trunc)); if (got5) return got5; } catch(e) {}
+  }
+
+  // 6. Full parse (single object etc.)
+  try { var got6 = accept(JSON.parse(clean)); if (got6) return got6; } catch(e) {}
+
+  throw new Error("No JSON array found. Raw response (first 200 chars): " + text.slice(0,200));
+}
+
+// HTML-escape untrusted text (AI output, user input) before it ever touches innerHTML.
+// Prevents XSS → token theft: the app builds its own markup and injects escaped text into it.
+function escHtml(s){
+  return String(s==null?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// Centralized duplicate check — case-insensitive, trims whitespace.
+// Single source of truth so every screen dedups the same way.
+function isDuplicate(de){
+  if(!de) return false;
+  var key = String(de).toLowerCase().trim();
+  return state.session.saved.some(function(x){
+    return x.de && String(x.de).toLowerCase().trim() === key;
+  });
 }
 
 function hexToRgb(hex) {
@@ -182,7 +243,7 @@ function showSaveCardModal(de, es, anchor) {
   saveBtn.onclick=function(){
     var phrase=ensureSrsFields({de:deInp.value.trim(),es:esInp.value.trim(),tip:"",source:"chat-correction"});
     if(!state.session.saved.some(function(x){return x.de===phrase.de;})){
-      state.session.saved.push(phrase); updateBadge(); syncUp();
+      state.session.saved.push(phrase); invalidateFlashcardQueues(); updateBadge(); syncUp();
     }
     closeModal();
     showToast("Guardada!","success");

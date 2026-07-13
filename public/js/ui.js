@@ -1,4 +1,30 @@
 // ── Toast ─────────────────────────────────────────────────────────────────────
+function confirmModal(msg, detail, onConfirm) {
+  var overlay=mk("div","","position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .18s ease;");
+  var card=mk("div","","background:var(--modal-bg,var(--surface));border:1px solid var(--border);border-radius:18px;padding:22px 20px;width:100%;max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,0.6);transform:scale(.95);transition:transform .18s cubic-bezier(.16,1,.3,1);");
+  card.appendChild(mk("p",msg,"font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.01em;margin-bottom:6px;"));
+  if(detail) card.appendChild(mk("p",detail,"font-size:13px;color:var(--muted);font-weight:500;margin-bottom:18px;line-height:1.4;"));
+  var row=mk("div","","display:flex;gap:8px;");
+  var cancel=mk("button","Cancelar","flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--muted);font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;");
+  var del=mk("button","Confirmar","flex:1;padding:12px;border-radius:12px;border:none;background:rgba(var(--red-rgb),0.16);color:var(--red);font-size:13.5px;font-weight:900;cursor:pointer;font-family:inherit;border:1px solid rgba(var(--red-rgb),0.4);");
+  row.appendChild(cancel); row.appendChild(del);
+  card.appendChild(row);
+  overlay.appendChild(card);
+  function close(){
+    overlay.style.opacity="0"; card.style.transform="scale(.95)";
+    document.removeEventListener("keydown",onKey);
+    setTimeout(function(){ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); },180);
+  }
+  function onKey(e){ if(e.key==="Escape") close(); }
+  overlay.onclick=function(e){ if(e.target===overlay) close(); };
+  cancel.onclick=close;
+  del.onclick=function(){ close(); onConfirm(); };
+  document.addEventListener("keydown",onKey);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(function(){ overlay.style.opacity="1"; card.style.transform="scale(1)"; });
+  del.focus();
+}
+
 function showToast(text, type, duration) {
   type=type||"info";
   var undoFn=null;

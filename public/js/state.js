@@ -1,7 +1,8 @@
 // ── Namespaced State ──────────────────────────────────────────────────────────
 const state = {
   app:{}, session:{}, flashcards:{}, savedView:{},
-  chat:{}, reading:{}, shadowing:{}, grammar:{}, cases:{}, tempus:{}
+  chat:{}, reading:{}, dictado:{}, shadowing:{}, grammar:{}, cases:{},
+  gender:{}, connectors:{}, tempus:{}, perfekt:{}, satzbau:{}
 };
 
 // ── Auth / Session state ──
@@ -21,11 +22,13 @@ state.flashcards.reviewQueue=[];
 state.savedView.savedFilter="";
 state.savedView.savedFilterCat="Todas";
 state.flashcards._flashcardEl=null, state.flashcards._gradeBtns=[];
-state.tempus.tempusIdx=0; state.tempus.tempusRight=0; state.tempus.tempusWrong=0; state.tempus.tempusDone=false; state.tempus.tempusResults=[]; state.tempus.tempusSkipped=[]; state.tempus.tempusLogged=false;
 state.app.level="B1";
 state.savedView.vocabSortCol="de";
 state.savedView.vocabSortAsc=true;
+state.savedView._boxFilter=null;
 state.app.serverInfo={model:"?"};
+state.dictado.level="A2", state.dictado.score=0, state.dictado.streak=0, state.dictado.right=0, state.dictado.wrong=0;
+state.dictado.current=null, state.dictado.loading=false, state.dictado.checked=false;
 if(localStorage.getItem("dl_theme")==="light") document.documentElement.classList.add("light-mode");
 
 // ── Constants ──
@@ -116,33 +119,45 @@ const CONNECTORS_VOCAB = [
 // ── Navigation constants ──
 const TABS=[
   {id:"hoy",      label:"Hoy", icon:"home"},
+  {id:"practicar",label:"Practicar", icon:"chat"},
   {id:"frases",   label:"Frases", icon:"book"},
   {id:"conversar",label:"Conversar", icon:"chat"},
   {id:"corrigeme",label:"Corrigeme", icon:"pen"},
   {id:"noentendi",label:"No entendi", icon:"target"},
   {id:"lectura",  label:"Lectura", icon:"book"},
+  {id:"dictado",  label:"Dictado", icon:"headphones"},
   {id:"shadowing",label:"Shadowing", icon:"headphones"},
   {id:"gramatica",label:"Gramatica", icon:"grammar"},
   {id:"casos",    label:"Casos", icon:"scale"},
   {id:"genero",   label:"Genero", icon:"target"},
   {id:"conectores",label:"Conectores", icon:"link"},
   {id:"tempus",    label:"⏳ Antes/Después", icon:"link"},
+  {id:"perfekt",  label:"Perfekt", icon:"⏪"},
+  {id:"satzbau",  label:"Satzbau", icon:"🧩"},
+  {id:"adjektive",label:"Adjektive", icon:"grammar"},
+  {id:"ndeklination",label:"N-Deklination", icon:"grammar"},
+  {id:"trennbare",label:"Trennbare", icon:"grammar"},
   {id:"flashcards",label:"Flashcards", icon:"cards"},
   {id:"guardadas",label:"Guardadas", icon:"star"},
   {id:"resumen",  label:"Resumen", icon:"chart"},
+  {id:"conjugacion",label:"Conjugación", icon:"table"},
+  {id:"preposiciones",label:"Preposiciones", icon:"link"},
+  {id:"leveltest",label:"Test de nivel", icon:"target"},
   {id:"config",   label:"Ajustes", icon:"gear"}
 ];
 const NAV_GROUPS=[
   {id:"hoy",       label:"Hoy",        icon:"home", screens:["hoy"]},
-  {id:"practicar", label:"Practicar",  icon:"chat", screens:["conversar","corrigeme","noentendi","shadowing","lectura"]},
-  {id:"gramatica", label:"Gramática",  icon:"grammar", screens:["gramatica","casos","genero","conectores","tempus"]},
+  {id:"practicar", label:"Practicar",  icon:"chat", screens:["practicar","conversar","corrigeme","noentendi","lectura","dictado","shadowing"]},
+  {id:"gramatica", label:"Gram\u00e1tica",  icon:"grammar", screens:["gramatica","casos","genero","conectores","tempus","conjugacion","preposiciones"]},
+  {id:"drills",    label:"Drills",     icon:"grammar", screens:["perfekt","satzbau","adjektive","ndeklination","trennbare"]},
   {id:"vocabulario",label:"Vocabulario",icon:"cards", screens:["frases","flashcards","guardadas"]},
-  {id:"mas",       label:"Más",        icon:"more", screens:["resumen","config"]}
+  {id:"mas",       label:"M\u00e1s",        icon:"more", screens:["resumen","leveltest","config"]}
 ];
 const NAV_ICON_STYLE={
   hoy:{color:"var(--green-text)",rgb:"123,216,155"},
   practicar:{color:"var(--teal-text)",rgb:"93,217,208"},
   gramatica:{color:"var(--purple-text)",rgb:"196,167,231"},
+  drills:{color:"var(--gold-text)",rgb:"255,185,85"},
   vocabulario:{color:"var(--gold-text)",rgb:"255,185,85"},
   mas:{color:"var(--text2)",rgb:"148,163,184"}
 };
@@ -165,8 +180,8 @@ const GRAMMAR_TOPICS=[
 ];
 state.grammar._gramDrills=[], state.grammar._gramIdx=0, state.grammar._gramCorrect=0, state.grammar._gramMissed=[];
 
-// ── CASES constants ──
-const CASES_NOUNS = [
+// ── CASOS constants (needed by cases.js at parse time) ──
+const CASOS_NOUNS = [
   {es:'el portátil', gen:'m', f:['Laptop','Laptop','Laptop','Laptops']},
   {es:'el monitor', gen:'m', f:['Monitor','Monitor','Monitor','Monitors']},
   {es:'el computador', gen:'m', f:['Computer','Computer','Computer','Computers']},
@@ -186,55 +201,55 @@ const CASES_NOUNS = [
   {es:'el MacBook', gen:'n', f:['MacBook','MacBook','MacBook','MacBooks']},
   {es:'la entrevista', gen:'n', f:['Interview','Interview','Interview','Interviews']}
 ];
-const CASES_ART = {
+const CASOS_ART = {
   der:  {m:['der','den','dem','des'], f:['die','die','der','der'], n:['das','das','dem','des']},
   ein:  {m:['ein','einen','einem','eines'], f:['eine','eine','einer','einer'], n:['ein','ein','einem','eines']},
   mein: {m:['mein','meinen','meinem','meines'], f:['meine','meine','meiner','meiner'], n:['mein','mein','meinem','meines']}
 };
-const CASES_CASES = [
+const CASOS_CASES = [
   {name:'Nominativ', cls:'nom', dot:'#5dd9d0'},
   {name:'Akkusativ', cls:'akk', dot:'#4ade80'},
   {name:'Dativ', cls:'dat', dot:'#ffb955'},
   {name:'Genitiv', cls:'gen', dot:'#c4a7e7'}
 ];
-const CASES_Q = [
+const CASOS_Q = [
   {mode:'articulo', sentence:'___ Laptop ist neu.', hint:'der Laptop', op:['der','den','dem','des'], ok:'der', caso:'nom', why:'¿quién es nuevo? él, es el sujeto → Nominativ.'},
   {mode:'articulo', sentence:'Ich benutze ___ Laptop.', hint:'der Laptop', op:['der','den','dem','des'], ok:'den', caso:'akk', why:'benutzen lleva objeto directo → Akkusativ. der → den.'},
-  {mode:'articulo', sentence:'Ich arbeite mit ___ Laptop.', hint:'der Laptop', op:['der','den','dem','des'], ok:'dem', caso:'dat', why:'“mit” siempre manda Dativ. der → dem.'},
+  {mode:'articulo', sentence:'Ich arbeite mit ___ Laptop.', hint:'der Laptop', op:['der','den','dem','des'], ok:'dem', caso:'dat', why:'"mit" siempre manda Dativ. der → dem.'},
   {mode:'articulo', sentence:'Die Tastatur ___ Laptops ist gut.', hint:'der Laptop', op:['der','den','dem','des'], ok:'des', caso:'gen', why:'¿de quién es el teclado? Genitiv. der → des (+ Laptops).'},
   {mode:'articulo', sentence:'___ Dashboard ist fertig.', hint:'das Dashboard', op:['das','dem','des','den'], ok:'das', caso:'nom', why:'el dashboard es el sujeto → Nominativ. Neutro: das.'},
   {mode:'articulo', sentence:'Ich baue ___ Dashboard.', hint:'das Dashboard', op:['das','dem','des','den'], ok:'das', caso:'akk', why:'bauen → objeto directo → Akkusativ. En neutro NO cambia: das.'},
-  {mode:'articulo', sentence:'Ich arbeite an ___ Dashboard.', hint:'das Dashboard', op:['das','dem','des','den'], ok:'dem', caso:'dat', why:'“arbeiten an” va con Dativ. das → dem.'},
+  {mode:'articulo', sentence:'Ich arbeite an ___ Dashboard.', hint:'das Dashboard', op:['das','dem','des','den'], ok:'dem', caso:'dat', why:'"arbeiten an" va con Dativ. das → dem.'},
   {mode:'articulo', sentence:'Die Farbe ___ Dashboards ist blau.', hint:'das Dashboard', op:['das','dem','des','den'], ok:'des', caso:'gen', why:'¿de qué es el color? Genitiv. das → des.'},
   {mode:'articulo', sentence:'___ Bewerbung ist fertig.', hint:'die Bewerbung', op:['die','der','dem','den'], ok:'die', caso:'nom', why:'sujeto → Nominativ. Femenino: die.'},
   {mode:'articulo', sentence:'Ich schreibe ___ Bewerbung.', hint:'die Bewerbung', op:['die','der','dem','den'], ok:'die', caso:'akk', why:'schreiben → objeto directo → Akkusativ. Femenino NO cambia: die.'},
-  {mode:'articulo', sentence:'Ich arbeite an ___ Bewerbung.', hint:'die Bewerbung', op:['die','der','dem','den'], ok:'der', caso:'dat', why:'“arbeiten an” → Dativ. Femenino: die → der.'},
+  {mode:'articulo', sentence:'Ich arbeite an ___ Bewerbung.', hint:'die Bewerbung', op:['die','der','dem','den'], ok:'der', caso:'dat', why:'"arbeiten an" → Dativ. Femenino: die → der.'},
   {mode:'articulo', sentence:'Der Titel ___ Bewerbung ist klar.', hint:'die Bewerbung', op:['die','der','dem','den'], ok:'der', caso:'gen', why:'¿de qué es el título? Genitiv. Femenino: die → der.'},
   {mode:'articulo', sentence:'Ich helfe ___ Studentin.', hint:'die Studentin', op:['die','der','dem','den'], ok:'der', caso:'dat', why:'helfen siempre va con Dativ. Femenino: die → der.'},
   {mode:'articulo', sentence:'___ Kunde antwortet nicht.', hint:'der Kunde', op:['der','den','dem','des'], ok:'der', caso:'nom', why:'el cliente es el sujeto → Nominativ.'},
-  {mode:'articulo', sentence:'Ich spreche mit ___ Kunden.', hint:'der Kunde', op:['der','den','dem','des'], ok:'dem', caso:'dat', why:'“mit” → Dativ. der → dem (Kunde es débil → Kunden).'},
+  {mode:'articulo', sentence:'Ich spreche mit ___ Kunden.', hint:'der Kunde', op:['der','den','dem','des'], ok:'dem', caso:'dat', why:'"mit" → Dativ. der → dem (Kunde es débil → Kunden).'},
   {mode:'articulo', sentence:'Die Nachricht ___ Kunden ist wichtig.', hint:'der Kunde', op:['der','den','dem','des'], ok:'des', caso:'gen', why:'¿de quién es el mensaje? Genitiv. der → des.'},
   {mode:'articulo', sentence:'Ich schneide ___ Video.', hint:'das Video', op:['das','dem','des','den'], ok:'das', caso:'akk', why:'schneiden → objeto directo → Akkusativ. Neutro: das.'},
   {mode:'articulo', sentence:'Der Anfang ___ Videos ist stark.', hint:'das Video', op:['das','dem','des','den'], ok:'des', caso:'gen', why:'¿de qué es el inicio? Genitiv. das → des.'},
-  {mode:'articulo', sentence:'Ich denke an ___ Interview.', hint:'das Interview', op:['das','dem','des','den'], ok:'das', caso:'akk', why:'“denken an” va con Akkusativ (no es ubicación). Neutro: das.'},
-  {mode:'articulo', sentence:'Ich warte auf ___ Antwort.', hint:'die Antwort', op:['die','der','dem','den'], ok:'die', caso:'akk', why:'“warten auf” va con Akkusativ. Femenino: die.'},
+  {mode:'articulo', sentence:'Ich denke an ___ Interview.', hint:'das Interview', op:['das','dem','des','den'], ok:'das', caso:'akk', why:'"denken an" va con Akkusativ (no es ubicación). Neutro: das.'},
+  {mode:'articulo', sentence:'Ich warte auf ___ Antwort.', hint:'die Antwort', op:['die','der','dem','den'], ok:'die', caso:'akk', why:'"warten auf" va con Akkusativ. Femenino: die.'},
   {mode:'articulo', sentence:'Ich suche ___ Job.', hint:'der Job', op:['der','den','dem','des'], ok:'den', caso:'akk', why:'suchen → objeto directo → Akkusativ. der → den.'},
   {mode:'articulo', sentence:'Ich danke ___ Team.', hint:'das Team', op:['das','dem','des','den'], ok:'dem', caso:'dat', why:'danken siempre va con Dativ. Neutro: das → dem.'},
   {mode:'articulo', sentence:'Ich suche ___ Job. (un trabajo)', hint:'der Job · indefinido', op:['ein','einen','einem','eines'], ok:'einen', caso:'akk', why:'objeto directo → Akkusativ. Masculino: ein → einen.'},
   {mode:'articulo', sentence:'Ich kaufe ___ Mikrofon. (un micro)', hint:'das Mikrofon · indefinido', op:['ein','einen','einem','eines'], ok:'ein', caso:'akk', why:'Akkusativ, pero neutro NO cambia: ein.'},
-  {mode:'articulo', sentence:'Ich arbeite mit ___ Mikrofon.', hint:'das Mikrofon · mein', op:['mein','meinen','meinem','meines'], ok:'meinem', caso:'dat', why:'“mit” → Dativ. Neutro: mein → meinem.'},
+  {mode:'articulo', sentence:'Ich arbeite mit ___ Mikrofon.', hint:'das Mikrofon · mein', op:['mein','meinen','meinem','meines'], ok:'meinem', caso:'dat', why:'"mit" → Dativ. Neutro: mein → meinem.'},
   {mode:'articulo', sentence:'___ Computer ist schnell.', hint:'der Computer · mein', op:['mein','meinen','meinem','meines'], ok:'mein', caso:'nom', why:'sujeto → Nominativ. Masculino: mein.'},
   {mode:'articulo', sentence:'Ich benutze ___ Computer.', hint:'der Computer · mein', op:['mein','meinen','meinem','meines'], ok:'meinen', caso:'akk', why:'objeto directo → Akkusativ. Masculino: mein → meinen.'},
-  {mode:'articulo', sentence:'Ich spreche mit ___ Kollegin.', hint:'die Kollegin · indefinido', op:['eine','einen','einer','einem'], ok:'einer', caso:'dat', why:'“mit” → Dativ. Femenino: eine → einer.'},
-  {mode:'caso', sentence:'<b class="cs-de">Der Monitor</b> ist groß.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Nominativ', why:'es el sujeto, el que “es grande”.'},
-  {mode:'caso', sentence:'Ich sehe <b class="cs-de">den Monitor</b>.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Akkusativ', why:'recibe la acción de “ver”. der → den lo delata.'},
-  {mode:'caso', sentence:'Ich arbeite mit <b class="cs-de">dem Monitor</b>.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Dativ', why:'“mit” manda Dativ. der → dem.'},
-  {mode:'caso', sentence:'Die Größe <b class="cs-de">des Monitors</b> ist perfekt.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Genitiv', why:'“el tamaño DEL monitor” → posesión → Genitiv.'},
+  {mode:'articulo', sentence:'Ich spreche mit ___ Kollegin.', hint:'die Kollegin · indefinido', op:['eine','einen','einer','einem'], ok:'einer', caso:'dat', why:'"mit" → Dativ. Femenino: eine → einer.'},
+  {mode:'caso', sentence:'<b class="cs-de">Der Monitor</b> ist groß.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Nominativ', why:'es el sujeto, el que "es grande".'},
+  {mode:'caso', sentence:'Ich sehe <b class="cs-de">den Monitor</b>.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Akkusativ', why:'recibe la acción de "ver". der → den lo delata.'},
+  {mode:'caso', sentence:'Ich arbeite mit <b class="cs-de">dem Monitor</b>.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Dativ', why:'"mit" manda Dativ. der → dem.'},
+  {mode:'caso', sentence:'Die Größe <b class="cs-de">des Monitors</b> ist perfekt.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Genitiv', why:'"el tamaño DEL monitor" → posesión → Genitiv.'},
   {mode:'caso', sentence:'Ich erkläre <b class="cs-de">dem Schüler</b> die Aufgabe.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Dativ', why:'¿a quién le explico? al estudiante → Dativ (segundo objeto).'},
   {mode:'caso', sentence:'Ich erkläre dem Schüler <b class="cs-de">die Aufgabe</b>.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Akkusativ', why:'¿qué explico? la tarea → objeto directo → Akkusativ.'},
-  {mode:'caso', sentence:'Während <b class="cs-de">des Meetings</b> mache ich Notizen.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Genitiv', why:'“während” es preposición de Genitiv.'},
-  {mode:'caso', sentence:'<b class="cs-de">Mein Code</b> funktioniert.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Nominativ', why:'es el sujeto que “funciona”.'},
-  {mode:'caso', sentence:'Das Ergebnis <b class="cs-de">der Analyse</b> ist klar.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Genitiv', why:'“el resultado DEL análisis” → Genitiv. Femenino: die → der.'},
+  {mode:'caso', sentence:'Während <b class="cs-de">des Meetings</b> mache ich Notizen.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Genitiv', why:'"während" es preposición de Genitiv.'},
+  {mode:'caso', sentence:'<b class="cs-de">Mein Code</b> funktioniert.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Nominativ', why:'es el sujeto que "funciona".'},
+  {mode:'caso', sentence:'Das Ergebnis <b class="cs-de">der Analyse</b> ist klar.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Genitiv', why:'"el resultado DEL análisis" → Genitiv. Femenino: die → der.'},
   {mode:'caso', sentence:'Ich gebe <b class="cs-de">dem Team</b> die Daten.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Dativ', why:'¿a quién le doy? al equipo → Dativ.'},
   {mode:'caso', sentence:'Ich danke <b class="cs-de">dem Kunden</b>.', op:['Nominativ','Akkusativ','Dativ','Genitiv'], ok:'Dativ', why:'danken siempre rige Dativ.'},
   {mode:'mov', sentence:'Ich lege das MacBook auf ___ Tisch.', hint:'der Tisch · ¿lo MUEVO ahí?', op:['den','dem'], ok:'den', caso:'akk', why:'lo estoy moviendo encima → movimiento → Akkusativ. den.'},
@@ -246,69 +261,35 @@ const CASES_Q = [
   {mode:'mov', sentence:'Ich hänge das Mikrofon über ___ Schreibtisch.', hint:'der Schreibtisch · lo cuelgo', op:['den','dem'], ok:'den', caso:'akk', why:'lo estoy colocando (movimiento) → Akkusativ. den.'},
   {mode:'mov', sentence:'Das Mikrofon hängt über ___ Schreibtisch.', hint:'der Schreibtisch · ya cuelga', op:['den','dem'], ok:'dem', caso:'dat', why:'ya está colgado (ubicación) → Dativ. dem.'},
   {mode:'traduccion', es:'Uso el portátil.', de:'Ich benutze <span class="c-akk">den</span> Laptop.', why:'objeto directo → Akkusativ.'},
-  {mode:'traduccion', es:'Trabajo con el portátil.', de:'Ich arbeite mit <span class="c-dat">dem</span> Laptop.', why:'“mit” → Dativ.'},
+  {mode:'traduccion', es:'Trabajo con el portátil.', de:'Ich arbeite mit <span class="c-dat">dem</span> Laptop.', why:'"mit" → Dativ.'},
   {mode:'traduccion', es:'El teclado del portátil es bueno.', de:'Die Tastatur <span class="c-gen">des</span> Laptops ist gut.', why:'Genitiv (+ Laptops).'},
   {mode:'traduccion', es:'Ayudo a la estudiante.', de:'Ich helfe <span class="c-dat">der</span> Studentin.', why:'helfen → Dativ. Femenino die → der.'},
   {mode:'traduccion', es:'Le explico la regla al estudiante.', de:'Ich erkläre <span class="c-dat">dem</span> Schüler <span class="c-akk">die</span> Regel.', why:'a quién = Dativ · qué = Akkusativ.'},
-  {mode:'traduccion', es:'Estoy esperando la respuesta.', de:'Ich warte auf <span class="c-akk">die</span> Antwort.', why:'“warten auf” → Akkusativ.'},
+  {mode:'traduccion', es:'Estoy esperando la respuesta.', de:'Ich warte auf <span class="c-akk">die</span> Antwort.', why:'"warten auf" → Akkusativ.'},
   {mode:'traduccion', es:'Pongo la Switch al lado del monitor.', de:'Ich stelle <span class="c-akk">die</span> Switch neben <span class="c-akk">den</span> Monitor.', why:'la muevo ahí → movimiento → Akkusativ.'},
   {mode:'traduccion', es:'La Switch está al lado del monitor.', de:'<span class="c-nom">Die</span> Switch steht neben <span class="c-dat">dem</span> Monitor.', why:'está fija → ubicación → Dativ.'},
-  {mode:'traduccion', es:'El inicio del video es importante.', de:'Der Anfang <span class="c-gen">des</span> Videos ist wichtig.', why:'“del video” → Genitiv.'},
-  {mode:'traduccion', es:'Busco un trabajo remoto.', de:'Ich suche <span class="c-akk">einen</span> Remote-Job.', why:'objeto directo → Akkusativ. ein → einen.'}
+  {mode:'traduccion', es:'El inicio del video es importante.', de:'Der Anfang <span class="c-gen">des</span> Videos ist wichtig.', why:'"del video" → Genitiv.'},
+  {mode:'traduccion', es:'Busco un trabajo remoto.', de:'Ich suche <span class="c-akk">einen</span> Remote-Job.', why:'objeto directo → Akkusativ. ein → einen.'},
+  // ── Rección verbal: el verbo manda el caso ──
+  {mode:'articulo', sentence:'Ich helfe ___ Mann.', hint:'der Mann · helfen', op:['der','den','dem','des'], ok:'dem', caso:'dat', why:'helfen SIEMPRE rige Dativ — nunca "den Mann".'},
+  {mode:'articulo', sentence:'Ich danke ___ Lehrerin.', hint:'die Lehrerin · danken', op:['die','der','den','des'], ok:'der', caso:'dat', why:'danken rige Dativ. Femenino: die → der.'},
+  {mode:'articulo', sentence:'Das Handy gehört ___ Kind.', hint:'das Kind · gehören', op:['das','dem','den','des'], ok:'dem', caso:'dat', why:'gehören rige Dativ: pertenece ¿a quién?'},
+  {mode:'articulo', sentence:'Der Film gefällt ___ Studenten.', hint:'die Studenten (pl.) · gefallen', op:['die','der','den','des'], ok:'den', caso:'dat', why:'gefallen rige Dativ. Plural: die → den (+n).'},
+  {mode:'articulo', sentence:'Sie antwortet ___ Chef.', hint:'der Chef · antworten', op:['der','den','dem','des'], ok:'dem', caso:'dat', why:'antworten rige Dativ: respondes ¿a quién?'},
+  {mode:'articulo', sentence:'Die Pizza schmeckt ___ Gästen.', hint:'die Gäste (pl.) · schmecken', op:['die','der','den','des'], ok:'den', caso:'dat', why:'schmecken rige Dativ: sabe bien ¿a quién?'},
+  {mode:'articulo', sentence:'Ich brauche ___ neuen Laptop.', hint:'der Laptop · brauchen', op:['einen','einem','ein','eines'], ok:'einen', caso:'akk', why:'brauchen → objeto directo → Akkusativ: einen.'},
+  {mode:'articulo', sentence:'Es gibt ___ Fehler im Code.', hint:'der Fehler · es gibt', op:['ein','einen','einem','eines'], ok:'einen', caso:'akk', why:'"es gibt" SIEMPRE rige Akkusativ.'},
+  {mode:'articulo', sentence:'Er ist ___ Chef.', hint:'der Chef · sein', op:['der','den','dem','des'], ok:'der', caso:'nom', why:'sein es copulativo: lo que sigue NO es objeto → Nominativ. ¡Nunca "den Chef"!'},
+  {mode:'articulo', sentence:'Sie wird ___ beste Entwicklerin.', hint:'die Entwicklerin · werden', op:['die','der','den','des'], ok:'die', caso:'nom', why:'werden es copulativo → Nominativ.'},
+  {mode:'articulo', sentence:'Das bleibt ___ Problem.', hint:'das Problem · bleiben', op:['ein','einen','einem','eines'], ok:'ein', caso:'nom', why:'bleiben es copulativo → Nominativ. Neutro: ein.'},
+  {mode:'articulo', sentence:'Ich gebe ___ Kunden den Report.', hint:'der Kunde · geben (¿a quién?)', op:['der','den','dem','des'], ok:'dem', caso:'dat', why:'geben: la persona que recibe va en Dativ, la cosa en Akkusativ.'}
 ];
-const CASES_TIPS = {
-  nom:"Tip: Nominativ es el sujeto: ¿quién hace o es algo? Es el artículo de diccionario.",
-  akk:"Tip: Akkusativ es el objeto directo: ¿qué recibe la acción? En masculino der cambia a den.",
-  dat:"Tip: Dativ aparece con mit/zu/bei y con el receptor: ¿a quién o para quién?",
-  gen:"Tip: Genitiv marca posesión o 'de': des en masc/neutro y normalmente añade -s al sustantivo."
-};
+
 state.cases.casesSubtab = "identificar";
 state.cases.casesArt = "der", state.cases.casesNounIdx = 0;
 state.cases.casesQuizMode = "all", state.cases.casesPool = [], state.cases.casesIdx = 0, state.cases.casesAnswered = false;
 state.cases.casesHits = 0, state.cases.casesTotal = 0, state.cases.casesStreak = 0;
 state.cases.casesWrongStreak = 0; state.cases.casesCaseMisses = {nom:0,akk:0,dat:0,gen:0};
-
-// ── CONNECTORS constants ──
-var _conData=null, _conIdx=0, _conRight=0, _conWrong=0, _conDone=false, _conResults=[];
-const CONNECTOR_CHOICES=["weil","obwohl","deshalb","dass","wenn"];
-
-// ── TEMPUS constants ──
-const TEMPUS_CHOICES=["vor","bevor","vorher","früher","nach","nachdem","danach","später"];
-const TEMPUS_CURATED=[
-  {sentence:"___ dem Essen wasche ich die Hände.", options:["vor","bevor","vorher","früher"], correct:"vor", tip:"vor + Dativ con sustantivo (dem Essen)"},
-  {sentence:"___ der Arbeit trinke ich einen Kaffee.", options:["bevor","vor","vorher","nach"], correct:"vor", tip:"vor + Dativ (der Arbeit → Dativ)"},
-  {sentence:"Ich stehe immer ___ dem Wecker auf.", options:["vor","vorher","bevor","früher"], correct:"vor", tip:"vor + Dativ con sustantivo (dem Wecker)"},
-  {sentence:"___ ich schlafen gehe, lese ich ein Buch.", options:["vor","bevor","vorher","nachdem"], correct:"bevor", tip:"bevor + oración subordinada (verbo al final: gehe)"},
-  {sentence:"Ruf mich an, ___ du losfährst.", options:["bevor","vor","vorher","danach"], correct:"bevor", tip:"bevor + oración subordinada (verbo al final: losfährst)"},
-  {sentence:"___ er antwortet, denkt er kurz nach.", options:["vorher","vor","bevor","früher"], correct:"bevor", tip:"bevor + oración subordinada (verbo al final: antwortet)"},
-  {sentence:"Ich war ___ beim Arzt.", options:["vor","vorher","bevor","früher"], correct:"vorher", tip:"vorher = adverbio solo, sin sustantivo"},
-  {sentence:"Hast du das ___ schon einmal gemacht?", options:["früher","vor","vorher","bevor"], correct:"vorher", tip:"vorher = adverbio solo, 'antes' como adverbio"},
-  {sentence:"___ hatte ich keine Ahnung davon.", options:["vor","vorher","bevor","früher"], correct:"vorher", tip:"vorher = adverbio solo al inicio de la sentence"},
-  {sentence:"___ habe ich in Berlin gewohnt.", options:["früher","vor","bevor","vorher"], correct:"früher", tip:"früher = antes, en el pasado (no lleva complemento)"},
-  {sentence:"___ war hier ein großer Park.", options:["vor","früher","vorher","bevor"], correct:"früher", tip:"früher = en el pasado, 'antes era diferente'"},
-  {sentence:"Mein Opa hat ___ als Lehrer gearbeitet.", options:["früher","vorher","vor","bevor"], correct:"früher", tip:"früher = antes, en el pasado"},
-  {sentence:"___ der Schule gehe ich ins Fitnessstudio.", options:["nachdem","nach","danach","später"], correct:"nach", tip:"nach + Dativ con sustantivo (der Schule)"},
-  {sentence:"___ dem Mittagessen bin ich immer müde.", options:["nachdem","nach","danach","später"], correct:"nach", tip:"nach + Dativ con sustantivo (dem Mittagessen)"},
-  {sentence:"___ der Pause machen wir weiter.", options:["nach","nachdem","danach","später"], correct:"nach", tip:"nach + Dativ con sustantivo (der Pause)"},
-  {sentence:"___ ich gegessen habe, gehe ich spazieren.", options:["nach","nachdem","danach","bevor"], correct:"nachdem", tip:"nachdem + oración subordinada (verbo al final: habe)"},
-  {sentence:"___ er angekommen war, hat er angerufen.", options:["nach","nachdem","danach","später"], correct:"nachdem", tip:"nachdem + oración subordinada (verbo al final: war)"},
-  {sentence:"___ wir das Meeting beendet hatten, gingen wir essen.", options:["nach","danach","nachdem","bevor"], correct:"nachdem", tip:"nachdem + oración subordinada (verbo al final: hatten)"},
-  {sentence:"Ich habe gegessen. ___ bin ich spazieren gegangen.", options:["nach","danach","nachdem","später"], correct:"danach", tip:"danach = adverbio solo, 'después' como adverbio"},
-  {sentence:"Zuerst dusche ich, ___ frühstücke ich.", options:["danach","nach","nachdem","bevor"], correct:"danach", tip:"danach = adverbio solo, 'después' en la sentence"},
-  {sentence:"___ fühle ich mich immer besser.", options:["nach","nachdem","danach","vor"], correct:"danach", tip:"danach = adverbio solo al inicio"},
-  {sentence:"Wir sehen uns ___!", options:["später","nach","danach","nachdem"], correct:"später", tip:"später = más tarde, después (adverbio)"},
-  {sentence:"Das mache ich ___.", options:["nach","später","danach","nachdem"], correct:"später", tip:"später = más tarde, después"},
-  {sentence:"Komm ___ noch einmal vorbei.", options:["später","nach","danach","bevor"], correct:"später", tip:"später = más tarde, adverbio temporal"}
-];
-
-// ── GENDER constants ──
-const GENDER_NOUN_POOL = [
-  {noun:"Tisch",article:"der",plural:"Tische",meaning:"mesa"},{noun:"Stuhl",article:"der",plural:"Stühle",meaning:"silla"},{noun:"Schlüssel",article:"der",plural:"Schlüssel",meaning:"llave"},{noun:"Bahnhof",article:"der",plural:"Bahnhöfe",meaning:"estación"},{noun:"Termin",article:"der",plural:"Termine",meaning:"cita"},{noun:"Fehler",article:"der",plural:"Fehler",meaning:"error"},{noun:"Kaffee",article:"der",plural:"Kaffees",meaning:"café"},{noun:"Laptop",article:"der",plural:"Laptops",meaning:"portátil"},
-  {noun:"Lampe",article:"die",plural:"Lampen",meaning:"lámpara"},{noun:"Rechnung",article:"die",plural:"Rechnungen",meaning:"factura"},{noun:"Frage",article:"die",plural:"Fragen",meaning:"pregunta"},{noun:"Antwort",article:"die",plural:"Antworten",meaning:"respuesta"},{noun:"Straße",article:"die",plural:"Straßen",meaning:"calle"},{noun:"Wohnung",article:"die",plural:"Wohnungen",meaning:"apartamento"},{noun:"Zeit",article:"die",plural:"Zeiten",meaning:"tiempo"},{noun:"Nachricht",article:"die",plural:"Nachrichten",meaning:"mensaje"},
-  {noun:"Buch",article:"das",plural:"Bücher",meaning:"libro"},{noun:"Fenster",article:"das",plural:"Fenster",meaning:"ventana"},{noun:"Handy",article:"das",plural:"Handys",meaning:"celular"},{noun:"Problem",article:"das",plural:"Probleme",meaning:"problema"},{noun:"Ticket",article:"das",plural:"Ticket",meaning:"tiquete"},{noun:"Zimmer",article:"das",plural:"Zimmer",meaning:"habitación"},{noun:"Wort",article:"das",plural:"Wörter",meaning:"palabra"},{noun:"Gespräch",article:"das",plural:"Gespräche",meaning:"conversación"}
-];
-var _genNouns=null, _genIdx=0, _genRight=0, _genWrong=0, _genMissed=[], _genDone=false;
-var _genRecentNouns=[];
 
 // ── SITS (phrase topics) ──
 const SITS=[
@@ -343,5 +324,42 @@ const SHADOWING_POOL=[
   {de:"Ich lerne seit sechs Monaten Deutsch.",es:"Llevo seis meses aprendiendo alemán."},
   {de:"Wir können uns am Wochenende treffen und Kaffee trinken.",es:"Podemos encontrarnos el fin de semana y tomar café."},
   {de:"Entschuldigung, wo ist der nächste Supermarkt?",es:"Disculpa, ¿dónde está el supermercado más cercano?"},
-  {de:"Ich habe mich über die neue Stelle sehr gefreut.",es:"Me alegré mucho por el nuevo puesto."}
+  {de:"Ich habe mich über die neue Stelle sehr gefreut.",es:"Me alegré mucho por el nuevo puesto."},
+  {de:"Ich brauche mehr Zeit für dieses Projekt.",es:"Necesito más tiempo para este proyecto."},
+  {de:"Hast du schon die E-Mail von der Chefin gelesen?",es:"¿Ya leíste el email de la jefa?"},
+  {de:"Am Wochenende fahre ich zu meinen Eltern.",es:"El fin de semana voy a casa de mis padres."},
+  {de:"Die Präsentation ist fast fertig, nur noch ein paar Änderungen.",es:"La presentación casi está lista, solo faltan unos cambios."},
+  {de:"Ich habe den Termin leider komplett vergessen.",es:"Lamentablemente olvidé por completo la cita."},
+  {de:"Könntest du das bitte langsamer wiederholen?",es:"¿Podrías repetir eso más despacio, por favor?"},
+  {de:"Wir müssen heute noch den Bericht abschicken.",es:"Tenemos que enviar el informe hoy todavía."},
+  {de:"Ich bin nicht sicher, ob das richtig ist.",es:"No estoy seguro de si eso es correcto."},
+  {de:"Meine Wohnung liegt in der Nähe vom Bahnhof.",es:"Mi apartamento queda cerca de la estación."},
+  {de:"Ich interessiere mich sehr für künstliche Intelligenz.",es:"Me interesa mucho la inteligencia artificial."},
+  {de:"Nach der Arbeit gehe ich meistens ins Fitnessstudio.",es:"Después del trabajo normalmente voy al gimnasio."},
+  {de:"Ich habe Angst, beim Sprechen Fehler zu machen.",es:"Me da miedo cometer errores al hablar."},
+  {de:"Der Zug hatte Verspätung, deshalb bin ich später gekommen.",es:"El tren tuvo retraso, por eso llegué más tarde."},
+  {de:"Kann ich die Rechnung bitte mit Karte bezahlen?",es:"¿Puedo pagar la cuenta con tarjeta, por favor?"},
+  {de:"Ich suche eine ruhigere Wohnung mit mehr Licht.",es:"Busco un apartamento más tranquilo con más luz."},
+  {de:"Seit gestern funktioniert mein Mikrofon nicht mehr.",es:"Desde ayer mi micrófono ya no funciona."},
+  {de:"Wenn ich mehr übe, spreche ich flüssiger.",es:"Si practico más, hablo con más fluidez."},
+  {de:"Obwohl ich müde bin, lerne ich noch ein bisschen.",es:"Aunque estoy cansado, estudio un poquito más."},
+  {de:"Ich möchte mich für die Einladung bedanken.",es:"Quiero agradecer la invitación."},
+  {de:"Das klingt gut, aber ich muss erst nachdenken.",es:"Eso suena bien, pero primero tengo que pensarlo."},
+  {de:"Gestern habe ich mit einem Kunden aus Berlin gesprochen.",es:"Ayer hablé con un cliente de Berlín."},
+  {de:"Bitte schick mir die Datei bis morgen früh.",es:"Por favor envíame el archivo hasta mañana temprano."},
+  {de:"Ich verstehe den Unterschied zwischen seit und vor noch nicht.",es:"Todavía no entiendo la diferencia entre seit y vor."},
+  {de:"Meine Kollegin hat mir eine hilfreiche Nachricht geschickt.",es:"Mi colega me envió un mensaje útil."},
+  {de:"Ich freue mich darauf, dich bald wiederzusehen.",es:"Me alegra volver a verte pronto."},
+  {de:"Wir sollten früher losfahren, damit wir pünktlich ankommen.",es:"Deberíamos salir más temprano para llegar puntuales."},
+  {de:"Das neue Tool spart mir jeden Tag viel Zeit.",es:"La nueva herramienta me ahorra mucho tiempo cada día."},
+  {de:"Ich habe aus Versehen die falsche Datei gelöscht.",es:"Borré por error el archivo equivocado."},
+  {de:"Während des Meetings habe ich viele Notizen gemacht.",es:"Durante la reunión tomé muchas notas."},
+  {de:"Ich bin stolz, weil ich heute auf Deutsch telefoniert habe.",es:"Estoy orgulloso porque hoy llamé por teléfono en alemán."}
 ];
+
+// ── Activity tiers (gamification by consistency, not payment) ─────────────────
+function computeTier(streak){
+  if(streak>=30) return {key:"experte", label:"Experte", icon:"🥇", color:"#ffd700", rgb:"255,215,0", next:null, nextAt:null};
+  if(streak>=7)  return {key:"fortgeschrittener", label:"Fortgeschrittener", icon:"🥈", color:"#c0c4cc", rgb:"192,196,204", next:"Experte", nextAt:30};
+  return {key:"lernender", label:"Lernender", icon:"🥉", color:"#cd7f32", rgb:"205,127,50", next:"Fortgeschrittener", nextAt:7};
+}

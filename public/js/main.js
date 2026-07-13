@@ -9,18 +9,27 @@ window.addEventListener("beforeunload",function(){
 });
 
 document.addEventListener("keydown",function(e){
-  if(e.key==="Enter"&&document.getElementById("login-screen").style.display!=="none"){ doAuth(); return; }
+  if(e.key==="Enter"&&document.getElementById("login-screen").style.display!=="none"){
+    var loginBtn=document.getElementById("login-btn");
+    if(loginBtn&&!loginBtn.disabled) doAuth();
+    return;
+  }
   var tag=document.activeElement&&document.activeElement.tagName;
   if(tag==="INPUT"||tag==="TEXTAREA"){
     if(e.key==="Enter"&&e.ctrlKey){}else return;
   }
   if(e.key===" "){
-    e.preventDefault();
-    if(state.flashcards._flashcardEl&&document.getElementById("s-flashcards").classList.contains("active")) state.flashcards._flashcardEl.click();
+    if(state.flashcards._flashcardEl&&document.getElementById("s-flashcards").classList.contains("active")&&document.activeElement===state.flashcards._flashcardEl){
+      e.preventDefault();
+      state.flashcards._flashcardEl.click();
+    }
   }
   if(e.key>="1"&&e.key<="4"){
     var idx=parseInt(e.key)-1;
-    if(state.flashcards._gradeBtns&&state.flashcards._gradeBtns[idx]&&state.flashcards._gradeBtns[idx].offsetParent!==null&&document.getElementById("s-flashcards").classList.contains("active")) state.flashcards._gradeBtns[idx].click();
+    if(state.flashcards._isFlipped&&state.flashcards._gradeBtns&&state.flashcards._gradeBtns[idx]&&state.flashcards._gradeBtns[idx].offsetParent!==null&&document.getElementById("s-flashcards").classList.contains("active")){
+      e.preventDefault();
+      state.flashcards._gradeBtns[idx].click();
+    }
   }
   if(e.key==="Enter"&&e.ctrlKey){
     var inp=document.querySelector(".chat-input");
@@ -45,7 +54,7 @@ if(state.app.authToken) {
       localStorage.removeItem("dl_token"); localStorage.removeItem("dl_user");
       document.getElementById("loading-screen").style.display="none";
       document.getElementById("login-screen").style.display="flex";
-      showToast("Tu sesión expiró, iniciá de nuevo","info");
+      showToast("Tu sesión expiró, inicia de nuevo","info");
     }
   }).catch(function(){
     state.app.authToken=null; state.app.authUser=null;
