@@ -203,7 +203,7 @@ function makeMicBtn(color, cb, vizCanvas) {
       btn.textContent="STOP"; btn.style.borderColor="var(--red)"; btn.style.color="var(--red-text)"; btn.style.animation="ring 1.2s infinite";
     } catch(e){
       if(viz){viz.stop();viz=null;}
-      alert("Permite el acceso al microfono en tu browser.");
+      showToast("Permite el acceso al micrófono en tu navegador (candado → ajustes del sitio).","error");
     }
   };
   return btn;
@@ -241,7 +241,7 @@ function makePronMicBtn(color, targetPhrase, host, vizCanvas){
       };
       state.app.mr.start(250);
       btn.textContent="STOP"; btn.style.borderColor="var(--red)"; btn.style.color="var(--red-text)"; btn.style.animation="ring 1.2s infinite";
-    } catch(e){ if(viz){viz.stop();viz=null;} alert("Permite el acceso al microfono."); }
+    } catch(e){ if(viz){viz.stop();viz=null;} showToast("Permite el acceso al micrófono (candado → ajustes del sitio).","error"); }
   };
   return btn;
 }

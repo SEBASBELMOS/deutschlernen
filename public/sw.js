@@ -13,7 +13,8 @@ const ASSETS = [
   "/js/screens/connectors.js", "/js/screens/tempus.js", "/js/screens/perfekt.js",
   "/js/screens/satzbau.js", "/js/screens/flashcards.js", "/js/screens/saved.js",
   "/js/screens/summary.js", "/js/screens/leveltest.js", "/js/screens/conjugacion.js",
-  "/js/screens/preposiciones.js", "/js/screens/settings.js"
+  "/js/screens/preposiciones.js", "/js/screens/adjektive.js", "/js/screens/ndeklination.js",
+  "/js/screens/trennbare.js", "/js/screens/settings.js"
 ];
 
 self.addEventListener("install", function(e){

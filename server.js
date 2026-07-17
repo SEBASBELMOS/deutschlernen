@@ -6,6 +6,9 @@ const crypto = require("crypto");
 const {createClient} = require("@supabase/supabase-js");
 
 const app = express();
+app.set("trust proxy", 1);
+const compression = require("compression");
+app.use(compression());
 const PORT = process.env.PORT || 3000;
 const AI_KEY = process.env.AI_KEY || process.env.GROQ_KEY || process.env.OPENROUTER_KEY || process.env.MIMO_KEY;
 const CATEGORIES = ["Trabajo","Viaje","Viajes","Comida","Naturaleza","Sentimientos","Hogar","Trámites","Tech","Conectores","General"];
@@ -257,7 +260,7 @@ app.use(function(_,res,next){
 });
 app.use(express.json({limit:"10mb"}));
 app.use(express.raw({type:["audio/*","application/octet-stream","video/*"], limit:"25mb"}));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), {maxAge: "1h", etag: true}));
 
 // Auth
 app.post("/api/register", async (req,res) => {
@@ -265,7 +268,7 @@ app.post("/api/register", async (req,res) => {
     const {username,password} = req.body||{};
     if (!username||!password) return res.json({error:"Completa todos los campos."});
     if (username.length<3) return res.json({error:"Username: minimo 3 caracteres."});
-    if (password.length<4) return res.json({error:"Password: minimo 4 caracteres."});
+    if (password.length<8) return res.json({error:"Password: mínimo 8 caracteres."});
     if (!checkRateLimit(req.ip, "register"))
       return res.status(429).json({error:"Demasiados intentos. Espera 15 minutos."});
     const emptyData = {saved:[],chatLogs:[],totalPhrases:0,totalMinutes:0,dailyLog:{},shownPhrases:{},weeklyGoal:60,casesStats:{}};
@@ -361,7 +364,12 @@ app.get("/api/sync", async (req,res) => {
 
 app.post("/api/sync", async (req,res) => {
   try {
-    const auth = await getAuth(req);
+    let auth = await getAuth(req);
+    // sendBeacon fallback: token in body when x-token header is absent (mobile/PWA)
+    if (!auth && req.body && req.body.token) {
+      req.headers["x-token"] = req.body.token;
+      auth = await getAuth(req);
+    }
     if (!auth) return res.json({error:"No autenticado."});
     const body = req.body||{};
     const MAX_SAVED = 5000, MAX_CHATLOGS = 200, MAX_ERRJOURNAL = 100, MAX_STR = 2000;
@@ -378,9 +386,57 @@ app.post("/api/sync", async (req,res) => {
     if (body.chatLogs.length > MAX_CHATLOGS) return res.status(400).json({error:"Demasiados chats (máx "+MAX_CHATLOGS+")."});
     if (body.errorJournal && !Array.isArray(body.errorJournal)) return res.status(400).json({error:"errorJournal debe ser un array."});
     if (Array.isArray(body.errorJournal) && body.errorJournal.length > MAX_ERRJOURNAL) body.errorJournal = body.errorJournal.slice(-MAX_ERRJOURNAL);
-    const {saved,chatLogs,totalPhrases,totalMinutes,dailyLog,shownPhrases,weeklyGoal,level,grammarStats,casesStats,errorJournal} = body;
-    const existing = auth.user.data || {};
-    let cleanCasesStats = existing.casesStats || {};
+    const existingData = auth.user.data || {};
+
+    // ── Merge saved: keep the most-recent lastReviewed per phrase ──
+    if (Array.isArray(body.saved)) {
+      var savedMap = {};
+      // Start with existing phrases
+      if (Array.isArray(existingData.saved)) {
+        existingData.saved.forEach(function(s){
+          if (s.de) savedMap[s.de] = s;
+        });
+      }
+      // Merge incoming (overwrite if newer or new)
+      body.saved.forEach(function(s){
+        if (!s.de) return;
+        var existing = savedMap[s.de];
+        if (!existing || (s.lastReviewed && (!existing.lastReviewed || new Date(s.lastReviewed) > new Date(existing.lastReviewed)))) {
+          savedMap[s.de] = s;
+        }
+      });
+      body.saved = Object.values(savedMap);
+    }
+
+    // ── Merge dailyLog: sum minutes / phrasesReviewed / drillsDone per day ──
+    if (body.dailyLog && typeof body.dailyLog==="object" && existingData.dailyLog && typeof existingData.dailyLog==="object") {
+      Object.keys(body.dailyLog).forEach(function(day){
+        var incoming = body.dailyLog[day] || {};
+        if (existingData.dailyLog[day]) {
+          existingData.dailyLog[day].minutes = (existingData.dailyLog[day].minutes||0) + (incoming.minutes||0);
+          existingData.dailyLog[day].phrasesReviewed = (existingData.dailyLog[day].phrasesReviewed||0) + (incoming.phrasesReviewed||0);
+          existingData.dailyLog[day].drillsDone = (existingData.dailyLog[day].drillsDone||0) + (incoming.drillsDone||0);
+        } else {
+          existingData.dailyLog[day] = {
+            minutes: Number(incoming.minutes)||0,
+            phrasesReviewed: Number(incoming.phrasesReviewed)||0,
+            drillsDone: Number(incoming.drillsDone)||0
+          };
+        }
+      });
+      body.dailyLog = existingData.dailyLog;
+    } else if (body.dailyLog && typeof body.dailyLog==="object") {
+      // No existing dailyLog — use incoming as-is
+    }
+
+    // ── Merge levelLog: incoming wins for same keys ──
+    if (body.levelLog && typeof body.levelLog==="object" && existingData.levelLog && typeof existingData.levelLog==="object") {
+      body.levelLog = Object.assign({}, existingData.levelLog, body.levelLog);
+    }
+
+    // ── Cases stats validation ──
+    let cleanCasesStats = existingData.casesStats || {};
+    const casesStats = body.casesStats;
     if (casesStats && typeof casesStats==="object" && !Array.isArray(casesStats)) {
       cleanCasesStats = {};
       if (["identificar","transformar","reglas","practicar"].includes(casesStats.casesSubtab)) cleanCasesStats.casesSubtab = casesStats.casesSubtab;
@@ -391,20 +447,23 @@ app.post("/api/sync", async (req,res) => {
         if (Number.isFinite(n)) cleanCasesStats[k] = Math.max(0, Math.floor(n));
       });
     }
-    const nextData = {
-      saved: saved,
-      chatLogs: chatLogs,
-      totalPhrases: Number(totalPhrases)||0,
-      totalMinutes: Number(totalMinutes)||0,
-      dailyLog: (dailyLog && typeof dailyLog==="object") ? dailyLog : (existing.dailyLog||{}),
-      shownPhrases: (shownPhrases && typeof shownPhrases==="object") ? shownPhrases : (existing.shownPhrases||{}),
-      weeklyGoal: Number(weeklyGoal)||60,
-      level: level,
-      grammarStats: (grammarStats && typeof grammarStats==="object") ? grammarStats : (existing.grammarStats||{}),
+
+    // ── Assemble merged data (full-replace fields: incoming wins) ──
+    var merged = Object.assign({}, existingData, {
+      saved: body.saved,
+      chatLogs: body.chatLogs,
+      totalPhrases: Number(body.totalPhrases)||0,
+      totalMinutes: Number(body.totalMinutes)||0,
+      dailyLog: (body.dailyLog && typeof body.dailyLog==="object") ? body.dailyLog : (existingData.dailyLog||{}),
+      levelLog: (body.levelLog && typeof body.levelLog==="object") ? body.levelLog : (existingData.levelLog||{}),
+      shownPhrases: (body.shownPhrases && typeof body.shownPhrases==="object") ? body.shownPhrases : (existingData.shownPhrases||{}),
+      weeklyGoal: Number(body.weeklyGoal)||60,
+      level: body.level,
+      grammarStats: (body.grammarStats && typeof body.grammarStats==="object") ? body.grammarStats : (existingData.grammarStats||{}),
       casesStats: cleanCasesStats,
-      errorJournal: Array.isArray(errorJournal) ? errorJournal : (existing.errorJournal||[])
-    };
-    await storage.updateUserData(auth.username, nextData);
+      errorJournal: Array.isArray(body.errorJournal) ? body.errorJournal : (existingData.errorJournal||[])
+    });
+    await storage.updateUserData(auth.username, merged);
     res.json({ok:true});
   } catch(err) {
     console.error("[sync:post]", err);

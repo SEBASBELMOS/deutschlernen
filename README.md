@@ -1,3 +1,12 @@
+---
+title: DeutschLernen
+emoji: 🇩🇪
+colorFrom: yellow
+colorTo: red
+sdk: docker
+app_port: 7860
+---
+
 # DeutschLernen 🇩🇪
 
 **A focused German learning app — built vanilla and deployable on free infrastructure. Practice what actually matters: speaking, listening, and real phrases.**

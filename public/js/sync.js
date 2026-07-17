@@ -43,9 +43,22 @@ function setLevel(lvl) {
 
 state.app.syncTimer=null;
 function syncPayload(){
-  var payload={saved:state.session.saved,chatLogs:state.session.chatLogs,totalPhrases:state.session.sessionPhrases,totalMinutes:state.session.sessionMinutes,dailyLog:state.session.dailyLog,levelLog:state.session.levelLog,shownPhrases:state.session.shownPhrases,weeklyGoal:state.session.weeklyGoal,level:state.app.level,grammarStats:state.grammar.grammarStats,errorJournal:state.session.errorJournal};
-  if(typeof getCasesSyncState==="function") payload.casesStats=getCasesSyncState();
-  return JSON.stringify(payload);
+  var p={token:state.app.authToken};
+  // Full-replace fields (incoming wins on server)
+  p.chatLogs=state.session.chatLogs.slice(-50); // last 50 only — keeps payload lean
+  p.totalPhrases=state.session.sessionPhrases;
+  p.totalMinutes=state.session.sessionMinutes;
+  p.dailyLog=state.session.dailyLog;
+  p.levelLog=state.session.levelLog;
+  p.shownPhrases=state.session.shownPhrases;
+  p.weeklyGoal=state.session.weeklyGoal;
+  p.level=state.app.level;
+  p.grammarStats=state.grammar.grammarStats;
+  p.errorJournal=state.session.errorJournal;
+  if(typeof getCasesSyncState==="function") p.casesStats=getCasesSyncState();
+  // Saved phrases: send ALL (server merges by lastReviewed)
+  p.saved=state.session.saved;
+  return JSON.stringify(p);
 }
 function setSyncChip(state){
   var chip=document.getElementById("sync-chip"); if(!chip) return;

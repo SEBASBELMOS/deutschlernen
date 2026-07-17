@@ -1,11 +1,18 @@
 // ── Init ──────────────────────────────────────────────────────────────────────
-// Flush-on-close: if a debounced sync is pending, fire it with keepalive
-window.addEventListener("beforeunload",function(){
+// Reliable flush: works on mobile kill, PWA close, tab hide
+function flushSync(){
   if(!state.app.authToken) return;
   clearTimeout(state.app.syncTimer); state.app.syncTimer=null;
-  try {
-    fetch("/api/sync",{method:"POST",keepalive:true,headers:{"content-type":"application/json","x-token":state.app.authToken},body:syncPayload()});
-  } catch(e){}
+  if(navigator.sendBeacon){
+    navigator.sendBeacon("/api/sync",new Blob([syncPayload()],{type:"application/json"}));
+  } else {
+    fetch("/api/sync",{method:"POST",keepalive:true,headers:{"content-type":"application/json","x-token":state.app.authToken},body:syncPayload()}).catch(function(){});
+  }
+}
+window.addEventListener("beforeunload",flushSync);
+window.addEventListener("pagehide",flushSync);
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="hidden") flushSync();
 });
 
 document.addEventListener("keydown",function(e){
